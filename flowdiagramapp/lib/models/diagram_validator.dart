@@ -9,18 +9,18 @@ class ValidationResult {
     this.isValid = true,
     List<String>? errors,
     List<String>? warnings,
-  }) : errors = errors ?? [],
-       warnings = warnings ?? [];
+  })  : errors = errors ?? [],
+        warnings = warnings ?? [];
 
   ValidationResult.withError(String error)
-    : isValid = false,
-      errors = [error],
-      warnings = [];
+      : isValid = false,
+        errors = [error],
+        warnings = [];
 
   ValidationResult.withWarning(String warning)
-    : isValid = true,
-      errors = [],
-      warnings = [warning];
+      : isValid = true,
+        errors = [],
+        warnings = [warning];
 
   ValidationResult merge(ValidationResult other) {
     return ValidationResult(

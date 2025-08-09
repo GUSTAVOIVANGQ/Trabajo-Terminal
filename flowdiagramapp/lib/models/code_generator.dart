@@ -345,12 +345,11 @@ class CodeGenerator {
     } else if (text.toLowerCase().contains('flotante') ||
         text.toLowerCase().contains('float') ||
         text.toLowerCase().contains('decimal')) {
-      String varName =
-          text
-              .replaceAll('flotante', '')
-              .replaceAll('float', '')
-              .replaceAll('decimal', '')
-              .trim();
+      String varName = text
+          .replaceAll('flotante', '')
+          .replaceAll('float', '')
+          .replaceAll('decimal', '')
+          .trim();
       return "float $varName";
     } else if (text.toLowerCase().contains('caracter') ||
         text.toLowerCase().contains('char')) {

@@ -17,7 +17,7 @@ dependencies:
   path_provider: ^2.1.1
   provider: ^6.1.1
   intl: ^0.18.1  # Firebase dependencies
-  firebase_core: ^2.27.0
+  firebase_core: ^2.32.0
   firebase_auth: ^4.17.8
   cloud_firestore: ^4.15.8
   shared_preferences: ^2.2.2

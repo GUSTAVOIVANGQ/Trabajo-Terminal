@@ -45,13 +45,33 @@ class FlowDiagramCanvas extends StatefulWidget {
   State<FlowDiagramCanvas> createState() => _FlowDiagramCanvasState();
 }
 
-class _FlowDiagramCanvasState extends State<FlowDiagramCanvas> {
+class _FlowDiagramCanvasState extends State<FlowDiagramCanvas>
+    with TickerProviderStateMixin {
   DiagramNode? draggingNode;
   Offset? dragStart;
   Offset? nodeDragStart;
+  Offset? currentDragPosition;
   bool isLongPressing = false;
   bool isSnappingEnabled = false;
   bool isDragging = false;
+
+  // Para optimizar el rendimiento del canvas
+  late AnimationController _dragController;
+
+  @override
+  void initState() {
+    super.initState();
+    _dragController = AnimationController(
+      duration: const Duration(milliseconds: 16), // 60 FPS
+      vsync: this,
+    );
+  }
+
+  @override
+  void dispose() {
+    _dragController.dispose();
+    super.dispose();
+  }
 
   Offset _applySnapping(Offset position) {
     final snappedX = (position.dx / FlowDiagramPainter.gridSize).round() *
@@ -164,9 +184,13 @@ class _FlowDiagramCanvasState extends State<FlowDiagramCanvas> {
             draggingNode = node;
             dragStart = details.localFocalPoint;
             nodeDragStart = node.position;
+            currentDragPosition = node.position; // Inicializar posición actual
           });
           // Notificar al padre para seleccionar este nodo inmediatamente
           widget.onNodeTap(node);
+
+          // Iniciar animación para feedback visual
+          _dragController.repeat();
         } else {
           setState(() {
             dragStart = details.localFocalPoint;
@@ -192,13 +216,19 @@ class _FlowDiagramCanvasState extends State<FlowDiagramCanvas> {
           // Calcular nueva posición
           final newPosition = nodeDragStart! + adjustedDelta;
 
-          // Actualizar posición directamente
-          draggingNode!.position = newPosition;
+          // Actualizar la posición de arrastre temporal para feedback visual
+          setState(() {
+            currentDragPosition = newPosition;
+          });
 
-          // Forzar redibujado sin reconstruir el widget tree
-          context.findRenderObject()?.markNeedsPaint();
+          // Actualizar posición del nodo de forma más eficiente
+          if (mounted) {
+            // Usar el AnimationController para suavizar el movimiento
+            _dragController.reset();
+            _dragController.forward();
+          }
 
-          // Notificar al padre del cambio
+          // Notificar al padre del cambio menos frecuentemente para mejor rendimiento
           widget.onNodeDragUpdate(draggingNode!, newPosition);
         } else if (details.scale != 1.0 && !isLongPressing) {
           // Si estamos haciendo zoom
@@ -216,12 +246,19 @@ class _FlowDiagramCanvasState extends State<FlowDiagramCanvas> {
 
       onScaleEnd: (details) {
         if (draggingNode != null) {
+          // Detener la animación
+          _dragController.stop();
+
+          // Aplicar la posición final al nodo
+          if (currentDragPosition != null) {
+            draggingNode!.position = currentDragPosition!;
+          }
+
           // Aplicar ajuste a cuadrícula si está habilitado
-          if (isSnappingEnabled) {
-            final snappedPosition = _applySnapping(draggingNode!.position);
-            if (snappedPosition != draggingNode!.position) {
-              widget.onNodeDragUpdate(draggingNode!, snappedPosition);
-            }
+          if (isSnappingEnabled && currentDragPosition != null) {
+            final snappedPosition = _applySnapping(currentDragPosition!);
+            draggingNode!.position = snappedPosition;
+            widget.onNodeDragUpdate(draggingNode!, snappedPosition);
           }
 
           // Guardar referencia al nodo arrastrado
@@ -230,6 +267,7 @@ class _FlowDiagramCanvasState extends State<FlowDiagramCanvas> {
           setState(() {
             draggingNode = null;
             nodeDragStart = null;
+            currentDragPosition = null;
           });
 
           // Mantener el nodo seleccionado después del arrastre
@@ -289,17 +327,23 @@ class _FlowDiagramCanvasState extends State<FlowDiagramCanvas> {
         child: ClipRect(
           child: RepaintBoundary(
             key: widget.canvasKey,
-            child: CustomPaint(
-              painter: FlowDiagramPainter(
-                nodes: widget.nodes,
-                connections: widget.connections,
-                selectedNode: widget.selectedNode,
-                draggingNode: draggingNode,
-                panOffset: widget.panOffset,
-                scale: widget.scale,
-                context: context,
-              ),
-              child: Container(),
+            child: AnimatedBuilder(
+              animation: _dragController,
+              builder: (context, child) {
+                return CustomPaint(
+                  painter: FlowDiagramPainter(
+                    nodes: widget.nodes,
+                    connections: widget.connections,
+                    selectedNode: widget.selectedNode,
+                    draggingNode: draggingNode,
+                    currentDragPosition: currentDragPosition,
+                    panOffset: widget.panOffset,
+                    scale: widget.scale,
+                    context: context,
+                  ),
+                  child: Container(),
+                );
+              },
             ),
           ),
         ),
@@ -313,6 +357,7 @@ class FlowDiagramPainter extends CustomPainter {
   final List<Connection> connections;
   final DiagramNode? selectedNode;
   final DiagramNode? draggingNode;
+  final Offset? currentDragPosition;
   final Offset panOffset;
   final double scale;
   final BuildContext context;
@@ -335,6 +380,7 @@ class FlowDiagramPainter extends CustomPainter {
     required this.connections,
     this.selectedNode,
     this.draggingNode,
+    this.currentDragPosition,
     required this.panOffset,
     required this.scale,
     required this.context,
@@ -432,7 +478,14 @@ class FlowDiagramPainter extends CustomPainter {
 
   void _drawNode(Canvas canvas, DiagramNode node) {
     canvas.save();
-    canvas.translate(node.position.dx, node.position.dy);
+
+    // Si este nodo se está arrastrando, usar la posición temporal
+    Offset nodePosition = node.position;
+    if (node == draggingNode && currentDragPosition != null) {
+      nodePosition = currentDragPosition!;
+    }
+
+    canvas.translate(nodePosition.dx, nodePosition.dy);
 
     // Obtener la forma del nodo según su tipo
     final path = node.getPath();
@@ -442,7 +495,7 @@ class FlowDiagramPainter extends CustomPainter {
 
     // Crear paint personalizado para este nodo
     final nodeFillPaintCustom = Paint()
-      ..color = nodeColor.withOpacity(0.1)
+      ..color = nodeColor.withOpacity(node == draggingNode ? 0.3 : 0.1)
       ..style = PaintingStyle.fill;
 
     final nodeStrokeCustom = Paint()
@@ -457,7 +510,22 @@ class FlowDiagramPainter extends CustomPainter {
     if (node == selectedNode) {
       canvas.drawPath(path, selectedNodePaint);
     } else if (node == draggingNode) {
-      canvas.drawPath(path, draggingNodePaint);
+      // Estilo especial para nodo que se está arrastrando
+      final draggingPaint = Paint()
+        ..color = nodeColor
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 3.0;
+      canvas.drawPath(path, draggingPaint);
+
+      // Agregar sombra durante el arrastre
+      final shadowPaint = Paint()
+        ..color = Colors.black.withOpacity(0.3)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.0;
+      canvas.save();
+      canvas.translate(2, 2);
+      canvas.drawPath(path, shadowPaint);
+      canvas.restore();
     } else {
       canvas.drawPath(path, nodeStrokeCustom);
     }
@@ -595,6 +663,7 @@ class FlowDiagramPainter extends CustomPainter {
         oldDelegate.connections != connections ||
         oldDelegate.selectedNode != selectedNode ||
         oldDelegate.draggingNode != draggingNode ||
+        oldDelegate.currentDragPosition != currentDragPosition ||
         oldDelegate.panOffset != panOffset ||
         oldDelegate.scale != scale;
   }

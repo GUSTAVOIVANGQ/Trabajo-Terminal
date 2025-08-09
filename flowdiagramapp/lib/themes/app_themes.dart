@@ -38,7 +38,7 @@ class AppThemes {
     ),
 
     // Cards y contenedores
-    cardTheme: CardTheme(
+    cardTheme: CardThemeData(
       elevation: 2,
       color: Colors.white,
       surfaceTintColor: const Color(0xFF2563EB).withOpacity(0.05),
@@ -187,7 +187,7 @@ class AppThemes {
     ),
 
     // Cards para modo oscuro
-    cardTheme: CardTheme(
+    cardTheme: CardThemeData(
       elevation: 4,
       color: const Color(0xFF1E293B),
       surfaceTintColor: const Color(0xFF3B82F6).withOpacity(0.1),

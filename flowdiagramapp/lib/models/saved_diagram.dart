@@ -65,34 +65,32 @@ class SavedDiagram {
     final List<Map<String, dynamic>> nodesData =
         List<Map<String, dynamic>>.from(jsonDecode(map['nodes_data']));
 
-    final List<DiagramNode> nodes =
-        nodesData.map((nodeData) {
-          return DiagramNode(
-            id: nodeData['id'],
-            type: NodeType.values.byName(nodeData['type']),
-            position: Offset(nodeData['x'], nodeData['y']),
-            text: nodeData['text'],
-          );
-        }).toList();
+    final List<DiagramNode> nodes = nodesData.map((nodeData) {
+      return DiagramNode(
+        id: nodeData['id'],
+        type: NodeType.values.byName(nodeData['type']),
+        position: Offset(nodeData['x'], nodeData['y']),
+        text: nodeData['text'],
+      );
+    }).toList();
 
     final List<Map<String, dynamic>> connectionsData =
         List<Map<String, dynamic>>.from(jsonDecode(map['connections_data']));
 
-    final List<Connection> connections =
-        connectionsData.map((connData) {
-          final sourceNode = nodes.firstWhere(
-            (node) => node.id == connData['source_id'],
-          );
-          final targetNode = nodes.firstWhere(
-            (node) => node.id == connData['target_id'],
-          );
+    final List<Connection> connections = connectionsData.map((connData) {
+      final sourceNode = nodes.firstWhere(
+        (node) => node.id == connData['source_id'],
+      );
+      final targetNode = nodes.firstWhere(
+        (node) => node.id == connData['target_id'],
+      );
 
-          return Connection(
-            source: sourceNode,
-            target: targetNode,
-            label: connData['label'],
-          );
-        }).toList();
+      return Connection(
+        source: sourceNode,
+        target: targetNode,
+        label: connData['label'],
+      );
+    }).toList();
 
     return SavedDiagram(
       id: map['id'],
