@@ -58,6 +58,13 @@ class NodePalette extends StatelessWidget {
           ),
           _buildPaletteItem(
             context,
+            NodeType.loop,
+            'Preparación',
+            Icons.hexagon_outlined,
+            nodeColors['loop']!,
+          ),
+          _buildPaletteItem(
+            context,
             NodeType.input,
             'Entrada',
             Icons.arrow_circle_down_outlined,

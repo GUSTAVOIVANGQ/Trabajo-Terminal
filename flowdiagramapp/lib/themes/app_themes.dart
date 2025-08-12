@@ -308,6 +308,7 @@ class AppThemes {
     'input': Color(0xFF7C3AED), // Púrpura para entrada
     'output': Color(0xFF059669), // Verde oscuro para salida
     'variable': Color(0xFF0891B2), // Cian para variable
+    'loop': Color(0xFFEF4444), // Rojo/naranja para bucle
   };
 
   /// Colores personalizados para nodos del diagrama en modo oscuro
@@ -319,6 +320,7 @@ class AppThemes {
     'input': Color(0xFF8B5CF6), // Púrpura más claro
     'output': Color(0xFF10B981), // Verde más claro
     'variable': Color(0xFF06B6D4), // Cian más claro
+    'loop': Color(0xFFF97316), // Naranja más claro para bucle
   };
 
   /// Obtiene los colores de nodos según el tema actual

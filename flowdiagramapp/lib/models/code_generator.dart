@@ -210,6 +210,18 @@ class CodeGenerator {
           processedNodes,
         );
         break;
+
+      case NodeType.loop:
+        code.writeln("${indent}// Bucle: ${node.text}");
+        _generateCLoopCode(
+          node,
+          allNodes,
+          connections,
+          code,
+          indent,
+          processedNodes,
+        );
+        break;
     }
   }
 
@@ -222,8 +234,8 @@ class CodeGenerator {
     String indent,
     Map<String, bool> processedNodes,
   ) {
-    // Encuentra el siguiente nodo para procesos lineales (no decisiones)
-    if (node.type != NodeType.decision) {
+    // Encuentra el siguiente nodo para procesos lineales (no decisiones ni bucles)
+    if (node.type != NodeType.decision && node.type != NodeType.loop) {
       final outConnections =
           connections.where((conn) => conn.source == node).toList();
       for (final connection in outConnections) {
@@ -237,6 +249,260 @@ class CodeGenerator {
         );
       }
     }
+  }
+
+  // Genera código para bucles en C
+  static void _generateCLoopCode(
+    DiagramNode loopNode,
+    List<DiagramNode> allNodes,
+    List<Connection> connections,
+    StringBuffer code,
+    String indent,
+    Map<String, bool> processedNodes,
+  ) {
+    // Analizar el texto del bucle para determinar el tipo
+    final loopText = loopNode.text.toLowerCase();
+
+    if (loopText.contains('while') || loopText.contains('mientras')) {
+      _generateWhileLoop(
+          loopNode, allNodes, connections, code, indent, processedNodes);
+    } else if (loopText.contains('for') || loopText.contains('para')) {
+      _generateForLoop(
+          loopNode, allNodes, connections, code, indent, processedNodes);
+    } else if (loopText.contains('do') || loopText.contains('hacer')) {
+      _generateDoWhileLoop(
+          loopNode, allNodes, connections, code, indent, processedNodes);
+    } else {
+      // Bucle genérico - usar while por defecto
+      _generateGenericLoop(
+          loopNode, allNodes, connections, code, indent, processedNodes);
+    }
+  }
+
+  // Genera un bucle while
+  static void _generateWhileLoop(
+    DiagramNode loopNode,
+    List<DiagramNode> allNodes,
+    List<Connection> connections,
+    StringBuffer code,
+    String indent,
+    Map<String, bool> processedNodes,
+  ) {
+    String condition = _extractLoopCondition(loopNode.text);
+    code.writeln("${indent}while ($condition) {");
+
+    _generateLoopBody(
+        loopNode, allNodes, connections, code, indent + "    ", processedNodes);
+
+    code.writeln("${indent}}");
+
+    // Procesar nodos después del bucle
+    _processLoopExit(
+        loopNode, allNodes, connections, code, indent, processedNodes);
+  }
+
+  // Genera un bucle for
+  static void _generateForLoop(
+    DiagramNode loopNode,
+    List<DiagramNode> allNodes,
+    List<Connection> connections,
+    StringBuffer code,
+    String indent,
+    Map<String, bool> processedNodes,
+  ) {
+    String forStatement = _extractForStatement(loopNode.text);
+    code.writeln("${indent}for ($forStatement) {");
+
+    _generateLoopBody(
+        loopNode, allNodes, connections, code, indent + "    ", processedNodes);
+
+    code.writeln("${indent}}");
+
+    // Procesar nodos después del bucle
+    _processLoopExit(
+        loopNode, allNodes, connections, code, indent, processedNodes);
+  }
+
+  // Genera un bucle do-while
+  static void _generateDoWhileLoop(
+    DiagramNode loopNode,
+    List<DiagramNode> allNodes,
+    List<Connection> connections,
+    StringBuffer code,
+    String indent,
+    Map<String, bool> processedNodes,
+  ) {
+    String condition = _extractLoopCondition(loopNode.text);
+    code.writeln("${indent}do {");
+
+    _generateLoopBody(
+        loopNode, allNodes, connections, code, indent + "    ", processedNodes);
+
+    code.writeln("${indent}} while ($condition);");
+
+    // Procesar nodos después del bucle
+    _processLoopExit(
+        loopNode, allNodes, connections, code, indent, processedNodes);
+  }
+
+  // Genera un bucle genérico (while)
+  static void _generateGenericLoop(
+    DiagramNode loopNode,
+    List<DiagramNode> allNodes,
+    List<Connection> connections,
+    StringBuffer code,
+    String indent,
+    Map<String, bool> processedNodes,
+  ) {
+    // Si no hay condición específica, usar una condición básica
+    String condition = loopNode.text.isEmpty
+        ? "/* condición */"
+        : _formatCCondition(loopNode.text);
+    code.writeln("${indent}while ($condition) {");
+
+    _generateLoopBody(
+        loopNode, allNodes, connections, code, indent + "    ", processedNodes);
+
+    code.writeln("${indent}}");
+
+    // Procesar nodos después del bucle
+    _processLoopExit(
+        loopNode, allNodes, connections, code, indent, processedNodes);
+  }
+
+  // Genera el cuerpo del bucle
+  static void _generateLoopBody(
+    DiagramNode loopNode,
+    List<DiagramNode> allNodes,
+    List<Connection> connections,
+    StringBuffer code,
+    String indent,
+    Map<String, bool> processedNodes,
+  ) {
+    // Encontrar nodos dentro del bucle (conectados desde el nodo de bucle)
+    final loopConnections =
+        connections.where((conn) => conn.source == loopNode).toList();
+
+    for (final connection in loopConnections) {
+      // Solo procesar nodos que forman parte del cuerpo del bucle
+      // (no la salida del bucle)
+      if (!_isLoopExitConnection(connection, loopNode, connections)) {
+        _generateCNodeCode(
+          connection.target,
+          allNodes,
+          connections,
+          code,
+          indent,
+          Map.from(processedNodes), // Copia para evitar marcar como procesados
+        );
+      }
+    }
+  }
+
+  // Procesa la salida del bucle
+  static void _processLoopExit(
+    DiagramNode loopNode,
+    List<DiagramNode> allNodes,
+    List<Connection> connections,
+    StringBuffer code,
+    String indent,
+    Map<String, bool> processedNodes,
+  ) {
+    final exitConnections = connections
+        .where((conn) =>
+            conn.source == loopNode &&
+            _isLoopExitConnection(conn, loopNode, connections))
+        .toList();
+
+    for (final connection in exitConnections) {
+      _generateCNodeCode(
+        connection.target,
+        allNodes,
+        connections,
+        code,
+        indent,
+        processedNodes,
+      );
+    }
+  }
+
+  // Determina si una conexión es una salida del bucle
+  static bool _isLoopExitConnection(
+    Connection connection,
+    DiagramNode loopNode,
+    List<Connection> allConnections,
+  ) {
+    // Una conexión es de salida si no tiene camino de retorno al bucle
+    return !_hasReturnPath(
+        connection.target, loopNode, allConnections, Set<String>());
+  }
+
+  // Verifica si hay un camino de retorno al bucle
+  static bool _hasReturnPath(
+    DiagramNode currentNode,
+    DiagramNode loopNode,
+    List<Connection> connections,
+    Set<String> visited,
+  ) {
+    if (visited.contains(currentNode.id)) {
+      return false;
+    }
+    visited.add(currentNode.id);
+
+    if (currentNode.id == loopNode.id) {
+      return true;
+    }
+
+    final outConnections =
+        connections.where((conn) => conn.source == currentNode).toList();
+    for (final connection in outConnections) {
+      if (_hasReturnPath(
+          connection.target, loopNode, connections, Set.from(visited))) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  // Extrae la condición del bucle desde el texto
+  static String _extractLoopCondition(String text) {
+    // Buscar patrones comunes de condiciones
+    if (text.contains('(') && text.contains(')')) {
+      final start = text.indexOf('(');
+      final end = text.lastIndexOf(')');
+      if (start != -1 && end != -1 && end > start) {
+        return text.substring(start + 1, end);
+      }
+    }
+
+    // Si contiene operadores de comparación, usar como condición
+    if (text.contains('==') ||
+        text.contains('>') ||
+        text.contains('<') ||
+        text.contains('>=') ||
+        text.contains('<=') ||
+        text.contains('!=')) {
+      return text;
+    }
+
+    // Condición por defecto
+    return "/* $text */";
+  }
+
+  // Extrae la declaración for desde el texto
+  static String _extractForStatement(String text) {
+    // Buscar patrón for(init; condition; increment)
+    if (text.contains('(') && text.contains(')')) {
+      final start = text.indexOf('(');
+      final end = text.lastIndexOf(')');
+      if (start != -1 && end != -1 && end > start) {
+        return text.substring(start + 1, end);
+      }
+    }
+
+    // Patrón básico por defecto
+    return "int i = 0; i < 10; i++";
   }
 
   // Formatea una declaración de proceso para C

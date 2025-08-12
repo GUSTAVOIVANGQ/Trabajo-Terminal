@@ -254,6 +254,9 @@ class _EditorScreenState extends State<EditorScreen> {
                         case NodeType.decision:
                           nodeName = "Decisión";
                           break;
+                        case NodeType.loop:
+                          nodeName = "Bucle";
+                          break;
                         case NodeType.input:
                           nodeName = "Entrada";
                           break;

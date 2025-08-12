@@ -552,6 +552,8 @@ class FlowDiagramPainter extends CustomPainter {
         return nodeColors['output']!;
       case NodeType.variable:
         return nodeColors['variable']!;
+      case NodeType.loop:
+        return nodeColors['loop']!;
     }
   }
 

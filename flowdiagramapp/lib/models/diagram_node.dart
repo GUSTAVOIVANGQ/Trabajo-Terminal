@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-enum NodeType { start, end, process, decision, input, output, variable }
+enum NodeType { start, end, process, decision, input, output, variable, loop }
 
 class DiagramNode {
   final String id;
@@ -16,6 +16,8 @@ class DiagramNode {
         return const Size(120, 60);
       case NodeType.decision:
         return const Size(140, 100);
+      case NodeType.loop:
+        return const Size(160, 90);
       case NodeType.process:
       case NodeType.input:
       case NodeType.output:
@@ -59,6 +61,18 @@ class DiagramNode {
         path.moveTo(size.width / 2, 0);
         path.lineTo(size.width, size.height / 2);
         path.lineTo(size.width / 2, size.height);
+        path.lineTo(0, size.height / 2);
+        path.close();
+        break;
+
+      case NodeType.loop:
+        // Hexágono para bucle/loop - forma característica de preparación/inicialización
+        final double offset = size.width * 0.15;
+        path.moveTo(offset, 0);
+        path.lineTo(size.width - offset, 0);
+        path.lineTo(size.width, size.height / 2);
+        path.lineTo(size.width - offset, size.height);
+        path.lineTo(offset, size.height);
         path.lineTo(0, size.height / 2);
         path.close();
         break;

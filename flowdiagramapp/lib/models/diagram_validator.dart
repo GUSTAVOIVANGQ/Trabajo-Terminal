@@ -164,6 +164,50 @@ class DiagramValidator {
       }
     }
 
+    // Validar que los nodos de bucle tengan estructura correcta
+    final loopNodes =
+        nodes.where((node) => node.type == NodeType.loop).toList();
+    for (final loopNode in loopNodes) {
+      final inputs =
+          connections.where((conn) => conn.target == loopNode).toList();
+      final outputs =
+          connections.where((conn) => conn.source == loopNode).toList();
+
+      if (inputs.isEmpty) {
+        result = result.merge(
+          ValidationResult.withWarning(
+            "El nodo de bucle '${loopNode.text}' debe tener al menos una conexión de entrada.",
+          ),
+        );
+      }
+
+      if (outputs.isEmpty) {
+        result = result.merge(
+          ValidationResult.withWarning(
+            "El nodo de bucle '${loopNode.text}' debe tener al menos una conexión de salida.",
+          ),
+        );
+      }
+
+      // Validar que haya una conexión de retorno (bucle)
+      bool hasLoopback = false;
+      for (final output in outputs) {
+        // Buscar si hay un camino de retorno al bucle
+        if (_hasPathBack(output.target, loopNode, connections, Set<String>())) {
+          hasLoopback = true;
+          break;
+        }
+      }
+
+      if (!hasLoopback && outputs.isNotEmpty) {
+        result = result.merge(
+          ValidationResult.withWarning(
+            "El nodo de bucle '${loopNode.text}' debería tener una conexión de retorno para formar un ciclo.",
+          ),
+        );
+      }
+    }
+
     return result;
   }
 
@@ -222,6 +266,40 @@ class DiagramValidator {
         return 'Salida';
       case NodeType.variable:
         return 'Variable';
+      case NodeType.loop:
+        return 'Preparación/Inicialización';
     }
+  }
+
+  /// Método auxiliar para verificar si hay un camino de retorno al nodo de bucle
+  static bool _hasPathBack(
+    DiagramNode currentNode,
+    DiagramNode targetLoopNode,
+    List<Connection> connections,
+    Set<String> visited,
+  ) {
+    // Evitar ciclos infinitos en la búsqueda
+    if (visited.contains(currentNode.id)) {
+      return false;
+    }
+    visited.add(currentNode.id);
+
+    // Si llegamos de vuelta al nodo de bucle, hemos encontrado un camino de retorno
+    if (currentNode.id == targetLoopNode.id) {
+      return true;
+    }
+
+    // Buscar en los nodos conectados
+    final outConnections =
+        connections.where((conn) => conn.source == currentNode).toList();
+
+    for (final connection in outConnections) {
+      if (_hasPathBack(
+          connection.target, targetLoopNode, connections, Set.from(visited))) {
+        return true;
+      }
+    }
+
+    return false;
   }
 }

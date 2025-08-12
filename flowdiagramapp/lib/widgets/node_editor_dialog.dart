@@ -1,5 +1,11 @@
 import 'package:flutter/material.dart';
 import '../models/diagram_node.dart';
+import 'process_node_dialog.dart';
+import 'decision_node_dialog.dart';
+import 'input_node_dialog.dart';
+import 'output_node_dialog.dart';
+import 'variable_node_dialog.dart';
+import 'preparation_node_dialog.dart';
 
 class NodeEditorDialog extends StatefulWidget {
   final DiagramNode node;
@@ -27,6 +33,36 @@ class _NodeEditorDialogState extends State<NodeEditorDialog> {
 
   @override
   Widget build(BuildContext context) {
+    // Para nodos de proceso, usar el diálogo especializado
+    if (widget.node.type == NodeType.process) {
+      return ProcessNodeDialog(node: widget.node);
+    }
+
+    // Para nodos de decisión, usar el diálogo especializado
+    if (widget.node.type == NodeType.decision) {
+      return DecisionNodeDialog(node: widget.node);
+    }
+
+    // Para nodos de entrada, usar el diálogo especializado
+    if (widget.node.type == NodeType.input) {
+      return InputNodeDialog(node: widget.node);
+    }
+
+    // Para nodos de salida, usar el diálogo especializado
+    if (widget.node.type == NodeType.output) {
+      return OutputNodeDialog(node: widget.node);
+    }
+
+    // Para nodos de variable, usar el diálogo especializado
+    if (widget.node.type == NodeType.variable) {
+      return VariableNodeDialog(node: widget.node);
+    }
+
+    // Para nodos de preparación/inicialización (loop), usar el diálogo especializado
+    if (widget.node.type == NodeType.loop) {
+      return PreparationNodeDialog(node: widget.node);
+    }
+
     String dialogTitle;
     String hintText;
 
@@ -46,6 +82,11 @@ class _NodeEditorDialogState extends State<NodeEditorDialog> {
       case NodeType.decision:
         dialogTitle = 'Editar Condición';
         hintText = '¿Condición? (ej: edad >= 18)';
+        break;
+      case NodeType.loop:
+        dialogTitle = 'Editar Bucle';
+        hintText =
+            'Condición del bucle (ej: while(i < 10) o for(i=0; i<10; i++))';
         break;
       case NodeType.input:
         dialogTitle = 'Editar Entrada';
@@ -108,6 +149,8 @@ class _NodeEditorDialogState extends State<NodeEditorDialog> {
         return 'Proceso';
       case NodeType.decision:
         return 'Decisión';
+      case NodeType.loop:
+        return 'Bucle';
       case NodeType.input:
         return 'Entrada';
       case NodeType.output:

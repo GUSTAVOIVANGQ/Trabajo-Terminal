@@ -10,13 +10,14 @@ FlowDiagram App es un editor visual intuitivo que permite crear diagramas de flu
 
 ### 🎨 Editor Visual
 - **Paleta de nodos**: Incluye todos los tipos de nodos esenciales:
-  - Nodo de inicio (círculo verde)
-  - Nodo de fin (círculo rojo)
+  - Nodo de inicio (óvalo verde)
+  - Nodo de fin (óvalo rojo)
   - Nodo de proceso (rectángulo azul)
   - Nodo de decisión (rombo amarillo)
   - Nodo de entrada (paralelogramo púrpura)
   - Nodo de salida (paralelogramo índigo)
   - Nodo de variable (rectángulo verde azulado)
+  - Nodo de preparación/inicialización (hexagonal)
 
 - **Interacciones avanzadas**:
   - Arrastrar y soltar nodos en el canvas
@@ -258,14 +259,49 @@ lib/
   - Uso de AnimationController para suavizar movimientos de nodos
   - Optimización de repintado usando RepaintBoundary y AnimatedBuilder
   - Mejora en la detección de colisiones y gestión de eventos de toque
+- [x] **Mejoras para usuarios no programadores (Nodo de Proceso)**
+  - Diálogo especializado con opciones predefinidas (asignación, operaciones matemáticas, incremento/decremento)
+  - Vista previa en tiempo real del código generado
+  - Interpretación inteligente del texto existente
+  - Interfaz guiada que reduce errores de sintaxis
+  - Cumplimiento de estándares ANSI/ISO 5807
+- [x] Mejorar la interfaz de usuario para usuario no programadores (Nodo de Proceso completado).
+- [x] Mejorar la interfaz de usuario para usuario no programadores (Nodo de decisión).
+- [x] **Mejorar la interfaz de usuario para usuario no programadores (Nodos de Entrada/Salida)**
+  - Diálogos especializados con opciones predefinidas (entrada simple, con mensaje, múltiples variables, desde archivo)
+  - Vista previa en tiempo real del código generado
+  - Interpretación inteligente del texto existente
+  - Interfaz guiada que reduce errores de sintaxis
+  - Soporte para diferentes tipos de datos y formatos de salida
+  - Cumplimiento de estándares ANSI/ISO 5807
+- [x] **Mejorar la interfaz de usuario para usuario no programadores (Nodo de Variable)**
+  - Diálogo especializado con opciones predefinidas (declaración, inicialización, constantes, arreglos)
+  - Vista previa en tiempo real del código generado
+  - Interpretación inteligente del texto existente
+  - Soporte completo para tipos de datos de C (int, float, double, char, bool, string)
+  - Interfaz guiada que reduce errores de sintaxis
+  - Ayuda contextual y ejemplos para cada tipo de declaración
+  - Cumplimiento de estándares ANSI/ISO 5807
+- [x] **Mejorar la interfaz de usuario para usuario no programadores (Nodos de Decisión y Preparación/Inicialización)**
+  - **Nodo de Decisión mejorado**: Nuevas opciones específicas para bucles (condición de bucle, par/impar, positivo/negativo)
+  - **Nuevo Nodo de Preparación/Inicialización**: Diálogo especializado para inicializar contadores, configurar bucles FOR/WHILE, declarar arreglos
+  - Vista previa en tiempo real del código generado
+  - Interpretación inteligente del texto existente
+  - Cumplimiento de estándares ANSI/ISO 5807 (rombo para decisión, hexágono para preparación)
+  - Interfaz guiada con iconos, colores y ayuda contextual
+  - Soporte para ciclos predefinidos (for, while, do-while) y configuraciones de bucles
 
 ### 🔄 En Desarrollo
+
+- [ ] Validación semántica entre nodos de preparación y decisión
+- [ ] Plantillas de bucles comunes (contador, suma, búsqueda)
 - [ ] Más plantillas de algoritmos comunes
+- [ ] Generación de código C funcional mejorada
 
 ### 🎯 Próximas Funcionalidades
-- [ ] Soporte para ciclos (for, while)
 - [ ] Compartir diagramas
 - [ ] Exportación de código a archivos
+- [ ] Tutorial integrado para cada tipo de nodo
 
 ## 📄 Licencia
 

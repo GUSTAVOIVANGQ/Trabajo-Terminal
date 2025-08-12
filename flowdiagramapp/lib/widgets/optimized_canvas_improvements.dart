@@ -168,6 +168,8 @@ class OptimizedNodeWidget extends StatelessWidget {
         return Colors.blue;
       case NodeType.decision:
         return Colors.orange;
+      case NodeType.loop:
+        return Colors.deepOrange;
       case NodeType.input:
         return Colors.purple;
       case NodeType.output:

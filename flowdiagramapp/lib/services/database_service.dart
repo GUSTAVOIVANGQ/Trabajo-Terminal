@@ -65,6 +65,14 @@ class DatabaseService {
       evenOddTemplate.toMap(),
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
+
+    // Plantilla 3: Contador con bucle while
+    SavedDiagram loopTemplate = await _createLoopTemplate();
+    await db.insert(
+      'diagrams',
+      loopTemplate.toMap(),
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
   }
 
   // Crear plantilla para suma de dos números
@@ -297,5 +305,102 @@ class DatabaseService {
   Future<int> deleteDiagram(int id) async {
     final Database db = await database;
     return await db.delete('diagrams', where: 'id = ?', whereArgs: [id]);
+  }
+
+  // Crear plantilla para contador con bucle while
+  Future<SavedDiagram> _createLoopTemplate() async {
+    final now = DateTime.now();
+
+    final startNode = DiagramNode(
+      id: "start_${now.millisecondsSinceEpoch}_20",
+      type: NodeType.start,
+      position: const Offset(250, 50),
+      text: "Inicio",
+    );
+
+    final variableNode = DiagramNode(
+      id: "variable_${now.millisecondsSinceEpoch}_21",
+      type: NodeType.variable,
+      position: const Offset(250, 150),
+      text: "int contador = 0",
+    );
+
+    final inputNode = DiagramNode(
+      id: "input_${now.millisecondsSinceEpoch}_22",
+      type: NodeType.input,
+      position: const Offset(250, 250),
+      text: "Ingrese el límite",
+    );
+
+    final loopNode = DiagramNode(
+      id: "loop_${now.millisecondsSinceEpoch}_23",
+      type: NodeType.loop,
+      position: const Offset(250, 350),
+      text: "while(contador < limite)",
+    );
+
+    final outputNode = DiagramNode(
+      id: "output_${now.millisecondsSinceEpoch}_24",
+      type: NodeType.output,
+      position: const Offset(400, 450),
+      text: "Mostrar contador",
+    );
+
+    final processNode = DiagramNode(
+      id: "process_${now.millisecondsSinceEpoch}_25",
+      type: NodeType.process,
+      position: const Offset(400, 550),
+      text: "contador = contador + 1",
+    );
+
+    final finalOutputNode = DiagramNode(
+      id: "output_${now.millisecondsSinceEpoch}_26",
+      type: NodeType.output,
+      position: const Offset(250, 650),
+      text: "Mostrar 'Bucle terminado'",
+    );
+
+    final endNode = DiagramNode(
+      id: "end_${now.millisecondsSinceEpoch}_27",
+      type: NodeType.end,
+      position: const Offset(250, 750),
+      text: "Fin",
+    );
+
+    final nodes = [
+      startNode,
+      variableNode,
+      inputNode,
+      loopNode,
+      outputNode,
+      processNode,
+      finalOutputNode,
+      endNode,
+    ];
+
+    final connections = [
+      Connection(source: startNode, target: variableNode, label: ""),
+      Connection(source: variableNode, target: inputNode, label: ""),
+      Connection(source: inputNode, target: loopNode, label: ""),
+      Connection(source: loopNode, target: outputNode, label: "Verdadero"),
+      Connection(source: outputNode, target: processNode, label: ""),
+      Connection(
+          source: processNode,
+          target: loopNode,
+          label: ""), // Retorno del bucle
+      Connection(source: loopNode, target: finalOutputNode, label: "Falso"),
+      Connection(source: finalOutputNode, target: endNode, label: ""),
+    ];
+
+    return SavedDiagram(
+      name: "Contador con bucle while",
+      description:
+          "Plantilla que demuestra el uso de un bucle while para contar números",
+      createdAt: now,
+      updatedAt: now,
+      nodes: nodes,
+      connections: connections,
+      isTemplate: true,
+    );
   }
 }
