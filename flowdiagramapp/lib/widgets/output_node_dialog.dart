@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/diagram_node.dart';
+import '../models/node_dialog_result.dart';
 
 class OutputNodeDialog extends StatefulWidget {
   final DiagramNode node;
@@ -525,7 +526,8 @@ class _OutputNodeDialogState extends State<OutputNodeDialog> {
         ),
         FilledButton(
           onPressed: () {
-            Navigator.of(context).pop(_generateOutputText());
+            Navigator.of(context)
+                .pop(NodeDialogResult.simple(_generateOutputText()));
           },
           child: const Text('Guardar'),
         ),

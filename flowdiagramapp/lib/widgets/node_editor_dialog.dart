@@ -6,6 +6,9 @@ import 'input_node_dialog.dart';
 import 'output_node_dialog.dart';
 import 'variable_node_dialog.dart';
 import 'preparation_node_dialog.dart';
+import 'connector_node_dialog.dart';
+import 'comment_node_dialog.dart';
+import 'subprocess_node_dialog.dart';
 
 class NodeEditorDialog extends StatefulWidget {
   final DiagramNode node;
@@ -63,6 +66,21 @@ class _NodeEditorDialogState extends State<NodeEditorDialog> {
       return PreparationNodeDialog(node: widget.node);
     }
 
+    // Para nodos de conector, usar el diálogo especializado
+    if (widget.node.type == NodeType.connector) {
+      return ConnectorNodeDialog(node: widget.node);
+    }
+
+    // Para nodos de comentario, usar el diálogo especializado
+    if (widget.node.type == NodeType.comment) {
+      return CommentNodeDialog(node: widget.node);
+    }
+
+    // Para nodos de subproceso, usar el diálogo especializado
+    if (widget.node.type == NodeType.subprocess) {
+      return SubprocessNodeDialog(node: widget.node);
+    }
+
     String dialogTitle;
     String hintText;
 
@@ -99,6 +117,18 @@ class _NodeEditorDialogState extends State<NodeEditorDialog> {
       case NodeType.variable:
         dialogTitle = 'Editar Variable';
         hintText = 'Declaración de variable (ej: int contador = 0)';
+        break;
+      case NodeType.connector:
+        dialogTitle = 'Editar Conector';
+        hintText = 'Etiqueta del conector (ej: A, B, C)';
+        break;
+      case NodeType.comment:
+        dialogTitle = 'Editar Comentario';
+        hintText = 'Texto del comentario o nota';
+        break;
+      case NodeType.subprocess:
+        dialogTitle = 'Editar Subproceso/Función';
+        hintText = 'Nombre de la función (ej: calcularPromedio)';
         break;
     }
 
@@ -157,6 +187,12 @@ class _NodeEditorDialogState extends State<NodeEditorDialog> {
         return 'Salida';
       case NodeType.variable:
         return 'Variable';
+      case NodeType.connector:
+        return 'Conector';
+      case NodeType.comment:
+        return 'Comentario';
+      case NodeType.subprocess:
+        return 'Subproceso/Función';
     }
   }
 }

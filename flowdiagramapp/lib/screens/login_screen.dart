@@ -3,6 +3,7 @@ import '../services/auth_service.dart';
 import 'register_screen.dart';
 import 'load_diagram_screen.dart';
 import 'debug_screen.dart';
+import 'tutorial_list_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -62,6 +63,50 @@ class _LoginScreenState extends State<LoginScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(errorMessage),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  // Continuar como invitado
+  Future<void> _continueAsGuest() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      await _authService.signInAsGuest();
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Bienvenido como invitado 👋'),
+            backgroundColor: Colors.green,
+            behavior: SnackBarBehavior.floating,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(
+            builder: (context) => const LoadDiagramScreen(),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error al continuar como invitado: $e'),
             backgroundColor: Colors.red,
             behavior: SnackBarBehavior.floating,
           ),
@@ -243,6 +288,35 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ),
 
+                    const SizedBox(height: 16),
+
+                    // Botón de continuar como invitado
+                    SizedBox(
+                      width: double.infinity,
+                      height: 50,
+                      child: OutlinedButton.icon(
+                        onPressed: _isLoading ? null : _continueAsGuest,
+                        icon: const Icon(Icons.person_outline),
+                        label: const Text('Continuar como Invitado'),
+                        style: OutlinedButton.styleFrom(
+                          side: BorderSide(
+                            color: Theme.of(context).primaryColor,
+                            width: 2,
+                          ),
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 8),
+                    Text(
+                      'Como invitado podrás usar todas las funciones sin conexión',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: Colors.grey[600],
+                            fontStyle: FontStyle.italic,
+                          ),
+                      textAlign: TextAlign.center,
+                    ),
+
                     const SizedBox(height: 16), // Enlace para registrarse
                     TextButton(
                       onPressed: _isLoading
@@ -255,6 +329,29 @@ class _LoginScreenState extends State<LoginScreen> {
                               );
                             },
                       child: const Text('¿No tienes cuenta? Regístrate aquí'),
+                    ),
+
+                    // Botón de tutoriales
+                    const SizedBox(height: 8),
+                    OutlinedButton.icon(
+                      onPressed: _isLoading
+                          ? null
+                          : () {
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (context) =>
+                                      const TutorialListScreen(),
+                                ),
+                              );
+                            },
+                      icon: const Icon(Icons.school),
+                      label: const Text('Ver Tutoriales'),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 24,
+                          vertical: 12,
+                        ),
+                      ),
                     ),
 
                     // Botón de debug (solo para desarrollo)

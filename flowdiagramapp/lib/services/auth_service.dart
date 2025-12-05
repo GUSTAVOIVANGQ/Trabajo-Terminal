@@ -51,6 +51,10 @@ class AuthService {
 
   // Inicializar el servicio de autenticación
   Future<UserModel?> initialize() async {
+    // COMENTADO: Autenticación automática deshabilitada para permitir modo invitado
+    // El usuario debe iniciar sesión manualmente o continuar como invitado
+
+    /*
     final hasInternet = await _hasInternetConnection();
 
     if (hasInternet) {
@@ -73,9 +77,20 @@ class AuthService {
       // Sin internet, usar cache local
       _currentUser = await _loadUserFromCache();
     }
+    */
 
     return _currentUser;
   }
+
+  // Continuar como invitado (sin conexión requerida)
+  Future<UserModel> signInAsGuest() async {
+    _currentUser = UserModel.guest();
+    await _saveUserToCache(_currentUser!);
+    return _currentUser!;
+  }
+
+  // Verificar si el usuario actual es invitado
+  bool get isGuestUser => _currentUser?.isGuest ?? false;
 
   // Registro de usuario
   Future<UserModel?> registerWithEmailPassword({

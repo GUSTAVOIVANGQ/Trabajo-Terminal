@@ -1,6 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-enum UserRole { user, admin }
+enum UserRole { user, admin, guest }
 
 class UserModel {
   final String uid;
@@ -10,6 +10,7 @@ class UserModel {
   final DateTime createdAt;
   final DateTime lastLogin;
   final Map<String, dynamic> metrics;
+  final bool isGuest; // Nuevo campo para identificar usuarios invitados
 
   UserModel({
     required this.uid,
@@ -19,7 +20,23 @@ class UserModel {
     required this.createdAt,
     required this.lastLogin,
     this.metrics = const {},
+    this.isGuest = false, // Por defecto no es invitado
   });
+
+  // Constructor de fábrica para crear usuario invitado
+  factory UserModel.guest() {
+    final now = DateTime.now();
+    return UserModel(
+      uid: 'guest_${now.millisecondsSinceEpoch}',
+      email: 'invitado@local.app',
+      displayName: 'Invitado',
+      role: UserRole.guest,
+      createdAt: now,
+      lastLogin: now,
+      metrics: {},
+      isGuest: true,
+    );
+  }
 
   // Convertir a Map para Firestore
   Map<String, dynamic> toMap() {
@@ -31,6 +48,7 @@ class UserModel {
       'createdAt': createdAt.toIso8601String(),
       'lastLogin': lastLogin.toIso8601String(),
       'metrics': metrics,
+      'isGuest': isGuest,
     };
   }
 
@@ -47,6 +65,7 @@ class UserModel {
       createdAt: DateTime.parse(map['createdAt']),
       lastLogin: DateTime.parse(map['lastLogin']),
       metrics: Map<String, dynamic>.from(map['metrics'] ?? {}),
+      isGuest: map['isGuest'] ?? false,
     );
   }
 
@@ -65,6 +84,7 @@ class UserModel {
     DateTime? createdAt,
     DateTime? lastLogin,
     Map<String, dynamic>? metrics,
+    bool? isGuest,
   }) {
     return UserModel(
       uid: uid ?? this.uid,
@@ -74,6 +94,7 @@ class UserModel {
       createdAt: createdAt ?? this.createdAt,
       lastLogin: lastLogin ?? this.lastLogin,
       metrics: metrics ?? this.metrics,
+      isGuest: isGuest ?? this.isGuest,
     );
   }
 

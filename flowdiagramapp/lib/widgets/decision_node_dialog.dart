@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/diagram_node.dart';
+import '../models/node_dialog_result.dart';
 
 class DecisionNodeDialog extends StatefulWidget {
   final DiagramNode node;
@@ -560,7 +561,23 @@ class _DecisionNodeDialogState extends State<DecisionNodeDialog> {
         FilledButton(
           onPressed: () {
             final generatedText = _generateConditionText();
-            Navigator.of(context).pop(generatedText);
+
+            // Si es una condición de bucle, retornar información adicional
+            if (selectedConditionType == 'loop_condition' &&
+                _variableController.text.isNotEmpty &&
+                _valueController.text.isNotEmpty) {
+              final result = NodeDialogResult(
+                text: generatedText,
+                generateLoopStructure: true,
+                loopVariable: _variableController.text,
+                loopLimit: _valueController.text,
+                loopCondition: selectedOperator,
+              );
+              Navigator.of(context).pop(result);
+            } else {
+              // Para otros tipos de condiciones, retornar solo el texto
+              Navigator.of(context).pop(generatedText);
+            }
           },
           child: const Text('Guardar'),
         ),

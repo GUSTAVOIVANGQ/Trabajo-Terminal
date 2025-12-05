@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/diagram_node.dart';
+import '../models/node_dialog_result.dart';
 
 class PreparationNodeDialog extends StatefulWidget {
   final DiagramNode node;
@@ -588,7 +589,7 @@ class _PreparationNodeDialogState extends State<PreparationNodeDialog> {
         FilledButton(
           onPressed: () {
             final generatedText = _generatePreparationText();
-            Navigator.of(context).pop(generatedText);
+            Navigator.of(context).pop(NodeDialogResult.simple(generatedText));
           },
           child: const Text('Guardar'),
         ),

@@ -17,7 +17,10 @@ FlowDiagram App es un editor visual intuitivo que permite crear diagramas de flu
   - Nodo de entrada (paralelogramo púrpura)
   - Nodo de salida (paralelogramo índigo)
   - Nodo de variable (rectángulo verde azulado)
-  - Nodo de preparación/inicialización (hexagonal)
+  - Nodo de preparación/inicialización (hexagonal naranja)
+  - Nodo de conector fuera de página (círculo índigo)
+  - Nodo de comentario/nota (rectángulo con esquina doblada amarillo)
+  - Nodo de subproceso/función (rectángulo con doble línea morado)
 
 - **Interacciones avanzadas**:
   - Arrastrar y soltar nodos en el canvas
@@ -71,9 +74,14 @@ FlowDiagram App es un editor visual intuitivo que permite crear diagramas de flu
   - Eliminar diagramas
 
 - **Sistema de plantillas**:
-  - Plantillas predefinidas incluidas
-  - Plantilla de suma de dos números
-  - Plantilla de verificación par/impar
+  - **6 plantillas predefinidas** que cubren todos los símbolos
+  - **Plantilla 1**: Suma de dos números (símbolos básicos)
+  - **Plantilla 2**: Verificación par/impar (decisiones)
+  - **Plantilla 3**: Contador con bucle while (bucles y variables)
+  - **Plantilla 4**: Menú de opciones con conectores (organización de flujos complejos)
+  - **Plantilla 5**: Promedio con comentarios (documentación de diagramas)
+  - **Plantilla 6**: Factorial con subprocesos (modularización)
+  - Ver [PLANTILLAS_SIMBOLOS.md](PLANTILLAS_SIMBOLOS.md) para documentación completa
 
 ### 📱 Interfaz de Usuario
 - **Diseño Material 3** moderno
@@ -102,12 +110,76 @@ FlowDiagram App es un editor visual intuitivo que permite crear diagramas de flu
 
 ## Funcionalidades en Desarrollo
 
+### 🎓 Sistema de Ejercicios de Comprensión
+
+- **Ejercicios interactivos** diseñados según el **Nivel 2 de la Taxonomía de Bloom (Comprensión)**
+- **5 categorías de ejercicios**:
+  - Símbolos Básicos: Aprende los símbolos fundamentales
+  - Estructuras de Control: Decisiones y bucles
+  - Flujo de Datos: Entrada, salida y variables
+  - Conexiones: Flujo lógico del diagrama
+  - Avanzado: Conectores y subprocesos
+
+- **Tipos de ejercicios variados**:
+  - Selección múltiple: Identificar símbolos y conceptos
+  - Verdadero o Falso: Distinguir afirmaciones correctas
+  - Relacionar: Comparar símbolos con sus funciones
+  - Ordenamiento: Organizar pasos de algoritmos
+
+- **Características del sistema**:
+  - Interfaz atractiva con animaciones y transiciones suaves
+  - Sistema de puntuación y progreso por categoría
+  - Retroalimentación inmediata con explicaciones detalladas
+  - Animaciones de celebración para respuestas correctas (confeti)
+  - Seguimiento de tiempo de resolución y precisión
+  - Vista previa visual de símbolos de diagramas de flujo
+
+- **Habilidades de comprensión evaluadas**:
+  - ✓ Identificar símbolos y su función
+  - ✓ Distinguir entre diferentes operaciones
+  - ✓ Comparar soluciones algorítmicas
+  - ✓ Explicar el flujo de ejecución
+
+- **Integración con métricas**: Los resultados se almacenan localmente para evaluar:
+  - Tasa de éxito en ejercicios (% de ejercicios completados correctamente)
+  - Tiempo promedio de resolución por categoría
+  - Precisión en las respuestas
+
+- **Acceso**: Botón dedicado "Ejercicios" en la pantalla principal junto a "Crear nuevo diagrama"
+
+### 📚 Sistema de Tutoriales Integrado
+
+- **Tutoriales interactivos** con animaciones y diseño atractivo para cada tipo de nodo
+- **Pantalla de bienvenida** para usuarios nuevos con introducción animada
+- **16 tutoriales completos** organizados por categorías:
+  - Bienvenida y conceptos básicos
+  - Tutoriales específicos para cada símbolo de diagrama de flujo
+  - Conexiones, validación y generación de código
+- **Nivel de Comprensión (Taxonomía de Bloom)**: Los tutoriales están diseñados para que los usuarios puedan:
+  - Identificar símbolos y su función
+  - Distinguir entre diferentes operaciones
+  - Comparar soluciones algorítmicas
+  - Explicar el flujo de ejecución
+- **Seguimiento de progreso**: SharedPreferences para guardar tutoriales completados
+- **Acceso desde múltiples pantallas**: Botón de tutoriales en login y pantalla principal
+- Ver documentación completa en [TUTORIAL_SYSTEM_README.md](TUTORIAL_SYSTEM_README.md)
+
 ### 🔒 Inicio de sesión y funcionamiento offline
 
-- El inicio de sesión requiere conexión a internet la primera vez.
-- Tras el primer login exitoso, la app permite acceder sin conexión utilizando la sesión almacenada en el dispositivo.
-- Los nuevos registros de usuario requieren internet.
-- En modo offline, el usuario puede acceder a todas sus funciones y métricas personales locales. La sincronización y acceso a métricas globales solo estarán disponibles al reconectar.
+- **Sistema de autenticación flexible** con Firebase Authentication y modo invitado
+- **Tres modos de acceso**:
+  - **Inicio de sesión con cuenta**: Requiere conexión a internet la primera vez
+  - **Modo offline**: Acceso con credenciales previamente guardadas
+  - **Modo invitado**: Acceso completo sin conexión ni registro
+- **Características del modo invitado**:
+  - Sin necesidad de correo electrónico ni contraseña
+  - Acceso completo a todas las funciones de la aplicación
+  - Datos almacenados localmente en el dispositivo
+  - Ideal para pruebas rápidas o uso sin conexión
+- Tras el primer login exitoso con cuenta, la app permite acceder sin conexión utilizando la sesión almacenada
+- Los nuevos registros de usuario requieren internet
+- En modo offline o invitado, el usuario puede acceder a todas sus funciones y métricas personales locales
+- La sincronización y acceso a métricas globales solo estarán disponibles al reconectar con una cuenta registrada
 
 ### 📊 Métricas de Evaluación
 
@@ -290,18 +362,37 @@ lib/
   - Cumplimiento de estándares ANSI/ISO 5807 (rombo para decisión, hexágono para preparación)
   - Interfaz guiada con iconos, colores y ayuda contextual
   - Soporte para ciclos predefinidos (for, while, do-while) y configuraciones de bucles
+- [x] Generar los simbolos basicos de un ciclo while al presionar el nodo "Desicion".
+- [x] **Implementación del Símbolo 6: Comentario/Nota**
+  - Diálogo especializado con 4 tipos de comentarios (simple, bloque, sección, nota)
+  - Forma característica de rectángulo con esquina doblada
+  - Vista previa en tiempo real
+  - Interpretación inteligente del texto existente
+  - No requiere conexiones (opcional para documentación)
+  - Genera comentarios válidos en código C (// y /* */)
+  - Color amarillo distintivo para fácil identificación
+- [x] **Implementación del Símbolo: Subproceso/Función**
+  - Diálogo especializado con 5 tipos de llamadas (simple, con parámetros, con retorno, predefinidas, personalizado)
+  - Forma característica de rectángulo con doble línea de borde
+  - Catálogo de 8 funciones matemáticas predefinidas (calcularPromedio, factorial, potencia, etc.)
+  - Vista previa en tiempo real con formato de función
+  - Interpretación inteligente del texto existente
+  - Genera llamadas a función válidas en código C
+  - Color morado/violeta distintivo
+  - Cumplimiento de estándares ANSI/ISO 5807 (símbolo de subrutina predefinida)
 
 ### 🔄 En Desarrollo
 
+- [ ] Tutorial integrado para cada tipo de nodo
 - [ ] Validación semántica entre nodos de preparación y decisión
 - [ ] Plantillas de bucles comunes (contador, suma, búsqueda)
 - [ ] Más plantillas de algoritmos comunes
 - [ ] Generación de código C funcional mejorada
 
 ### 🎯 Próximas Funcionalidades
+
 - [ ] Compartir diagramas
 - [ ] Exportación de código a archivos
-- [ ] Tutorial integrado para cada tipo de nodo
 
 ## 📄 Licencia
 

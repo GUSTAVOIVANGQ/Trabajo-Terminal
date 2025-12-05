@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/diagram_node.dart';
+import '../models/node_dialog_result.dart';
 
 class ProcessNodeDialog extends StatefulWidget {
   final DiagramNode node;
@@ -455,7 +456,7 @@ class _ProcessNodeDialogState extends State<ProcessNodeDialog> {
         FilledButton(
           onPressed: () {
             String result = _generateProcessText();
-            Navigator.of(context).pop(result);
+            Navigator.of(context).pop(NodeDialogResult.simple(result));
           },
           child: const Text('Guardar'),
         ),

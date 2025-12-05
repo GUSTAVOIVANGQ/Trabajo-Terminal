@@ -4,11 +4,14 @@ import '../models/saved_diagram.dart';
 import '../services/database_service.dart';
 import '../services/auth_service.dart';
 import '../services/metrics_service.dart'; // Nueva importación
+import '../services/tutorial_service.dart'; // Nueva importación para tutoriales
 import 'editor_screen.dart';
 import 'profile_screen.dart';
 import 'metrics_screen.dart'; // Nueva importación
 import 'admin_setup_screen.dart'; // Nueva importación para configurar admin
-import 'admin_setup_screen.dart'; // Nueva importación para configurar admin
+import 'tutorial_list_screen.dart'; // Nueva importación para tutoriales
+import 'welcome_screen.dart'; // Nueva importación para pantalla de bienvenida
+import 'exercises_screen.dart'; // Nueva importación para ejercicios
 import '../widgets/theme_selector_widget.dart';
 
 class LoadDiagramScreen extends StatefulWidget {
@@ -23,15 +26,19 @@ class _LoadDiagramScreenState extends State<LoadDiagramScreen>
   late TabController _tabController;
   final DatabaseService _databaseService = DatabaseService();
   final MetricsService _metricsService = MetricsService(); // Nuevo servicio
+  final TutorialService _tutorialService =
+      TutorialService(); // Servicio de tutoriales
   List<SavedDiagram> _diagrams = [];
   List<SavedDiagram> _templates = [];
   bool _isLoading = true;
+  bool _hasShownWelcome = false;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
     _loadData();
+    _checkFirstTime();
   }
 
   Future<void> _loadData() async {
@@ -60,6 +67,28 @@ class _LoadDiagramScreenState extends State<LoadDiagramScreen>
     }
   }
 
+  Future<void> _checkFirstTime() async {
+    // Verificar si es la primera vez del usuario
+    final isFirstTime = await _tutorialService.isFirstTime();
+    if (isFirstTime && mounted && !_hasShownWelcome) {
+      _hasShownWelcome = true;
+      // Esperar a que se cargue la pantalla
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (context) => WelcomeScreen(
+                onComplete: () {
+                  Navigator.of(context).pop();
+                },
+              ),
+            ),
+          );
+        }
+      });
+    }
+  }
+
   @override
   void dispose() {
     _tabController.dispose();
@@ -72,6 +101,18 @@ class _LoadDiagramScreenState extends State<LoadDiagramScreen>
       appBar: AppBar(
         title: const Text('Cargar diagrama'),
         actions: [
+          // Botón de ejercicios
+          IconButton(
+            icon: const Icon(Icons.school),
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => const ExercisesScreen(),
+                ),
+              );
+            },
+            tooltip: 'Ejercicios de comprensión',
+          ),
           // Botón para cambiar tema
           const ThemeToggleButton(),
           // Botón de configuración de admin (temporal)
@@ -135,15 +176,38 @@ class _LoadDiagramScreenState extends State<LoadDiagramScreen>
               : _buildDiagramList(_templates),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          // En lugar de cerrar la pantalla actual, navegamos a la pantalla del editor
-          Navigator.of(
-            context,
-          ).push(MaterialPageRoute(builder: (context) => const EditorScreen()));
-        },
-        tooltip: 'Crear nuevo',
-        child: const Icon(Icons.add),
+      floatingActionButton: Column(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: [
+          // Botón de tutoriales (nuevo)
+          FloatingActionButton(
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => const TutorialListScreen(),
+                ),
+              );
+            },
+            heroTag: 'tutorials_fab',
+            tooltip: 'Tutoriales',
+            child: const Icon(Icons.quiz),
+            backgroundColor: Colors.deepPurple,
+          ),
+          const SizedBox(height: 12),
+          // Botón crear nuevo
+          FloatingActionButton(
+            onPressed: () {
+              // En lugar de cerrar la pantalla actual, navegamos a la pantalla del editor
+              Navigator.of(
+                context,
+              ).push(MaterialPageRoute(
+                  builder: (context) => const EditorScreen()));
+            },
+            heroTag: 'create_fab',
+            tooltip: 'Crear nuevo',
+            child: const Icon(Icons.add),
+          ),
+        ],
       ),
     );
   }

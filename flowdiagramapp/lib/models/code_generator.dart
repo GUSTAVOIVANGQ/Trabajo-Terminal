@@ -110,6 +110,34 @@ class CodeGenerator {
         code.writeln("${indent}// Fin del programa");
         break;
 
+      case NodeType.comment:
+        // Los comentarios se agregan tal cual al código
+        code.writeln("${indent}${node.text}");
+        // Los comentarios no generan flujo de control adicional
+        _processNextNodes(
+          node,
+          allNodes,
+          connections,
+          code,
+          indent,
+          processedNodes,
+        );
+        break;
+
+      case NodeType.subprocess:
+        // Los subprocesos se traducen en llamadas a función
+        code.writeln("${indent}// Llamada a subproceso/función");
+        code.writeln("${indent}${_formatSubprocessCall(node.text)};");
+        _processNextNodes(
+          node,
+          allNodes,
+          connections,
+          code,
+          indent,
+          processedNodes,
+        );
+        break;
+
       case NodeType.process:
         code.writeln("${indent}// Proceso: ${node.text}");
         code.writeln("${indent}${_formatCProcessStatement(node.text)};");
@@ -125,51 +153,118 @@ class CodeGenerator {
 
       case NodeType.decision:
         code.writeln("${indent}// Decisión: ${node.text}");
-        code.writeln("${indent}if (${_formatCCondition(node.text)}) {");
-
-        // Encontrar las conexiones de salida (true y false)
+        
+        // Verificar si este nodo de decisión es parte de un bucle while
+        // (tiene una conexión de retorno desde uno de sus descendientes)
         final outConnections =
             connections.where((conn) => conn.source == node).toList();
-
-        // Procesar rama 'true' con indentación adicional
+        
+        bool isWhileLoop = false;
         if (outConnections.isNotEmpty) {
-          final trueConnection = outConnections.firstWhere(
-            (conn) =>
-                conn.label.toLowerCase().contains('true') ||
-                conn.label.toLowerCase().contains('sí') ||
-                conn.label.toLowerCase().contains('yes'),
-            orElse: () => outConnections.first,
-          );
-          _generateCNodeCode(
-            trueConnection.target,
-            allNodes,
-            connections,
-            code,
-            indent + "    ",
-            Map.from(processedNodes),
-          );
+          // Verificar si hay un camino que regresa a este nodo
+          for (var conn in outConnections) {
+            if (_hasReturnPath(conn.target, node, connections, {})) {
+              isWhileLoop = true;
+              break;
+            }
+          }
         }
+        
+        if (isWhileLoop) {
+          // Generar un bucle while
+          code.writeln("${indent}while (${_formatCCondition(node.text)}) {");
+          
+          // Procesar el cuerpo del bucle (rama verdadera)
+          if (outConnections.isNotEmpty) {
+            final trueConnection = outConnections.firstWhere(
+              (conn) =>
+                  conn.label.toLowerCase().contains('true') ||
+                  conn.label.toLowerCase().contains('verdadero') ||
+                  conn.label.toLowerCase().contains('sí') ||
+                  conn.label.toLowerCase().contains('yes'),
+              orElse: () => outConnections.first,
+            );
+            
+            // Procesar el cuerpo del bucle con una copia del estado de procesamiento
+            // para permitir la repetición
+            final loopProcessedNodes = Map<String, bool>.from(processedNodes);
+            loopProcessedNodes[node.id] = false; // Permitir volver a este nodo
+            
+            _generateCNodeCode(
+              trueConnection.target,
+              allNodes,
+              connections,
+              code,
+              indent + "    ",
+              loopProcessedNodes,
+            );
+          }
+          
+          code.writeln("${indent}}");
+          
+          // Procesar lo que viene después del bucle (rama falsa)
+          if (outConnections.length > 1) {
+            final falseConnection = outConnections.firstWhere(
+              (conn) =>
+                  conn.label.toLowerCase().contains('false') ||
+                  conn.label.toLowerCase().contains('falso') ||
+                  conn.label.toLowerCase().contains('no'),
+              orElse: () => outConnections[1],
+            );
+            
+            _generateCNodeCode(
+              falseConnection.target,
+              allNodes,
+              connections,
+              code,
+              indent,
+              processedNodes,
+            );
+          }
+        } else {
+          // Generar un if-else normal
+          code.writeln("${indent}if (${_formatCCondition(node.text)}) {");
 
-        // Procesar rama 'false'
-        if (outConnections.length > 1) {
-          final falseConnection = outConnections.firstWhere(
-            (conn) =>
-                conn.label.toLowerCase().contains('false') ||
-                conn.label.toLowerCase().contains('no'),
-            orElse: () => outConnections[1],
-          );
-          code.writeln("${indent}} else {");
-          _generateCNodeCode(
-            falseConnection.target,
-            allNodes,
-            connections,
-            code,
-            indent + "    ",
-            Map.from(processedNodes),
-          );
+          // Procesar rama 'true' con indentación adicional
+          if (outConnections.isNotEmpty) {
+            final trueConnection = outConnections.firstWhere(
+              (conn) =>
+                  conn.label.toLowerCase().contains('true') ||
+                  conn.label.toLowerCase().contains('sí') ||
+                  conn.label.toLowerCase().contains('yes'),
+              orElse: () => outConnections.first,
+            );
+            _generateCNodeCode(
+              trueConnection.target,
+              allNodes,
+              connections,
+              code,
+              indent + "    ",
+              Map.from(processedNodes),
+            );
+          }
+
+          // Procesar rama 'false'
+          if (outConnections.length > 1) {
+            final falseConnection = outConnections.firstWhere(
+              (conn) =>
+                  conn.label.toLowerCase().contains('false') ||
+                  conn.label.toLowerCase().contains('no'),
+              orElse: () => outConnections[1],
+            );
+            code.writeln("${indent}} else {");
+            _generateCNodeCode(
+              falseConnection.target,
+              allNodes,
+              connections,
+              code,
+              indent + "    ",
+              Map.from(processedNodes),
+            );
+          }
+
+          code.writeln("${indent}}");
         }
-
-        code.writeln("${indent}}");
         break;
 
       case NodeType.input:
@@ -212,15 +307,75 @@ class CodeGenerator {
         break;
 
       case NodeType.loop:
-        code.writeln("${indent}// Bucle: ${node.text}");
-        _generateCLoopCode(
-          node,
-          allNodes,
-          connections,
-          code,
-          indent,
-          processedNodes,
-        );
+        // Analizar si es una inicialización simple o una estructura de bucle completa
+        final loopText = node.text.toLowerCase();
+        
+        // Si el texto parece una inicialización simple (variable = valor)
+        if (!loopText.contains('while') && 
+            !loopText.contains('for') && 
+            !loopText.contains('do') &&
+            !loopText.contains('mientras') &&
+            !loopText.contains('para') &&
+            !loopText.contains('hacer') &&
+            loopText.contains('=')) {
+          // Es una inicialización, generar el código y continuar
+          code.writeln("${indent}// Inicialización");
+          code.writeln("${indent}${_formatCProcessStatement(node.text)};");
+          
+          // Buscar el siguiente nodo (debería ser la decisión del bucle)
+          _processNextNodes(
+            node,
+            allNodes,
+            connections,
+            code,
+            indent,
+            processedNodes,
+          );
+        } else {
+          // Es una estructura de bucle completa (legado)
+          code.writeln("${indent}// Bucle: ${node.text}");
+          _generateCLoopCode(
+            node,
+            allNodes,
+            connections,
+            code,
+            indent,
+            processedNodes,
+          );
+        }
+        break;
+
+      case NodeType.connector:
+        // Los conectores son puntos de referencia para dividir diagramas grandes
+        final label = _extractConnectorLabel(node.text);
+        
+        // Generar una etiqueta goto en C
+        if (node.text.contains('←') || node.text.contains('DESDE')) {
+          // Conector de entrada - generar una etiqueta
+          code.writeln("${indent}// Conector de entrada: $label");
+          code.writeln("${indent}connector_$label:");
+        } else if (node.text.contains('→') || node.text.contains('HACIA')) {
+          // Conector de salida - generar un goto
+          code.writeln("${indent}// Conector de salida: $label");
+          code.writeln("${indent}goto connector_$label;");
+        } else {
+          // Conector bidireccional o sin tipo específico
+          code.writeln("${indent}// Conector: $label");
+          code.writeln("${indent}connector_$label:");
+        }
+        
+        // Procesar nodos siguientes solo si es entrada o bidireccional
+        if (node.text.contains('←') || node.text.contains('⇄') || 
+            node.text.contains('DESDE') || !node.text.contains('→')) {
+          _processNextNodes(
+            node,
+            allNodes,
+            connections,
+            code,
+            indent,
+            processedNodes,
+          );
+        }
         break;
     }
   }
@@ -518,27 +673,30 @@ class CodeGenerator {
 
   // Formatea una condición para C
   static String _formatCCondition(String text) {
+    // Remover símbolos de interrogación y espacios extra
+    String cleanText = text.replaceAll('¿', '').replaceAll('?', '').trim();
+    
     // Si ya contiene operadores de comparación, usarla directamente
-    if (text.contains('==') ||
-        text.contains('>') ||
-        text.contains('<') ||
-        text.contains('>=') ||
-        text.contains('<=') ||
-        text.contains('!=')) {
-      return text;
+    if (cleanText.contains('==') ||
+        cleanText.contains('>') ||
+        cleanText.contains('<') ||
+        cleanText.contains('>=') ||
+        cleanText.contains('<=') ||
+        cleanText.contains('!=')) {
+      return cleanText;
     }
 
     // Intentar inferir la condición
-    if (text.contains(' mayor que ')) {
-      return text.replaceAll(' mayor que ', ' > ');
-    } else if (text.contains(' menor que ')) {
-      return text.replaceAll(' menor que ', ' < ');
-    } else if (text.contains(' igual a ')) {
-      return text.replaceAll(' igual a ', ' == ');
+    if (cleanText.contains(' mayor que ')) {
+      return cleanText.replaceAll(' mayor que ', ' > ');
+    } else if (cleanText.contains(' menor que ')) {
+      return cleanText.replaceAll(' menor que ', ' < ');
+    } else if (cleanText.contains(' igual a ')) {
+      return cleanText.replaceAll(' igual a ', ' == ');
     }
 
     // Si no se puede inferir, usar el texto como está
-    return text;
+    return cleanText;
   }
 
   // Formatea una declaración de entrada para C
@@ -651,5 +809,34 @@ class CodeGenerator {
   static bool _isSimpleVariableName(String text) {
     final simpleName = RegExp(r'^[a-zA-Z_][a-zA-Z0-9_]*$');
     return simpleName.hasMatch(text.trim());
+  }
+
+  // Extrae la etiqueta de un conector (sin símbolos de dirección)
+  static String _extractConnectorLabel(String text) {
+    return text
+        .replaceAll('←', '')
+        .replaceAll('→', '')
+        .replaceAll('⇄', '')
+        .replaceAll('DESDE:', '')
+        .replaceAll('HACIA:', '')
+        .replaceAll('TO:', '')
+        .replaceAll('FROM:', '')
+        .replaceAll('CONECTOR:', '')
+        .trim();
+  }
+
+  // Formatea una llamada a subproceso/función
+  static String _formatSubprocessCall(String text) {
+    // Si ya tiene el formato correcto de llamada a función, devolverlo tal cual
+    if (text.contains('(') && text.contains(')')) {
+      // Remover "resultado = " si existe para evitar duplicación
+      if (text.startsWith('resultado = ')) {
+        return text;
+      }
+      return text;
+    }
+    
+    // Si no tiene formato de función, agregarlo
+    return "$text()";
   }
 }

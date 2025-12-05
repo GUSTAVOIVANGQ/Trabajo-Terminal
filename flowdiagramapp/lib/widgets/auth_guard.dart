@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../services/auth_service.dart';
+// import '../services/auth_service.dart'; // COMENTADO: No se usa m\u00e1s con autenticaci\u00f3n manual
 import '../screens/login_screen.dart';
 
 class AuthGuard extends StatefulWidget {
@@ -12,7 +12,7 @@ class AuthGuard extends StatefulWidget {
 }
 
 class _AuthGuardState extends State<AuthGuard> {
-  final AuthService _authService = AuthService();
+  // final AuthService _authService = AuthService(); // COMENTADO: No se usa más
   bool _isLoading = true;
   bool _isAuthenticated = false;
 
@@ -23,10 +23,13 @@ class _AuthGuardState extends State<AuthGuard> {
   }
 
   Future<void> _checkAuthStatus() async {
+    // COMENTADO: Verificación automática deshabilitada
+    // Ahora el usuario debe iniciar sesión manualmente o continuar como invitado
+
     try {
-      final user = await _authService.initialize();
+      // final user = await _authService.initialize();
       setState(() {
-        _isAuthenticated = user != null;
+        _isAuthenticated = false; // Siempre mostrar login/invitado
         _isLoading = false;
       });
     } catch (e) {

@@ -59,6 +59,10 @@ class DiagramValidator {
     final connectionValidation = _validateConnections(nodes, connections);
     result = result.merge(connectionValidation);
 
+    // Validar conectores fuera de página
+    final connectorValidation = _validateConnectors(nodes);
+    result = result.merge(connectorValidation);
+
     // Validar que no haya nodos sueltos (excepto el nodo final)
     final disconnectedValidation = _validateNoDisconnectedNodes(
       nodes,
@@ -211,6 +215,103 @@ class DiagramValidator {
     return result;
   }
 
+  /// Validar conectores fuera de página
+  static ValidationResult _validateConnectors(List<DiagramNode> nodes) {
+    ValidationResult result = ValidationResult();
+
+    // Obtener todos los nodos de tipo conector
+    final connectorNodes =
+        nodes.where((node) => node.type == NodeType.connector).toList();
+
+    if (connectorNodes.isEmpty) {
+      return result; // No hay conectores, no hay nada que validar
+    }
+
+    // Crear un mapa de etiquetas de conectores
+    Map<String, List<DiagramNode>> connectorsByLabel = {};
+
+    for (final connector in connectorNodes) {
+      String label = _extractConnectorLabel(connector.text);
+
+      if (label.isEmpty) {
+        result = result.merge(
+          ValidationResult.withWarning(
+            "El conector en la posición (${connector.position.dx.toInt()}, ${connector.position.dy.toInt()}) no tiene etiqueta.",
+          ),
+        );
+        continue;
+      }
+
+      if (!connectorsByLabel.containsKey(label)) {
+        connectorsByLabel[label] = [];
+      }
+      connectorsByLabel[label]!.add(connector);
+    }
+
+    // Validar que cada etiqueta tenga al menos dos conectores (entrada y salida)
+    for (final entry in connectorsByLabel.entries) {
+      final label = entry.key;
+      final connectorsWithLabel = entry.value;
+
+      if (connectorsWithLabel.length == 1) {
+        result = result.merge(
+          ValidationResult.withWarning(
+            "El conector '$label' solo aparece una vez. Debería tener al menos un conector de entrada y uno de salida.",
+          ),
+        );
+      } else if (connectorsWithLabel.length > 2) {
+        result = result.merge(
+          ValidationResult.withWarning(
+            "El conector '$label' aparece ${connectorsWithLabel.length} veces. Se recomienda tener solo 2 (entrada y salida).",
+          ),
+        );
+      }
+
+      // Verificar que haya al menos un conector de entrada y uno de salida
+      bool hasEntry = connectorsWithLabel
+          .any((c) => c.text.contains('←') || c.text.contains('DESDE'));
+      bool hasExit = connectorsWithLabel
+          .any((c) => c.text.contains('→') || c.text.contains('HACIA'));
+
+      if (!hasEntry && !hasExit && connectorsWithLabel.length == 2) {
+        // Si no tienen marcadores específicos pero son dos, es aceptable
+        continue;
+      }
+
+      if (connectorsWithLabel.length >= 2 && !hasEntry) {
+        result = result.merge(
+          ValidationResult.withWarning(
+            "El conector '$label' no tiene un punto de entrada (←) definido.",
+          ),
+        );
+      }
+
+      if (connectorsWithLabel.length >= 2 && !hasExit) {
+        result = result.merge(
+          ValidationResult.withWarning(
+            "El conector '$label' no tiene un punto de salida (→) definido.",
+          ),
+        );
+      }
+    }
+
+    return result;
+  }
+
+  /// Extraer la etiqueta de un conector (sin los símbolos de dirección)
+  static String _extractConnectorLabel(String text) {
+    return text
+        .replaceAll('←', '')
+        .replaceAll('→', '')
+        .replaceAll('⇄', '')
+        .replaceAll('DESDE:', '')
+        .replaceAll('HACIA:', '')
+        .replaceAll('TO:', '')
+        .replaceAll('FROM:', '')
+        .replaceAll('CONECTOR:', '')
+        .trim();
+  }
+
   /// Validar que no haya nodos desconectados (excepto posiblemente el de inicio)
   static ValidationResult _validateNoDisconnectedNodes(
     List<DiagramNode> nodes,
@@ -219,8 +320,10 @@ class DiagramValidator {
     ValidationResult result = ValidationResult();
 
     for (final node in nodes) {
-      // Ignorar el nodo de inicio en esta validación
-      if (node.type == NodeType.start) continue;
+      // Ignorar el nodo de inicio y los comentarios en esta validación
+      if (node.type == NodeType.start || node.type == NodeType.comment) {
+        continue;
+      }
 
       // Verificar si el nodo tiene conexiones entrantes
       final incomingConnections =
@@ -268,6 +371,12 @@ class DiagramValidator {
         return 'Variable';
       case NodeType.loop:
         return 'Preparación/Inicialización';
+      case NodeType.connector:
+        return 'Conector';
+      case NodeType.comment:
+        return 'Comentario';
+      case NodeType.subprocess:
+        return 'Subproceso/Función';
     }
   }
 

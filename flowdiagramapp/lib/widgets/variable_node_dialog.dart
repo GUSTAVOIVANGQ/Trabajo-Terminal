@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/diagram_node.dart';
+import '../models/node_dialog_result.dart';
 
 class VariableNodeDialog extends StatefulWidget {
   final DiagramNode node;
@@ -494,7 +495,7 @@ class _VariableNodeDialogState extends State<VariableNodeDialog> {
           onPressed: () {
             String result = _generateVariableText();
             if (result.isNotEmpty) {
-              Navigator.of(context).pop(result);
+              Navigator.of(context).pop(NodeDialogResult.simple(result));
             }
           },
           child: const Text('Guardar'),

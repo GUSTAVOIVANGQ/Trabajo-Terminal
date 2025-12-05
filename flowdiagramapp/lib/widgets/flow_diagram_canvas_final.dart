@@ -125,10 +125,39 @@ class _FlowDiagramCanvasState extends State<FlowDiagramCanvas>
       final start = points[0];
       final end = points[1];
 
-      final distance = _distanceToLine(scaledPosition, start, end);
+      // Si es una flecha cuadrada (loop-back), verificar todos los segmentos
+      if (connection.isLoopBack) {
+        final offset = 40.0;
+        final midY = (start.dy + end.dy) / 2;
 
-      if (distance < hitDistance) {
-        return connection;
+        // Crear los puntos del camino cuadrado
+        final point1 = Offset(start.dx - offset, start.dy);
+        final point2 = Offset(start.dx - offset, midY);
+        final point3 = Offset(end.dx - offset, midY);
+        final point4 = Offset(end.dx - offset, end.dy);
+
+        // Verificar cada segmento del camino cuadrado
+        final segments = [
+          [start, point1],
+          [point1, point2],
+          [point2, point3],
+          [point3, point4],
+          [point4, end],
+        ];
+
+        for (final segment in segments) {
+          final distance =
+              _distanceToLine(scaledPosition, segment[0], segment[1]);
+          if (distance < hitDistance) {
+            return connection;
+          }
+        }
+      } else {
+        // Para flechas rectas, verificar solo el segmento directo
+        final distance = _distanceToLine(scaledPosition, start, end);
+        if (distance < hitDistance) {
+          return connection;
+        }
       }
     }
 
@@ -554,6 +583,12 @@ class FlowDiagramPainter extends CustomPainter {
         return nodeColors['variable']!;
       case NodeType.loop:
         return nodeColors['loop']!;
+      case NodeType.connector:
+        return nodeColors['connector']!;
+      case NodeType.comment:
+        return nodeColors['comment']!;
+      case NodeType.subprocess:
+        return nodeColors['subprocess']!;
     }
   }
 
@@ -586,11 +621,42 @@ class FlowDiagramPainter extends CustomPainter {
     // Dibujar la línea
     final path = Path();
     path.moveTo(start.dx, start.dy);
-    path.lineTo(end.dx, end.dy);
+
+    // Variable para almacenar el penúltimo punto (para calcular la dirección de la flecha)
+    Offset penultimatePoint = start;
+
+    // Si es una conexión de retorno de bucle, dibujar en forma cuadrada
+    if (connection.isLoopBack) {
+      // Calcular puntos intermedios para forma cuadrada
+      final offset = 40.0; // Desplazamiento hacia la izquierda
+      final midY = (start.dy + end.dy) / 2;
+
+      // Punto 1: desplazarse hacia la izquierda desde el inicio
+      final point1 = Offset(start.dx - offset, start.dy);
+      // Punto 2: bajar hasta la mitad
+      final point2 = Offset(start.dx - offset, midY);
+      // Punto 3: subir hasta la mitad
+      final point3 = Offset(end.dx - offset, midY);
+      // Punto 4: ir hacia el final
+      final point4 = Offset(end.dx - offset, end.dy);
+
+      path.lineTo(point1.dx, point1.dy);
+      path.lineTo(point2.dx, point2.dy);
+      path.lineTo(point3.dx, point3.dy);
+      path.lineTo(point4.dx, point4.dy);
+      path.lineTo(end.dx, end.dy);
+
+      // El penúltimo punto es point4 (antes de llegar a end)
+      penultimatePoint = point4;
+    } else {
+      // Línea recta normal
+      path.lineTo(end.dx, end.dy);
+    }
+
     canvas.drawPath(path, connectionPaint);
 
-    // Dibujar la flecha
-    _drawArrow(canvas, start, end);
+    // Dibujar la flecha con la dirección correcta
+    _drawArrow(canvas, penultimatePoint, end);
 
     // Dibujar la etiqueta si existe
     if (connection.label.isNotEmpty) {
@@ -617,10 +683,21 @@ class FlowDiagramPainter extends CustomPainter {
 
   void _drawConnectionLabel(
       Canvas canvas, Connection connection, Offset start, Offset end) {
-    final midpoint = Offset(
-      (start.dx + end.dx) / 2,
-      (start.dy + end.dy) / 2,
-    );
+    // Calcular el punto medio según el tipo de conexión
+    Offset midpoint;
+
+    if (connection.isLoopBack) {
+      // Para flechas cuadradas, colocar la etiqueta en el lado izquierdo (parte vertical)
+      final offset = 40.0;
+      final midY = (start.dy + end.dy) / 2;
+      midpoint = Offset(start.dx - offset, midY);
+    } else {
+      // Para flechas rectas, usar el punto medio normal
+      midpoint = Offset(
+        (start.dx + end.dx) / 2,
+        (start.dy + end.dy) / 2,
+      );
+    }
 
     final textSpan = TextSpan(
       text: connection.label,
@@ -639,10 +716,18 @@ class FlowDiagramPainter extends CustomPainter {
     textPainter.layout();
 
     // Desplazamiento pequeño para que no esté directamente sobre la línea
-    final offset = Offset(
-      midpoint.dx - textPainter.width / 2,
-      midpoint.dy - textPainter.height - 5,
-    );
+    // Para flechas cuadradas, colocar a la izquierda de la línea vertical
+    final offset = connection.isLoopBack
+        ? Offset(
+            midpoint.dx -
+                textPainter.width -
+                8, // A la izquierda de la línea vertical
+            midpoint.dy - textPainter.height / 2,
+          )
+        : Offset(
+            midpoint.dx - textPainter.width / 2,
+            midpoint.dy - textPainter.height - 5,
+          );
 
     // Dibujar un rectángulo de fondo
     final rect = Rect.fromLTWH(

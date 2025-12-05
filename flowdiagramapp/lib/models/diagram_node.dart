@@ -1,6 +1,18 @@
 import 'package:flutter/material.dart';
 
-enum NodeType { start, end, process, decision, input, output, variable, loop }
+enum NodeType {
+  start,
+  end,
+  process,
+  decision,
+  input,
+  output,
+  variable,
+  loop,
+  connector,
+  comment,
+  subprocess
+}
 
 class DiagramNode {
   final String id;
@@ -14,10 +26,18 @@ class DiagramNode {
       case NodeType.start:
       case NodeType.end:
         return const Size(120, 60);
+      case NodeType.connector:
+        return const Size(80, 80); // Círculo para conector
       case NodeType.decision:
         return const Size(140, 100);
       case NodeType.loop:
         return const Size(160, 90);
+      case NodeType.comment:
+        return const Size(
+            140, 100); // Rectángulo con esquina doblada para comentarios
+      case NodeType.subprocess:
+        return const Size(
+            160, 80); // Rectángulo con doble línea para subproceso
       case NodeType.process:
       case NodeType.input:
       case NodeType.output:
@@ -41,6 +61,17 @@ class DiagramNode {
       case NodeType.start:
       case NodeType.end:
         // Óvalo para inicio/fin
+        path.addOval(
+          Rect.fromCenter(
+            center: Offset(size.width / 2, size.height / 2),
+            width: size.width,
+            height: size.height,
+          ),
+        );
+        break;
+
+      case NodeType.connector:
+        // Círculo para conector fuera de página
         path.addOval(
           Rect.fromCenter(
             center: Offset(size.width / 2, size.height / 2),
@@ -86,6 +117,41 @@ class DiagramNode {
         path.lineTo(size.width - offset, size.height);
         path.lineTo(0, size.height);
         path.close();
+        break;
+
+      case NodeType.comment:
+        // Rectángulo con esquina doblada para comentarios/notas
+        final double foldSize = 15.0; // Tamaño de la esquina doblada
+
+        // Rectángulo principal
+        path.moveTo(0, 0);
+        path.lineTo(size.width - foldSize, 0);
+        path.lineTo(size.width, foldSize);
+        path.lineTo(size.width, size.height);
+        path.lineTo(0, size.height);
+        path.close();
+
+        // Esquina doblada (líneas internas)
+        path.moveTo(size.width - foldSize, 0);
+        path.lineTo(size.width - foldSize, foldSize);
+        path.lineTo(size.width, foldSize);
+        break;
+
+      case NodeType.subprocess:
+        // Rectángulo con dos líneas verticales en los laterales
+        final double lineOffset =
+            8.0; // Distancia de las líneas laterales desde el borde
+
+        // Rectángulo principal
+        path.addRect(Rect.fromLTWH(0, 0, size.width, size.height));
+
+        // Línea vertical izquierda
+        path.moveTo(lineOffset, 0);
+        path.lineTo(lineOffset, size.height);
+
+        // Línea vertical derecha
+        path.moveTo(size.width - lineOffset, 0);
+        path.lineTo(size.width - lineOffset, size.height);
         break;
     }
 
@@ -154,8 +220,15 @@ class Connection {
   final DiagramNode source;
   final DiagramNode target;
   String label;
+  bool
+      isLoopBack; // Indica si esta conexión es un retorno de bucle (puede cambiar)
 
-  Connection({required this.source, required this.target, this.label = ''});
+  Connection({
+    required this.source,
+    required this.target,
+    this.label = '',
+    this.isLoopBack = false,
+  });
 
   // Calcular los puntos de conexión entre nodos
   List<Offset> getConnectionPoints() {

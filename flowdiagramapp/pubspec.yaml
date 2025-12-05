@@ -23,6 +23,7 @@ dependencies:
   shared_preferences: ^2.2.2
   connectivity_plus: ^5.0.2
   fl_chart: ^0.68.0  # Para gráficos y visualización de métricas
+  confetti: ^0.7.0  # Para animaciones de celebración en ejercicios
   
   # Para generar archivos PDF, PNG y JPG
   pdf: ^3.10.7

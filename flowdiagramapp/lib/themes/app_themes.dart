@@ -309,6 +309,9 @@ class AppThemes {
     'output': Color(0xFF059669), // Verde oscuro para salida
     'variable': Color(0xFF0891B2), // Cian para variable
     'loop': Color(0xFFEF4444), // Rojo/naranja para bucle
+    'connector': Color(0xFF6366F1), // Índigo para conector
+    'comment': Color(0xFFFBBF24), // Amarillo dorado para comentario
+    'subprocess': Color(0xFF8B5CF6), // Morado para subproceso/función
   };
 
   /// Colores personalizados para nodos del diagrama en modo oscuro
@@ -321,6 +324,9 @@ class AppThemes {
     'output': Color(0xFF10B981), // Verde más claro
     'variable': Color(0xFF06B6D4), // Cian más claro
     'loop': Color(0xFFF97316), // Naranja más claro para bucle
+    'connector': Color(0xFF818CF8), // Índigo más claro para conector
+    'comment': Color(0xFFFDE68A), // Amarillo suave para comentario
+    'subprocess': Color(0xFFA78BFA), // Morado claro para subproceso/función
   };
 
   /// Obtiene los colores de nodos según el tema actual

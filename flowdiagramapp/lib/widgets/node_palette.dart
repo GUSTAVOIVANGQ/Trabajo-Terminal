@@ -84,6 +84,27 @@ class NodePalette extends StatelessWidget {
             Icons.data_array_outlined,
             nodeColors['variable']!,
           ),
+          _buildPaletteItem(
+            context,
+            NodeType.connector,
+            'Conector',
+            Icons.radio_button_unchecked,
+            nodeColors['connector']!,
+          ),
+          _buildPaletteItem(
+            context,
+            NodeType.comment,
+            'Comentario',
+            Icons.comment_outlined,
+            nodeColors['comment']!,
+          ),
+          _buildPaletteItem(
+            context,
+            NodeType.subprocess,
+            'Subproceso',
+            Icons.account_tree_outlined,
+            nodeColors['subprocess']!,
+          ),
         ],
       ),
     );
