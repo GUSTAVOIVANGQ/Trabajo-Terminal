@@ -446,13 +446,12 @@ class DiagramValidator {
 
   /// Validar que exista un nodo terminal de inicio
   static ValidationResult _validateStartNode(List<DiagramNode> nodes) {
+    // Filtrar nodos de inicio del programa principal (excluir subprocesos)
+    // Los subprocesos tienen texto como "Inicio Suma(x, y)" o "Inicio NombreFuncion"
     final startNodes = nodes
         .where((node) =>
             node.type == NodeType.terminal &&
-            (node.text.toLowerCase().contains('inicio') ||
-                node.text.toLowerCase().contains('start') ||
-                node.text.toLowerCase().contains('comenzar') ||
-                node.text.isEmpty))
+            _isMainProgramStartNode(node.text))
         .toList();
 
     if (startNodes.isEmpty) {
@@ -470,14 +469,58 @@ class DiagramValidator {
     return ValidationResult();
   }
 
-  /// Validar que exista al menos un nodo terminal de fin
+  /// Determina si un nodo terminal es el inicio del programa principal
+  /// (no un subproceso/función)
+  static bool _isMainProgramStartNode(String text) {
+    final lowerText = text.toLowerCase().trim();
+
+    // Un nodo vacío se considera inicio del programa principal
+    if (lowerText.isEmpty) return true;
+
+    // Verificar si contiene palabras clave de inicio
+    final isStart = lowerText.contains('inicio') ||
+        lowerText.contains('start') ||
+        lowerText.contains('comenzar');
+
+    if (!isStart) return false;
+
+    // Si contiene paréntesis, es un subproceso (ej: "Inicio Suma(x, y)")
+    if (text.contains('(') && text.contains(')')) return false;
+
+    // Si el texto tiene más de una palabra después de "inicio/start",
+    // probablemente sea un subproceso (ej: "Inicio Suma", "Inicio MiFuncion")
+    final words = lowerText.split(RegExp(r'\s+'));
+    if (words.length > 1) {
+      // Verificar si la segunda palabra parece un nombre de función
+      final secondWord = words.length > 1 ? words[1] : '';
+      // Si la segunda palabra empieza con mayúscula en el texto original
+      // o es un identificador válido, es un subproceso
+      if (secondWord.isNotEmpty &&
+          !['de', 'del', 'programa', 'principal', 'main']
+              .contains(secondWord)) {
+        // Obtener la palabra original para verificar si empieza con mayúscula
+        final originalWords = text.trim().split(RegExp(r'\s+'));
+        if (originalWords.length > 1) {
+          final originalSecond = originalWords[1];
+          // Si la segunda palabra empieza con mayúscula, es nombre de función
+          if (originalSecond.isNotEmpty &&
+              originalSecond[0] == originalSecond[0].toUpperCase() &&
+              originalSecond[0] != originalSecond[0].toLowerCase()) {
+            return false;
+          }
+        }
+      }
+    }
+
+    return true;
+  }
+
+  /// Validar que exista al menos un nodo terminal de fin del programa principal
   static ValidationResult _validateEndNode(List<DiagramNode> nodes) {
+    // Filtrar nodos de fin del programa principal (excluir subprocesos)
     final endNodes = nodes
         .where((node) =>
-            node.type == NodeType.terminal &&
-            (node.text.toLowerCase().contains('fin') ||
-                node.text.toLowerCase().contains('end') ||
-                node.text.toLowerCase().contains('terminar')))
+            node.type == NodeType.terminal && _isMainProgramEndNode(node.text))
         .toList();
 
     if (endNodes.isEmpty) {
@@ -489,6 +532,46 @@ class DiagramValidator {
     return ValidationResult();
   }
 
+  /// Determina si un nodo terminal es el fin del programa principal
+  /// (no un subproceso/función)
+  static bool _isMainProgramEndNode(String text) {
+    final lowerText = text.toLowerCase().trim();
+
+    // Verificar si contiene palabras clave de fin
+    final isEnd = lowerText.contains('fin') ||
+        lowerText.contains('end') ||
+        lowerText.contains('terminar');
+
+    if (!isEnd) return false;
+
+    // Si contiene paréntesis, es un subproceso
+    if (text.contains('(') && text.contains(')')) return false;
+
+    // Si el texto tiene más de una palabra después de "fin/end",
+    // probablemente sea un subproceso (ej: "Fin Suma", "Fin MiFuncion")
+    final words = lowerText.split(RegExp(r'\s+'));
+    if (words.length > 1) {
+      final secondWord = words.length > 1 ? words[1] : '';
+      if (secondWord.isNotEmpty &&
+          !['de', 'del', 'programa', 'principal', 'main']
+              .contains(secondWord)) {
+        // Obtener la palabra original para verificar si empieza con mayúscula
+        final originalWords = text.trim().split(RegExp(r'\s+'));
+        if (originalWords.length > 1) {
+          final originalSecond = originalWords[1];
+          // Si la segunda palabra empieza con mayúscula, es nombre de función
+          if (originalSecond.isNotEmpty &&
+              originalSecond[0] == originalSecond[0].toUpperCase() &&
+              originalSecond[0] != originalSecond[0].toLowerCase()) {
+            return false;
+          }
+        }
+      }
+    }
+
+    return true;
+  }
+
   /// Validar conexiones lógicas entre nodos
   static ValidationResult _validateConnections(
     List<DiagramNode> nodes,
@@ -496,13 +579,11 @@ class DiagramValidator {
   ) {
     ValidationResult result = ValidationResult();
 
-    // Validar que el nodo terminal de inicio tenga al menos una salida
+    // Validar que el nodo terminal de inicio del programa principal tenga al menos una salida
     final startNodes = nodes
         .where((node) =>
             node.type == NodeType.terminal &&
-            (node.text.toLowerCase().contains('inicio') ||
-                node.text.toLowerCase().contains('start') ||
-                node.text.isEmpty))
+            _isMainProgramStartNode(node.text))
         .toList();
     if (startNodes.isNotEmpty) {
       final startNode = startNodes.first;
@@ -518,13 +599,11 @@ class DiagramValidator {
       }
     }
 
-    // Validar que los nodos terminales de fin no tengan salidas
+    // Validar que los nodos terminales de fin del programa principal no tengan salidas
+    // (los subprocesos pueden tener sus propios nodos de fin)
     final endNodes = nodes
         .where((node) =>
-            node.type == NodeType.terminal &&
-            (node.text.toLowerCase().contains('fin') ||
-                node.text.toLowerCase().contains('end') ||
-                node.text.toLowerCase().contains('terminar')))
+            node.type == NodeType.terminal && _isMainProgramEndNode(node.text))
         .toList();
     for (final endNode in endNodes) {
       final endNodeOutputs =

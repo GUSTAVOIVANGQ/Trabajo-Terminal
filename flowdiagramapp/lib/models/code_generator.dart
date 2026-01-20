@@ -325,11 +325,17 @@ class CodeGenerator {
     code.writeln("#include <stdbool.h>");
     code.writeln("");
 
+    // Detectar y generar subprocesos/funciones definidos en el diagrama
+    _generateSubprocessFunctions(nodes, connections, code);
+
     // Función principal
     code.writeln("int main() {");
 
     // Variables para seguimiento
     Map<String, bool> processedNodes = {};
+
+    // Marcar los nodos de subprocesos como procesados para no procesarlos en main
+    _markSubprocessNodesAsProcessed(nodes, processedNodes);
 
     // Comenzar la generación recursiva desde el nodo de inicio
     _generateCNodeCode(
@@ -347,6 +353,262 @@ class CodeGenerator {
     code.writeln("}");
 
     return code.toString();
+  }
+
+  /// Detecta subprocesos definidos en el diagrama y genera funciones C para ellos
+  static void _generateSubprocessFunctions(
+    List<DiagramNode> nodes,
+    List<Connection> connections,
+    StringBuffer code,
+  ) {
+    // Buscar nodos terminales que sean inicio de subprocesos
+    // (tienen formato "Inicio NombreFuncion" o "Inicio NombreFuncion(params)")
+    final subprocessStartNodes = nodes.where((node) {
+      if (node.type != NodeType.terminal) return false;
+      final text = node.text.trim();
+      final lowerText = text.toLowerCase();
+
+      // Debe contener "inicio" o "start"
+      if (!lowerText.startsWith('inicio ') && !lowerText.startsWith('start '))
+        return false;
+
+      // El nombre después de "inicio" debe ser un identificador (nombre de función)
+      final words = text.split(RegExp(r'\s+'));
+      if (words.length < 2) return false;
+
+      // Verificar que no sea el inicio del programa principal
+      final secondWord = words[1];
+      if (['de', 'del', 'programa', 'principal', 'main']
+          .contains(secondWord.toLowerCase())) return false;
+
+      return true;
+    }).toList();
+
+    // Generar cada subproceso como función
+    for (final subStartNode in subprocessStartNodes) {
+      _generateSingleSubprocessFunction(subStartNode, nodes, connections, code);
+    }
+  }
+
+  /// Genera una función C para un subproceso específico
+  static void _generateSingleSubprocessFunction(
+    DiagramNode subStartNode,
+    List<DiagramNode> allNodes,
+    List<Connection> connections,
+    StringBuffer code,
+  ) {
+    // Extraer nombre de función y parámetros del texto
+    final functionInfo = _extractFunctionInfo(subStartNode.text);
+    final functionName = functionInfo['name'] ?? 'funcion';
+    final parameters = functionInfo['params'] ?? '';
+
+    // Determinar tipo de retorno (por defecto int)
+    String returnType = 'int';
+
+    // Buscar si hay un nodo con "return" para determinar el tipo
+    final subprocessNodes = _getSubprocessNodes(subStartNode, connections);
+    for (final node in subprocessNodes) {
+      if (node.text.toLowerCase().contains('return')) {
+        // Si retorna algo con punto decimal, usar float
+        if (node.text.contains('.')) {
+          returnType = 'float';
+        }
+        break;
+      }
+    }
+
+    // Escribir firma de función
+    code.writeln("// Subproceso: $functionName");
+    code.writeln("$returnType $functionName($parameters) {");
+
+    // Generar código del cuerpo del subproceso
+    Map<String, bool> processedNodes = {};
+    processedNodes[subStartNode.id] = true;
+
+    // Procesar nodos del subproceso
+    final outConnections =
+        connections.where((conn) => conn.source == subStartNode).toList();
+    for (final conn in outConnections) {
+      _generateSubprocessNodeCode(
+        conn.target,
+        allNodes,
+        connections,
+        code,
+        "    ",
+        processedNodes,
+      );
+    }
+
+    code.writeln("}");
+    code.writeln("");
+  }
+
+  /// Extrae el nombre de la función y parámetros del texto del nodo
+  static Map<String, String> _extractFunctionInfo(String text) {
+    // Patrones: "Inicio Suma(x, y)" o "Inicio Suma" o "Start Sum(a, b)"
+    final result = <String, String>{};
+
+    // Remover "Inicio " o "Start "
+    String cleaned = text.trim();
+    if (cleaned.toLowerCase().startsWith('inicio ')) {
+      cleaned = cleaned.substring(7).trim();
+    } else if (cleaned.toLowerCase().startsWith('start ')) {
+      cleaned = cleaned.substring(6).trim();
+    }
+
+    // Verificar si tiene parámetros entre paréntesis
+    if (cleaned.contains('(') && cleaned.contains(')')) {
+      final parenStart = cleaned.indexOf('(');
+      final parenEnd = cleaned.lastIndexOf(')');
+      result['name'] = cleaned.substring(0, parenStart).trim();
+      result['params'] = cleaned.substring(parenStart + 1, parenEnd).trim();
+
+      // Agregar tipos a los parámetros si no los tienen
+      if (result['params']!.isNotEmpty &&
+          !result['params']!.contains('int') &&
+          !result['params']!.contains('float')) {
+        final params = result['params']!
+            .split(',')
+            .map((p) => 'int ${p.trim()}')
+            .join(', ');
+        result['params'] = params;
+      }
+    } else {
+      result['name'] = cleaned;
+      result['params'] = '';
+    }
+
+    return result;
+  }
+
+  /// Obtiene todos los nodos que pertenecen a un subproceso
+  static List<DiagramNode> _getSubprocessNodes(
+    DiagramNode subStartNode,
+    List<Connection> connections,
+  ) {
+    final result = <DiagramNode>[];
+    final visited = <String>{};
+
+    void traverse(DiagramNode node) {
+      if (visited.contains(node.id)) return;
+      visited.add(node.id);
+      result.add(node);
+
+      final outConnections =
+          connections.where((conn) => conn.source == node).toList();
+      for (final conn in outConnections) {
+        traverse(conn.target);
+      }
+    }
+
+    traverse(subStartNode);
+    return result;
+  }
+
+  /// Marca todos los nodos de subprocesos como procesados
+  static void _markSubprocessNodesAsProcessed(
+    List<DiagramNode> nodes,
+    Map<String, bool> processedNodes,
+  ) {
+    // Encontrar nodos de inicio de subprocesos
+    for (final node in nodes) {
+      if (node.type == NodeType.terminal) {
+        final text = node.text.trim().toLowerCase();
+        if ((text.startsWith('inicio ') || text.startsWith('start ')) &&
+            !text.contains('programa') &&
+            !text.contains('principal') &&
+            !text.contains('main')) {
+          // Verificar que tiene un nombre de función después
+          final words = node.text.split(RegExp(r'\s+'));
+          if (words.length >= 2) {
+            processedNodes[node.id] = true;
+          }
+        }
+      }
+    }
+  }
+
+  /// Genera código para nodos dentro de un subproceso
+  static void _generateSubprocessNodeCode(
+    DiagramNode node,
+    List<DiagramNode> allNodes,
+    List<Connection> connections,
+    StringBuffer code,
+    String indent,
+    Map<String, bool> processedNodes,
+  ) {
+    if (processedNodes[node.id] == true) return;
+    processedNodes[node.id] = true;
+
+    switch (node.type) {
+      case NodeType.terminal:
+        // Si es fin del subproceso, no generar código especial
+        final lowerText = node.text.toLowerCase();
+        if (lowerText.contains('fin') || lowerText.contains('end')) {
+          // No generar nada, el return ya se manejó
+        }
+        break;
+
+      case NodeType.process:
+        code.writeln("${indent}${_formatCProcessStatement(node.text)};");
+        _processSubprocessNextNodes(
+            node, allNodes, connections, code, indent, processedNodes);
+        break;
+
+      case NodeType.data:
+        final dataText = node.text.toLowerCase();
+        // Verificar si es un return
+        if (dataText.contains('return')) {
+          final returnValue = _extractReturnValue(node.text);
+          code.writeln("${indent}return $returnValue;");
+        } else if (dataText.contains('leer') || dataText.contains('input')) {
+          code.writeln("${indent}${_formatCInputStatement(node.text)};");
+          _processSubprocessNextNodes(
+              node, allNodes, connections, code, indent, processedNodes);
+        } else {
+          code.writeln("${indent}${_formatCOutputStatement(node.text)};");
+          _processSubprocessNextNodes(
+              node, allNodes, connections, code, indent, processedNodes);
+        }
+        break;
+
+      default:
+        _processSubprocessNextNodes(
+            node, allNodes, connections, code, indent, processedNodes);
+        break;
+    }
+  }
+
+  /// Procesa los siguientes nodos en un subproceso
+  static void _processSubprocessNextNodes(
+    DiagramNode node,
+    List<DiagramNode> allNodes,
+    List<Connection> connections,
+    StringBuffer code,
+    String indent,
+    Map<String, bool> processedNodes,
+  ) {
+    final outConnections =
+        connections.where((conn) => conn.source == node).toList();
+    for (final conn in outConnections) {
+      _generateSubprocessNodeCode(
+          conn.target, allNodes, connections, code, indent, processedNodes);
+    }
+  }
+
+  /// Extrae el valor de retorno de un texto como "return retorno"
+  static String _extractReturnValue(String text) {
+    final lowerText = text.toLowerCase().trim();
+    if (lowerText.startsWith('return ')) {
+      return text.substring(7).trim();
+    }
+    // Buscar patrón "return X"
+    final match =
+        RegExp(r'return\s+(\S+)', caseSensitive: false).firstMatch(text);
+    if (match != null) {
+      return match.group(1) ?? '0';
+    }
+    return '0';
   }
 
   // Genera código recursivamente para un nodo en C
@@ -462,60 +724,58 @@ class CodeGenerator {
             connections.where((conn) => conn.source == node).toList();
 
         bool isWhileLoop = false;
-        if (outConnections.isNotEmpty) {
-          // Verificar si hay un camino que regresa a este nodo
-          for (var conn in outConnections) {
-            if (_hasReturnPath(conn.target, node, connections, {})) {
-              isWhileLoop = true;
-              break;
-            }
+        Connection? trueConn;
+        Connection? falseConn;
+
+        // Identificar las conexiones verdadera y falsa
+        for (var conn in outConnections) {
+          final label = conn.label.toLowerCase();
+          if (label.contains('true') ||
+              label.contains('verdadero') ||
+              label.contains('sí') ||
+              label.contains('yes')) {
+            trueConn = conn;
+          } else if (label.contains('false') ||
+              label.contains('falso') ||
+              label.contains('no')) {
+            falseConn = conn;
           }
         }
 
-        if (isWhileLoop) {
+        // Si no se identificaron por etiqueta, usar orden
+        trueConn ??= outConnections.isNotEmpty ? outConnections.first : null;
+        falseConn ??= outConnections.length > 1 ? outConnections[1] : null;
+
+        // Verificar si la rama verdadera tiene un camino de retorno (es un while)
+        if (trueConn != null) {
+          isWhileLoop = _hasReturnPath(trueConn.target, node, connections, {});
+        }
+
+        if (isWhileLoop && trueConn != null) {
           // Generar un bucle while
           code.writeln("${indent}while (${_formatCCondition(node.text)}) {");
 
-          // Procesar el cuerpo del bucle (rama verdadera)
-          if (outConnections.isNotEmpty) {
-            final trueConnection = outConnections.firstWhere(
-              (conn) =>
-                  conn.label.toLowerCase().contains('true') ||
-                  conn.label.toLowerCase().contains('verdadero') ||
-                  conn.label.toLowerCase().contains('sí') ||
-                  conn.label.toLowerCase().contains('yes'),
-              orElse: () => outConnections.first,
-            );
+          // Marcar el nodo de decisión como procesado para evitar que se procese
+          // de nuevo cuando el cuerpo del bucle llegue al loop back
+          processedNodes[node.id] = true;
 
-            // Procesar el cuerpo del bucle con una copia del estado de procesamiento
-            // para permitir la repetición
-            final loopProcessedNodes = Map<String, bool>.from(processedNodes);
-            loopProcessedNodes[node.id] = false; // Permitir volver a este nodo
-
-            _generateCNodeCode(
-              trueConnection.target,
-              allNodes,
-              connections,
-              code,
-              indent + "    ",
-              loopProcessedNodes,
-            );
-          }
+          // Procesar el cuerpo del bucle (rama verdadera) con detección de loop back
+          _generateWhileLoopBody(
+            trueConn.target,
+            node, // El nodo de decisión del while (para detectar loop back)
+            allNodes,
+            connections,
+            code,
+            indent + "    ",
+            Map<String, bool>.from(processedNodes),
+          );
 
           code.writeln("${indent}}");
 
           // Procesar lo que viene después del bucle (rama falsa)
-          if (outConnections.length > 1) {
-            final falseConnection = outConnections.firstWhere(
-              (conn) =>
-                  conn.label.toLowerCase().contains('false') ||
-                  conn.label.toLowerCase().contains('falso') ||
-                  conn.label.toLowerCase().contains('no'),
-              orElse: () => outConnections[1],
-            );
-
+          if (falseConn != null) {
             _generateCNodeCode(
-              falseConnection.target,
+              falseConn.target,
               allNodes,
               connections,
               code,
@@ -875,6 +1135,148 @@ class CodeGenerator {
         connection.target, loopNode, allConnections, Set<String>());
   }
 
+  // Genera el cuerpo de un while, deteniéndose antes del loop back
+  static void _generateWhileLoopBody(
+    DiagramNode currentNode,
+    DiagramNode whileDecisionNode,
+    List<DiagramNode> allNodes,
+    List<Connection> connections,
+    StringBuffer code,
+    String indent,
+    Map<String, bool> processedNodes,
+  ) {
+    // Si ya procesamos este nodo o es el nodo de decisión del while, detenernos
+    if (processedNodes[currentNode.id] == true) {
+      return;
+    }
+    if (currentNode.id == whileDecisionNode.id) {
+      return; // Llegamos al loop back, no generar más código
+    }
+
+    processedNodes[currentNode.id] = true;
+
+    // Verificar si este nodo conecta de vuelta al while (es el último del cuerpo)
+    final outConnections =
+        connections.where((conn) => conn.source == currentNode).toList();
+
+    bool connectsBackToWhile =
+        outConnections.any((conn) => conn.target.id == whileDecisionNode.id);
+
+    // Generar código según el tipo de nodo
+    switch (currentNode.type) {
+      case NodeType.process:
+        code.writeln("${indent}// Proceso: ${currentNode.text}");
+        code.writeln("${indent}${_formatCProcessStatement(currentNode.text)};");
+        break;
+
+      case NodeType.data:
+        final dataText = currentNode.text.toLowerCase();
+        final isInput = dataText.contains('leer') ||
+            dataText.contains('input') ||
+            dataText.contains('ingresar') ||
+            dataText.contains('scanf');
+        final isOutput = dataText.contains('mostrar') ||
+            dataText.contains('imprimir') ||
+            dataText.contains('print') ||
+            dataText.contains('escribir') ||
+            dataText.contains('printf');
+
+        if (isInput) {
+          code.writeln("${indent}// Entrada: ${currentNode.text}");
+          code.writeln("${indent}${_formatCInputStatement(currentNode.text)};");
+        } else if (isOutput) {
+          code.writeln("${indent}// Salida: ${currentNode.text}");
+          code.writeln(
+              "${indent}${_formatCOutputStatement(currentNode.text)};");
+        } else {
+          code.writeln("${indent}// Dato: ${currentNode.text}");
+          code.writeln(
+              "${indent}${_formatCOutputStatement(currentNode.text)};");
+        }
+        break;
+
+      case NodeType.decision:
+        // Decisión dentro del while (if-else anidado)
+        code.writeln("${indent}// Decisión: ${currentNode.text}");
+        code.writeln("${indent}if (${_formatCCondition(currentNode.text)}) {");
+
+        final decisionConnections =
+            connections.where((conn) => conn.source == currentNode).toList();
+
+        Connection? trueConn;
+        Connection? falseConn;
+
+        for (var conn in decisionConnections) {
+          final label = conn.label.toLowerCase();
+          if (label.contains('true') ||
+              label.contains('sí') ||
+              label.contains('yes')) {
+            trueConn = conn;
+          } else if (label.contains('false') || label.contains('no')) {
+            falseConn = conn;
+          }
+        }
+
+        trueConn ??=
+            decisionConnections.isNotEmpty ? decisionConnections.first : null;
+        falseConn ??=
+            decisionConnections.length > 1 ? decisionConnections[1] : null;
+
+        if (trueConn != null && trueConn.target.id != whileDecisionNode.id) {
+          _generateWhileLoopBody(
+            trueConn.target,
+            whileDecisionNode,
+            allNodes,
+            connections,
+            code,
+            indent + "    ",
+            Map<String, bool>.from(processedNodes),
+          );
+        }
+
+        if (falseConn != null && falseConn.target.id != whileDecisionNode.id) {
+          code.writeln("${indent}} else {");
+          _generateWhileLoopBody(
+            falseConn.target,
+            whileDecisionNode,
+            allNodes,
+            connections,
+            code,
+            indent + "    ",
+            Map<String, bool>.from(processedNodes),
+          );
+        }
+
+        code.writeln("${indent}}");
+        return; // Las decisiones manejan sus propias conexiones
+
+      default:
+        // Otros tipos de nodos
+        if (currentNode.type != NodeType.terminal) {
+          code.writeln(
+              "${indent}// ${currentNode.type.name}: ${currentNode.text}");
+        }
+        break;
+    }
+
+    // Si no conecta de vuelta al while, procesar los siguientes nodos
+    if (!connectsBackToWhile) {
+      for (final conn in outConnections) {
+        if (conn.target.id != whileDecisionNode.id) {
+          _generateWhileLoopBody(
+            conn.target,
+            whileDecisionNode,
+            allNodes,
+            connections,
+            code,
+            indent,
+            processedNodes,
+          );
+        }
+      }
+    }
+  }
+
   // Verifica si hay un camino de retorno al bucle
   static bool _hasReturnPath(
     DiagramNode currentNode,
@@ -1055,29 +1457,123 @@ class CodeGenerator {
       return trimmedText;
     }
 
-    String varName = trimmedText;
+    // Extraer el nombre de la variable del texto
+    String varName = _extractVariableNameFromInput(trimmedText);
+    String dataType = _detectDataType(trimmedText);
 
     // Si el texto contiene una asignación o especificación de variable
     if (text.contains('=')) {
       varName = text.split('=')[0].trim();
-      return "scanf(\"%d\", &$varName)";
+      // Limpiar el nombre de la variable de palabras clave
+      varName = _cleanVariableName(varName);
     }
 
-    // Si el texto contiene instrucciones sobre el tipo de variable
-    if (text.toLowerCase().contains('entero') ||
-        text.toLowerCase().contains('int')) {
-      return "printf(\"Ingrese $varName: \"); scanf(\"%d\", &$varName)";
-    } else if (text.toLowerCase().contains('flotante') ||
-        text.toLowerCase().contains('float') ||
-        text.toLowerCase().contains('decimal')) {
-      return "printf(\"Ingrese $varName: \"); scanf(\"%f\", &$varName)";
-    } else if (text.toLowerCase().contains('caracter') ||
-        text.toLowerCase().contains('char')) {
-      return "printf(\"Ingrese $varName: \"); scanf(\" %c\", &$varName)";
-    } else {
-      // Por defecto, asumir entero
-      return "printf(\"Ingrese $varName: \"); scanf(\"%d\", &$varName)";
+    // Generar código según el tipo de dato
+    switch (dataType) {
+      case 'float':
+        return "printf(\"Ingrese $varName: \"); scanf(\"%f\", &$varName)";
+      case 'char':
+        return "printf(\"Ingrese $varName: \"); scanf(\" %c\", &$varName)";
+      case 'string':
+        return "printf(\"Ingrese $varName: \"); scanf(\"%s\", $varName)";
+      case 'int':
+      default:
+        return "printf(\"Ingrese $varName: \"); scanf(\"%d\", &$varName)";
     }
+  }
+
+  // Extrae el nombre de la variable de un texto de entrada
+  static String _extractVariableNameFromInput(String text) {
+    String lowerText = text.toLowerCase();
+
+    // Patrones comunes: "Leer variable", "Ingresar variable", "Input variable"
+    final patterns = [
+      RegExp(r'leer\s+([a-zA-Z_][a-zA-Z0-9_]*)', caseSensitive: false),
+      RegExp(r'ingresar\s+([a-zA-Z_][a-zA-Z0-9_]*)', caseSensitive: false),
+      RegExp(r'input\s+([a-zA-Z_][a-zA-Z0-9_]*)', caseSensitive: false),
+      RegExp(r'scanf.*&([a-zA-Z_][a-zA-Z0-9_]*)', caseSensitive: false),
+    ];
+
+    for (final pattern in patterns) {
+      final match = pattern.firstMatch(text);
+      if (match != null && match.group(1) != null) {
+        return match.group(1)!;
+      }
+    }
+
+    // Si no se encuentra patrón, intentar extraer la última palabra que parezca variable
+    final words = text.split(RegExp(r'[\s,]+'));
+    for (int i = words.length - 1; i >= 0; i--) {
+      final word = words[i].trim();
+      if (RegExp(r'^[a-zA-Z_][a-zA-Z0-9_]*$').hasMatch(word) &&
+          !_isKeyword(word.toLowerCase())) {
+        return word;
+      }
+    }
+
+    return 'var';
+  }
+
+  // Detecta el tipo de dato del texto de entrada
+  static String _detectDataType(String text) {
+    final lowerText = text.toLowerCase();
+    if (lowerText.contains('flotante') ||
+        lowerText.contains('float') ||
+        lowerText.contains('decimal') ||
+        lowerText.contains('real')) {
+      return 'float';
+    } else if (lowerText.contains('caracter') ||
+        lowerText.contains('char') ||
+        lowerText.contains('carácter')) {
+      return 'char';
+    } else if (lowerText.contains('cadena') ||
+        lowerText.contains('string') ||
+        lowerText.contains('texto')) {
+      return 'string';
+    }
+    return 'int';
+  }
+
+  // Verifica si una palabra es una palabra clave a ignorar
+  static bool _isKeyword(String word) {
+    const keywords = [
+      'leer',
+      'ingresar',
+      'input',
+      'entrada',
+      'escribir',
+      'mostrar',
+      'imprimir',
+      'print',
+      'output',
+      'salida',
+      'el',
+      'la',
+      'los',
+      'las',
+      'un',
+      'una',
+      'de',
+      'del',
+      'al',
+      'y',
+      'o',
+      'a'
+    ];
+    return keywords.contains(word);
+  }
+
+  // Limpia el nombre de una variable de palabras clave
+  static String _cleanVariableName(String name) {
+    final words = name.split(RegExp(r'\s+'));
+    for (int i = words.length - 1; i >= 0; i--) {
+      final word = words[i].trim();
+      if (RegExp(r'^[a-zA-Z_][a-zA-Z0-9_]*$').hasMatch(word) &&
+          !_isKeyword(word.toLowerCase())) {
+        return word;
+      }
+    }
+    return name.replaceAll(' ', '_');
   }
 
   // Formatea una declaración de salida para C
@@ -1093,18 +1589,78 @@ class CodeGenerator {
       return trimmedText;
     }
 
-    // Si parece una variable sola, la mostramos
-    if (_isSimpleVariableName(text)) {
-      return "printf(\"%d\\n\", $text)";
+    // Detectar si el texto contiene una cadena literal entre comillas
+    final stringMatch = RegExp(r'"([^"]*)"').firstMatch(trimmedText);
+    if (stringMatch != null) {
+      final stringContent = stringMatch.group(1)!;
+      // Verificar si hay variables adicionales después de la cadena
+      final afterString = trimmedText.substring(stringMatch.end).trim();
+      if (afterString.isNotEmpty) {
+        // Hay variables para mostrar junto con el texto
+        final vars = afterString
+            .split(RegExp(r'[,\s]+'))
+            .where((v) => v.isNotEmpty && !_isKeyword(v.toLowerCase()))
+            .toList();
+        if (vars.isNotEmpty) {
+          final formatSpecifiers = vars.map((v) => '%d').join(' ');
+          return "printf(\"$stringContent $formatSpecifiers\\n\", ${vars.join(', ')})";
+        }
+      }
+      return "printf(\"$stringContent\\n\")";
     }
 
-    // Si contiene comillas, probablemente sea un mensaje formateado
-    if (text.contains('"')) {
-      return "printf($text)";
+    // Extraer variables del texto de salida
+    String varName = _extractVariableNameFromOutput(trimmedText);
+
+    // Si parece una variable sola, la mostramos
+    if (_isSimpleVariableName(varName)) {
+      return "printf(\"%d\\n\", $varName)";
     }
 
     // Si no tiene formato especial, lo tratamos como texto a mostrar
-    return "printf(\"$text\\n\")";
+    // Pero primero verificamos si no es un comando como "Escribir algo"
+    final lowerText = trimmedText.toLowerCase();
+    if (lowerText.startsWith('escribir ') ||
+        lowerText.startsWith('mostrar ') ||
+        lowerText.startsWith('imprimir ') ||
+        lowerText.startsWith('print ')) {
+      // Extraer lo que se debe mostrar
+      final content =
+          trimmedText.substring(trimmedText.indexOf(' ') + 1).trim();
+      if (_isSimpleVariableName(content)) {
+        return "printf(\"%d\\n\", $content)";
+      } else if (content.startsWith('"') && content.endsWith('"')) {
+        return "printf(${content.substring(0, content.length)}\\n\")";
+      } else {
+        // Es un texto literal
+        return "printf(\"$content\\n\")";
+      }
+    }
+
+    return "printf(\"$trimmedText\\n\")";
+  }
+
+  // Extrae el nombre de la variable de un texto de salida
+  static String _extractVariableNameFromOutput(String text) {
+    String lowerText = text.toLowerCase();
+
+    // Patrones comunes: "Escribir variable", "Mostrar variable", "Print variable"
+    final patterns = [
+      RegExp(r'escribir\s+([a-zA-Z_][a-zA-Z0-9_]*)', caseSensitive: false),
+      RegExp(r'mostrar\s+([a-zA-Z_][a-zA-Z0-9_]*)', caseSensitive: false),
+      RegExp(r'imprimir\s+([a-zA-Z_][a-zA-Z0-9_]*)', caseSensitive: false),
+      RegExp(r'print\s+([a-zA-Z_][a-zA-Z0-9_]*)', caseSensitive: false),
+    ];
+
+    for (final pattern in patterns) {
+      final match = pattern.firstMatch(text);
+      if (match != null && match.group(1) != null) {
+        return match.group(1)!;
+      }
+    }
+
+    // Si no se encuentra patrón, devolver el texto limpio
+    return text;
   }
 
   // Verifica si el texto parece un nombre de variable simple

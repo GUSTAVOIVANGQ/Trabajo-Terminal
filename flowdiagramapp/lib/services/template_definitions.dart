@@ -926,13 +926,16 @@ class TemplateDefinitions {
     final now = DateTime.now();
     final baseId = now.millisecondsSinceEpoch;
 
+    // Comentario explicativo
     final commentNode = DiagramNode(
       id: "comment_${baseId}_0",
       type: NodeType.comment,
       position: const Offset(500, 50),
-      text: "Cuenta del 1 al N usando while.\nConcepto: Bucle pre-condición",
+      text:
+          "Cuenta del 1 al N usando while.\nConcepto: Bucle pre-condición con símbolo de decisión (rombo)",
     );
 
+    // Nodo inicial
     final startNode = DiagramNode(
       id: "start_${baseId}_1",
       type: NodeType.terminal,
@@ -940,6 +943,7 @@ class TemplateDefinitions {
       text: "Inicio",
     );
 
+    // Leer el límite
     final inputNode = DiagramNode(
       id: "input_${baseId}_2",
       type: NodeType.data,
@@ -948,6 +952,7 @@ class TemplateDefinitions {
       metadata: {'isOutput': false, 'inputType': 'int', 'varName': 'limite'},
     );
 
+    // Inicializar contador (instrucciones antes del ciclo)
     final initNode = DiagramNode(
       id: "process_${baseId}_3",
       type: NodeType.process,
@@ -961,15 +966,16 @@ class TemplateDefinitions {
       },
     );
 
-    final loopNode = DiagramNode(
-      id: "loop_${baseId}_4",
-      type: NodeType.preparation,
+    // Nodo de decisión del while (rombo) - símbolo correcto según ISO 5807
+    final whileDecisionNode = DiagramNode(
+      id: "decision_${baseId}_4",
+      type: NodeType.decision,
       position: const Offset(280, 340),
-      text: "while (contador <= limite)",
-      metadata: {'loopType': 'while', 'condition': 'contador <= limite'},
+      text: "contador <= limite",
     );
 
-    final outputNode = DiagramNode(
+    // Cuerpo del ciclo: Escribir contador
+    final outputContadorNode = DiagramNode(
       id: "output_${baseId}_5",
       type: NodeType.data,
       position: const Offset(500, 340),
@@ -977,6 +983,7 @@ class TemplateDefinitions {
       metadata: {'isOutput': true},
     );
 
+    // Cuerpo del ciclo: Incrementar contador
     final incrementNode = DiagramNode(
       id: "process_${baseId}_6",
       type: NodeType.process,
@@ -985,6 +992,7 @@ class TemplateDefinitions {
       metadata: {'processType': 'increment'},
     );
 
+    // Después del ciclo: mensaje de fin
     final outputFinNode = DiagramNode(
       id: "output_${baseId}_7",
       type: NodeType.data,
@@ -993,6 +1001,7 @@ class TemplateDefinitions {
       metadata: {'isOutput': true, 'outputType': 'string'},
     );
 
+    // Nodo final
     final endNode = DiagramNode(
       id: "end_${baseId}_8",
       type: NodeType.terminal,
@@ -1005,28 +1014,37 @@ class TemplateDefinitions {
       startNode,
       inputNode,
       initNode,
-      loopNode,
-      outputNode,
+      whileDecisionNode,
+      outputContadorNode,
       incrementNode,
       outputFinNode,
       endNode
     ];
 
     final connections = [
+      // Secuencia inicial
       Connection(source: startNode, target: inputNode, label: ""),
       Connection(source: inputNode, target: initNode, label: ""),
-      Connection(source: initNode, target: loopNode, label: ""),
-      Connection(source: loopNode, target: outputNode, label: "Verdadero"),
-      Connection(source: outputNode, target: incrementNode, label: ""),
+      Connection(source: initNode, target: whileDecisionNode, label: ""),
+      // Rama "Sí" - entra al cuerpo del ciclo
       Connection(
-          source: incrementNode, target: loopNode, label: "", isLoopBack: true),
-      Connection(source: loopNode, target: outputFinNode, label: "Falso"),
+          source: whileDecisionNode, target: outputContadorNode, label: "Sí"),
+      Connection(source: outputContadorNode, target: incrementNode, label: ""),
+      // Loop back - regresa a la decisión del while
+      Connection(
+          source: incrementNode,
+          target: whileDecisionNode,
+          label: "",
+          isLoopBack: true),
+      // Rama "No" - sale del ciclo
+      Connection(source: whileDecisionNode, target: outputFinNode, label: "No"),
       Connection(source: outputFinNode, target: endNode, label: ""),
     ];
 
     return SavedDiagram(
       name: "09. Contador While",
-      description: "UNIDAD I - Nivel Bucles: Bucle while con contador y límite",
+      description:
+          "UNIDAD I - Nivel Bucles: Bucle while con símbolo de decisión (rombo) según ISO 5807",
       createdAt: now,
       updatedAt: now,
       nodes: nodes,

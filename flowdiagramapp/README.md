@@ -582,10 +582,10 @@ lib/
   - Diálogo de Proceso expandido con 8 tipos de operaciones (procesamiento + declaraciones)
   - Reducción de 11 a 9 símbolos esenciales conforme a estándar internacional
 - [X] Programacion de las estructuras generadas por cada boton del panel "C concepts"
+- [x] 20 plantillas implementadas usando de referencia el temario de Fundamentos de Programación (ESCOM ISC 2020)
 
 ### 🔄 En Desarrollo
 
-- [x] ~~Eliminar las plantillas existentes y agregar plantillas de diagramas de flujo con respecto al temario de la asignatura de Fundamentos de Programación.~~ ✅ **COMPLETADO** - 20 plantillas educativas implementadas
 - [ ] Generación de código C funcional mejorada
 - [ ] Tutorial integrado para cada tipo de nodo
 - [ ] Validación semántica entre nodos de preparación y decisión
