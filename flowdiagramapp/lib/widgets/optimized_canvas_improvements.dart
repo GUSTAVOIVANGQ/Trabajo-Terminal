@@ -160,29 +160,50 @@ class OptimizedNodeWidget extends StatelessWidget {
 
   Color _getNodeColor() {
     switch (node.type) {
-      case NodeType.start:
+      // Basic symbols
+      case NodeType.terminal:
         return Colors.green;
-      case NodeType.end:
-        return Colors.red;
       case NodeType.process:
         return Colors.blue;
       case NodeType.decision:
         return Colors.orange;
-      case NodeType.loop:
+      case NodeType.preparation:
         return Colors.deepOrange;
-      case NodeType.input:
+      case NodeType.data:
         return Colors.purple;
-      case NodeType.output:
-        return Colors.teal;
-      case NodeType.variable:
-        return Colors.cyan;
+      case NodeType.predefinedProcess:
+        return Colors.indigo;
+      // ISO 5807 Data symbols
+      case NodeType.storedData:
+      case NodeType.internalStorage:
+      case NodeType.sequentialStorage:
+      case NodeType.directStorage:
+      case NodeType.document:
+      case NodeType.manualInput:
+      case NodeType.card:
+      case NodeType.punchedTape:
+      case NodeType.display:
+        return Colors.blue.shade400;
+      // ISO 5807 Process symbols
+      case NodeType.manualOperation:
+      case NodeType.parallelMode:
+      case NodeType.loopLimit:
+        return Colors.green.shade400;
+      // ISO 5807 Special symbols
+      case NodeType.connector:
+        return Colors.amber;
+      case NodeType.offPageConnector:
+        return Colors.amber.shade700;
+      case NodeType.annotation:
+      case NodeType.comment:
+        return Colors.grey;
     }
   }
 
   BorderRadius? _getBorderRadius() {
     switch (node.type) {
-      case NodeType.start:
-      case NodeType.end:
+      case NodeType.terminal:
+      case NodeType.connector:
         return BorderRadius.circular(node.size.width / 2);
       case NodeType.decision:
         return null; // Los rombos no necesitan border radius

@@ -6,10 +6,12 @@ void main() {
   print('=== PRUEBA: Diálogo de Nodo de Variable ===');
   print('');
 
-  // Crear un nodo de variable para pruebas
+  // Crear un nodo de proceso para pruebas (variables ahora son parte de process)
+  // NodeType.variable was merged into NodeType.process per ISO 5807
   final testNode = DiagramNode(
     id: 'test_var_1',
-    type: NodeType.variable,
+    type:
+        NodeType.process, // Changed from NodeType.variable to NodeType.process
     position: const Offset(100, 100),
     text: '',
   );

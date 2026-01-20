@@ -300,33 +300,76 @@ class AppThemes {
   );
 
   /// Colores personalizados para nodos del diagrama en modo claro
+  /// Includes ISO 5807 symbols
   static const Map<String, Color> lightNodeColors = {
-    'start': Color(0xFF10B981), // Verde para inicio
-    'end': Color(0xFFDC2626), // Rojo para fin
+    // Basic symbols (with code generation)
+    'terminal': Color(0xFF10B981), // Verde para terminal (inicio/fin)
     'process': Color(0xFF3B82F6), // Azul para proceso
     'decision': Color(0xFFF59E0B), // Amarillo para decisión
-    'input': Color(0xFF7C3AED), // Púrpura para entrada
-    'output': Color(0xFF059669), // Verde oscuro para salida
-    'variable': Color(0xFF0891B2), // Cian para variable
-    'loop': Color(0xFFEF4444), // Rojo/naranja para bucle
-    'connector': Color(0xFF6366F1), // Índigo para conector
-    'comment': Color(0xFFFBBF24), // Amarillo dorado para comentario
-    'subprocess': Color(0xFF8B5CF6), // Morado para subproceso/función
+    'data': Color(0xFF7C3AED), // Púrpura para datos (entrada/salida)
+    'preparation': Color(0xFFEF4444), // Rojo/naranja para preparación
+    'predefinedProcess': Color(0xFF8B5CF6), // Morado para subproceso/función
+    // Aliases for backwards compatibility
+    'loop': Color(0xFFEF4444),
+    'subprocess': Color(0xFF8B5CF6),
+    // ISO 5807 Data symbols
+    'storedData': Color(0xFF06B6D4), // Cian
+    'internalStorage': Color(0xFF0891B2), // Cian oscuro
+    'sequentialStorage': Color(0xFF0EA5E9), // Azul cielo
+    'directStorage': Color(0xFF2563EB), // Azul profundo (database)
+    'document': Color(0xFF4F46E5), // Índigo
+    'manualInput': Color(0xFF7C3AED), // Púrpura
+    'card': Color(0xFF6366F1), // Índigo claro
+    'punchedTape': Color(0xFF8B5CF6), // Violeta
+    'display': Color(0xFFA855F7), // Púrpura claro
+    // ISO 5807 Process symbols
+    'manualOperation': Color(0xFF22C55E), // Verde
+    'parallelMode': Color(0xFF84CC16), // Lima
+    'loopLimit': Color(0xFFF97316), // Naranja
+    'collate': Color(0xFF14B8A6), // Teal
+    'summingJunction': Color(0xFF0D9488), // Teal oscuro
+    // ISO 5807 Special symbols
+    'connector': Color(0xFFFBBF24), // Ámbar
+    'offPageConnector': Color(0xFFF59E0B), // Ámbar oscuro
+    'annotation': Color(0xFF9CA3AF), // Gris
+    'comment': Color(0xFF6B7280), // Gris oscuro
   };
 
   /// Colores personalizados para nodos del diagrama en modo oscuro
+  /// Includes ISO 5807 symbols
   static const Map<String, Color> darkNodeColors = {
-    'start': Color(0xFF34D399), // Verde más claro
-    'end': Color(0xFFEF4444), // Rojo más claro
+    // Basic symbols (with code generation)
+    'terminal': Color(0xFF34D399), // Verde más claro para terminal
     'process': Color(0xFF60A5FA), // Azul más claro
     'decision': Color(0xFFFBBF24), // Amarillo más claro
-    'input': Color(0xFF8B5CF6), // Púrpura más claro
-    'output': Color(0xFF10B981), // Verde más claro
-    'variable': Color(0xFF06B6D4), // Cian más claro
-    'loop': Color(0xFFF97316), // Naranja más claro para bucle
-    'connector': Color(0xFF818CF8), // Índigo más claro para conector
-    'comment': Color(0xFFFDE68A), // Amarillo suave para comentario
-    'subprocess': Color(0xFFA78BFA), // Morado claro para subproceso/función
+    'data': Color(0xFF8B5CF6), // Púrpura más claro para datos (entrada/salida)
+    'preparation': Color(0xFFF97316), // Naranja más claro para preparación
+    'predefinedProcess':
+        Color(0xFFA78BFA), // Morado claro para subproceso/función
+    // Aliases for backwards compatibility
+    'loop': Color(0xFFF97316),
+    'subprocess': Color(0xFFA78BFA),
+    // ISO 5807 Data symbols
+    'storedData': Color(0xFF22D3EE), // Cian claro
+    'internalStorage': Color(0xFF06B6D4), // Cian
+    'sequentialStorage': Color(0xFF38BDF8), // Azul cielo claro
+    'directStorage': Color(0xFF3B82F6), // Azul
+    'document': Color(0xFF6366F1), // Índigo
+    'manualInput': Color(0xFF8B5CF6), // Púrpura
+    'card': Color(0xFF818CF8), // Índigo claro
+    'punchedTape': Color(0xFFA78BFA), // Violeta claro
+    'display': Color(0xFFC084FC), // Púrpura claro
+    // ISO 5807 Process symbols
+    'manualOperation': Color(0xFF4ADE80), // Verde claro
+    'parallelMode': Color(0xFFA3E635), // Lima claro
+    'loopLimit': Color(0xFFFB923C), // Naranja claro
+    'collate': Color(0xFF2DD4BF), // Teal claro
+    'summingJunction': Color(0xFF14B8A6), // Teal
+    // ISO 5807 Special symbols
+    'connector': Color(0xFFFCD34D), // Ámbar claro
+    'offPageConnector': Color(0xFFFBBF24), // Ámbar
+    'annotation': Color(0xFFD1D5DB), // Gris claro
+    'comment': Color(0xFF9CA3AF), // Gris
   };
 
   /// Obtiene los colores de nodos según el tema actual

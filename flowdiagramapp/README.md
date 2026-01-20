@@ -1,6 +1,239 @@
-# FlowDiagram App
+# FlowCode: Aplicación Android para traducción automática de Diagramas de Flujo a Código C estructurado con validación integrada
 
 Una aplicación móvil Flutter que permite a los usuarios diseñar algoritmos mediante diagramas de flujo y traducirlos automáticamente a código en lenguaje C.
+
+---
+
+## 🎉 **Nuevas Características (Enero 2026) - Sistema de Metadata Inteligente**
+
+### ✨ **Generación Correcta de Estructuras de Control**
+
+FlowCode ahora genera código C correcto para estructuras avanzadas:
+
+#### ✅ **Switch Statement**
+- **Antes**: Generaba múltiples `if-else` anidados ❌
+- **Ahora**: Genera código `switch() { case: break; }` correcto ✅
+- **Uso**: Menú "Conceptos" → "Switch"
+
+**Ejemplo:**
+```c
+// Código generado por FlowCode
+switch (opcion) {
+    case 1:
+        printf("Opción 1");
+        break;
+    case 2:
+        printf("Opción 2");
+        break;
+    default:
+        printf("Opción inválida");
+        break;
+}
+```
+
+#### ✅ **Bucle For**
+- **Antes**: Indistinguible de `while`, generaba código genérico ❌
+- **Ahora**: Genera bucles `for(init; cond; incr)` específicos ✅
+- **Uso**: Menú "Conceptos" → "For"
+
+**Ejemplo:**
+```c
+// Código generado por FlowCode
+for (int i = 0; i < 10; i++) {
+    printf("Iteración %d\n", i);
+}
+```
+
+#### ✅ **Bucle While**
+- **Antes**: Mezclado con for, sin diferenciación ❌
+- **Ahora**: Genera bucles `while(cond)` diferenciados ✅
+- **Uso**: Menú "Conceptos" → "While"
+
+**Ejemplo:**
+```c
+// Código generado por FlowCode
+while (contador < 100) {
+    contador++;
+}
+```
+
+### 🔍 **Sistema de Detección Inteligente**
+
+**Doble prioridad de detección:**
+1. **Metadata explícito** (100% precisión) - Insertado automáticamente desde "Conceptos"
+2. **Análisis de patrón de texto** (fallback) - Para diagramas legacy o creados manualmente
+
+**Resultados de pruebas:**
+- ✅ 7/7 pruebas pasadas (100% éxito)
+- ✅ Backward compatibility con diagramas existentes
+- ✅ 0 errores de compilación
+
+### 📚 **Documentación Completa**
+
+- **[Guía de Usuario](GUIA_ESTRUCTURAS_CONTROL.md)** - Cómo usar las nuevas estructuras
+- **[Documentación Técnica](DOCUMENTACION_TECNICA_METADATA.md)** - Arquitectura e implementación
+- **[Claves de Metadata](METADATA_KEYS_DOCUMENTATION.md)** - Referencia de metadata
+- **[Resultados de Pruebas](FASE_4_PRUEBAS_COMPLETADAS.md)** - Validación completa
+
+---
+
+## 📖 **Descripción General**
+
+El producto principal es implementar un compilador fuente a fuente (Diagramas de flujo a codigo en c). Esta aplicacion debe conviertir los diagramas de flujo a codigo en lenguaje c funcional mediante las fases de un compilador. Hasta ahora tenemos la primera fase implementada (analisis estrucutral y generacion de codigo directo).:
+
+**Análisis Básico:**
+- **Validación sintáctica básica** (estructura del diagrama)
+- **Detección de errores estructurales** (nodos desconectados, múltiples inicios, etc.)
+- **Generación de código directo** (traducción 1:1 de nodos a C)
+- **✨ NUEVO: Generación correcta de switch, for y while con metadata** (Enero 2026)
+
+### Lo que FALTA para un compilador completo:
+
+1. Análisis Léxico
+2. Análisis Sintáctico
+3. Análisis Semántico
+4. Optimización
+
+**🎯 Plan de Desarrollo Actualizado:**
+
+## **FASE 1: Análisis Léxico Visual (2-3 semanas)**
+**Objetivo:** Tokenizar y analizar el contenido de cada nodo
+
+### **Semana 1-2: Implementación del Lexer**
+```dart
+// Crear: lib/compiler/lexical_analyzer.dart
+class DiagramLexicalAnalyzer {
+  List<Token> tokenize(DiagramNode node)
+  Map<String, SymbolInfo> symbolTable
+  bool validateIdentifiers(String text)
+  TokenType getTokenType(String text)
+}
+```
+
+**Entregables:**
+- ✅ Tokenizador para expresiones en nodos
+- ✅ Tabla de símbolos básica
+- ✅ Reconocimiento de identificadores, operadores, literales
+- ✅ Validación de nombres de variables
+
+---
+
+## **FASE 2: Análisis Sintáctico Visual (3-4 semanas)**
+**Objetivo:** Validar sintaxis y construir AST
+
+### **Semana 3-5: Parser de Expresiones**
+```dart
+// Crear: lib/compiler/syntax_analyzer.dart
+class DiagramSyntaxAnalyzer {
+  ParseTree parseExpression(List<Token> tokens)
+  bool validateAssignment(DiagramNode node)
+  AST buildAbstractSyntaxTree(List<DiagramNode> nodes)
+  bool validateControlFlow(List<Connection> connections)
+}
+```
+
+**Entregables:**
+- ✅ Parser para expresiones matemáticas y asignaciones
+- ✅ Validación de sintaxis en cada nodo
+- ✅ AST básico del diagrama completo
+- ✅ Validación avanzada de flujo de control
+
+---
+
+## **FASE 3: Análisis Semántico Visual (4-5 semanas)**
+**Objetivo:** Verificar coherencia lógica y tipos
+
+### **Semana 6-9: Análisis Semántico**
+```dart
+// Crear: lib/compiler/semantic_analyzer.dart
+class DiagramSemanticAnalyzer {
+  bool checkTypes(ParseTree tree)
+  bool analyzeScope(List<DiagramNode> nodes)
+  List<SemanticError> findUndeclaredVariables()
+  bool validateOperationCompatibility()
+}
+```
+
+**Entregables:**
+- ✅ Verificación de tipos de datos
+- ✅ Detección de variables no declaradas
+- ✅ Análisis de alcance (scope)
+- ✅ Verificación de compatibilidad de operaciones
+
+---
+
+## **FASE 4: Optimización Básica (2-3 semanas)**
+**Objetivo:** Mejorar el código generado
+
+### **Semana 10-12: Optimizador**
+```dart
+// Crear: lib/compiler/code_optimizer.dart
+class DiagramCodeOptimizer {
+  String eliminateDeadCode(String code)
+  String simplifyExpressions(String code)
+  String optimizeControlFlow(ParseTree tree)
+}
+```
+
+**Entregables:**
+- ✅ Eliminación de código redundante
+- ✅ Simplificación de expresiones constantes
+- ✅ Optimización de estructuras de control
+
+---
+
+## **FASE 5: Integración y Documentación (1-2 semanas)**
+**Objetivo:** Integrar todo y documentar
+
+### **Semana 13-14: Integración Final**
+```dart
+// Modificar: lib/models/code_generator.dart
+class EnhancedCodeGenerator {
+  String generateOptimizedCode(
+    List<DiagramNode> nodes,
+    List<Connection> connections,
+    CompilerOptions options
+  )
+}
+```
+
+**Entregables:**
+- ✅ Sistema completo integrado
+- ✅ Documentación técnica del compilador
+- ✅ Casos de prueba automatizados
+- ✅ Métricas de rendimiento
+
+---
+
+## 📋 **Condiciones Adicionales Importantes:**
+
+### **🔧 Aspectos Técnicos que Agregar:**
+
+1. **Manejo de Errores Robusto:**
+   - Sistema de recuperación de errores
+   - Mensajes de error descriptivos
+   - Sugerencias de corrección automática
+
+2. **Optimizaciones Específicas para Diagramas:**
+   - Detección de bucles infinitos
+   - Validación de rutas no alcanzables
+   - Optimización de saltos condicionales
+
+3. **Extensibilidad:**
+   - Soporte para nuevos tipos de nodos
+   - Plugin system para validaciones personalizadas
+   - API para exportar a otros lenguajes
+
+### **📊 Métricas de Validación:**
+``` dart
+// Crear: lib/compiler/compiler_metrics.dart
+class CompilerMetrics {
+  double lexicalAccuracy;    // % tokens correctos
+  double syntaxValidation;   // % sintaxis válida
+  double semanticPrecision;  // % errores semánticos detectados
+  double optimizationGain;   // % mejora en código generado
+}
+```
 
 ## 📋 Descripción
 
@@ -9,26 +242,28 @@ FlowDiagram App es un editor visual intuitivo que permite crear diagramas de flu
 ## ✨ Funcionalidades Implementadas
 
 ### 🎨 Editor Visual
-- **Paleta de nodos**: Incluye todos los tipos de nodos esenciales:
+- **Paleta de nodos**: Incluye todos los tipos de nodos esenciales conforme a **ISO 5807**:
   - Nodo de inicio (óvalo verde)
   - Nodo de fin (óvalo rojo)
-  - Nodo de proceso (rectángulo azul)
+  - Nodo de proceso (rectángulo azul) - Incluye operaciones aritméticas y declaraciones de variables
   - Nodo de decisión (rombo amarillo)
-  - Nodo de entrada (paralelogramo púrpura)
-  - Nodo de salida (paralelogramo índigo)
-  - Nodo de variable (rectángulo verde azulado)
-  - Nodo de preparación/inicialización (hexagonal naranja)
-  - Nodo de conector fuera de página (círculo índigo)
-  - Nodo de comentario/nota (rectángulo con esquina doblada amarillo)
-  - Nodo de subproceso/función (rectángulo con doble línea morado)
+  - Nodo de dato (paralelogramo púrpura) - Unifica entrada/salida de datos
+  - Nodo de bucle (hexagonal naranja)
+  - Nodo de subproceso (rectángulo con doble línea morado)
 
 - **Interacciones avanzadas**:
   - Arrastrar y soltar nodos en el canvas
   - Zoom y desplazamiento (pan) del área de trabajo
   - Conexión visual entre nodos mediante líneas con flechas
-  - Selección y edición de nodos con diálogo personalizado
+  - Selección y edición de nodos con diálogos especializados y dropdowns
   - Etiquetado de conexiones entre nodos
   - Grid de alineación opcional
+
+- **Diálogos mejorados para usuarios no programadores**:
+  - **Nodo de Dato**: Dropdown con 10 tipos de operaciones predefinidas (lectura de entero, flotante, cadena, carácter, línea completa + escritura con las mismas variantes)
+  - **Nodo de Proceso**: 8 tipos de operaciones (asignación, operaciones aritméticas, incremento/decremento, declaración, inicialización, constantes, arreglos)
+  - Vista previa de código generado en tiempo real
+  - Interpretación inteligente de texto existente
 
 ### 🔗 Sistema de Conexiones
 - Conexión intuitiva entre nodos
@@ -74,13 +309,13 @@ FlowDiagram App es un editor visual intuitivo que permite crear diagramas de flu
   - Eliminar diagramas
 
 - **Sistema de plantillas**:
-  - **6 plantillas predefinidas** que cubren todos los símbolos
-  - **Plantilla 1**: Suma de dos números (símbolos básicos)
-  - **Plantilla 2**: Verificación par/impar (decisiones)
-  - **Plantilla 3**: Contador con bucle while (bucles y variables)
-  - **Plantilla 4**: Menú de opciones con conectores (organización de flujos complejos)
-  - **Plantilla 5**: Promedio con comentarios (documentación de diagramas)
-  - **Plantilla 6**: Factorial con subprocesos (modularización)
+  - **20 plantillas educativas** basadas en el temario de Fundamentos de Programación (ESCOM ISC 2020)
+  - **UNIDAD I - Básico**: Hola Mundo, Tipos de Datos, Calculadora, Conversión Temperatura
+  - **UNIDAD I - Decisiones**: Par/Impar, Mayor de 3, Calculadora Menú, Triángulos
+  - **UNIDAD I - Bucles**: While, Do-While, For, Factorial Iterativo
+  - **UNIDAD I - Arreglos**: Suma, Búsqueda Secuencial, Bubble Sort, Selection Sort
+  - **UNIDAD II - Funciones**: Función Suma, Función Factorial, Swap, Apuntadores
+  - Cada plantilla incluye nodo de comentario explicativo
   - Ver [PLANTILLAS_SIMBOLOS.md](PLANTILLAS_SIMBOLOS.md) para documentación completa
 
 ### 📱 Interfaz de Usuario
@@ -339,55 +574,22 @@ lib/
   - Cumplimiento de estándares ANSI/ISO 5807
 - [x] Mejorar la interfaz de usuario para usuario no programadores (Nodo de Proceso completado).
 - [x] Mejorar la interfaz de usuario para usuario no programadores (Nodo de decisión).
-- [x] **Mejorar la interfaz de usuario para usuario no programadores (Nodos de Entrada/Salida)**
-  - Diálogos especializados con opciones predefinidas (entrada simple, con mensaje, múltiples variables, desde archivo)
-  - Vista previa en tiempo real del código generado
-  - Interpretación inteligente del texto existente
-  - Interfaz guiada que reduce errores de sintaxis
-  - Soporte para diferentes tipos de datos y formatos de salida
-  - Cumplimiento de estándares ANSI/ISO 5807
-- [x] **Mejorar la interfaz de usuario para usuario no programadores (Nodo de Variable)**
-  - Diálogo especializado con opciones predefinidas (declaración, inicialización, constantes, arreglos)
-  - Vista previa en tiempo real del código generado
-  - Interpretación inteligente del texto existente
-  - Soporte completo para tipos de datos de C (int, float, double, char, bool, string)
-  - Interfaz guiada que reduce errores de sintaxis
-  - Ayuda contextual y ejemplos para cada tipo de declaración
-  - Cumplimiento de estándares ANSI/ISO 5807
-- [x] **Mejorar la interfaz de usuario para usuario no programadores (Nodos de Decisión y Preparación/Inicialización)**
-  - **Nodo de Decisión mejorado**: Nuevas opciones específicas para bucles (condición de bucle, par/impar, positivo/negativo)
-  - **Nuevo Nodo de Preparación/Inicialización**: Diálogo especializado para inicializar contadores, configurar bucles FOR/WHILE, declarar arreglos
-  - Vista previa en tiempo real del código generado
-  - Interpretación inteligente del texto existente
-  - Cumplimiento de estándares ANSI/ISO 5807 (rombo para decisión, hexágono para preparación)
-  - Interfaz guiada con iconos, colores y ayuda contextual
-  - Soporte para ciclos predefinidos (for, while, do-while) y configuraciones de bucles
-- [x] Generar los simbolos basicos de un ciclo while al presionar el nodo "Desicion".
-- [x] **Implementación del Símbolo 6: Comentario/Nota**
-  - Diálogo especializado con 4 tipos de comentarios (simple, bloque, sección, nota)
-  - Forma característica de rectángulo con esquina doblada
-  - Vista previa en tiempo real
-  - Interpretación inteligente del texto existente
-  - No requiere conexiones (opcional para documentación)
-  - Genera comentarios válidos en código C (// y /* */)
-  - Color amarillo distintivo para fácil identificación
-- [x] **Implementación del Símbolo: Subproceso/Función**
-  - Diálogo especializado con 5 tipos de llamadas (simple, con parámetros, con retorno, predefinidas, personalizado)
-  - Forma característica de rectángulo con doble línea de borde
-  - Catálogo de 8 funciones matemáticas predefinidas (calcularPromedio, factorial, potencia, etc.)
-  - Vista previa en tiempo real con formato de función
-  - Interpretación inteligente del texto existente
-  - Genera llamadas a función válidas en código C
-  - Color morado/violeta distintivo
-  - Cumplimiento de estándares ANSI/ISO 5807 (símbolo de subrutina predefinida)
+- [x] Implementación del Símbolo: Subproceso/Función
+- [x] **Simplificación de símbolos según ISO 5807**
+  - Fusión de símbolos "Entrada" y "Salida" en un único símbolo "Dato" (paralelogramo)
+  - Fusión de símbolo "Variable" con símbolo "Proceso" (rectángulo)
+  - Diálogo de Dato con dropdown para 10 tipos de operaciones I/O
+  - Diálogo de Proceso expandido con 8 tipos de operaciones (procesamiento + declaraciones)
+  - Reducción de 11 a 9 símbolos esenciales conforme a estándar internacional
+- [X] Programacion de las estructuras generadas por cada boton del panel "C concepts"
 
 ### 🔄 En Desarrollo
 
+- [x] ~~Eliminar las plantillas existentes y agregar plantillas de diagramas de flujo con respecto al temario de la asignatura de Fundamentos de Programación.~~ ✅ **COMPLETADO** - 20 plantillas educativas implementadas
+- [ ] Generación de código C funcional mejorada
 - [ ] Tutorial integrado para cada tipo de nodo
 - [ ] Validación semántica entre nodos de preparación y decisión
 - [ ] Plantillas de bucles comunes (contador, suma, búsqueda)
-- [ ] Más plantillas de algoritmos comunes
-- [ ] Generación de código C funcional mejorada
 
 ### 🎯 Próximas Funcionalidades
 

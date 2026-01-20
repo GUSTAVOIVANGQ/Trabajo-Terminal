@@ -68,9 +68,12 @@ class SavedDiagram {
     final List<DiagramNode> nodes = nodesData.map((nodeData) {
       return DiagramNode(
         id: nodeData['id'],
-        type: NodeType.values.byName(nodeData['type']),
+        type: _migrateNodeType(nodeData['type']),
         position: Offset(nodeData['x'], nodeData['y']),
         text: nodeData['text'],
+        metadata: nodeData['metadata'] != null
+            ? Map<String, dynamic>.from(nodeData['metadata'])
+            : {}, // Cargar metadata o usar diccionario vacío
       );
     }).toList();
 
@@ -113,6 +116,7 @@ class SavedDiagram {
         'x': node.position.dx,
         'y': node.position.dy,
         'text': node.text,
+        'metadata': node.metadata, // Incluir metadata en la serialización
       };
     }).toList();
   }
@@ -126,5 +130,29 @@ class SavedDiagram {
         'label': conn.label,
       };
     }).toList();
+  }
+
+  // Migrar tipos de nodos antiguos a los nuevos (compatibilidad hacia atrás)
+  static NodeType _migrateNodeType(String typeString) {
+    // Mapa de tipos antiguos a nuevos
+    const Map<String, String> migrationMap = {
+      'start': 'terminal', // start fue renombrado a terminal
+      'end': 'terminal', // end fue renombrado a terminal
+      'loop': 'preparation', // loop fue renombrado a preparation
+      'subprocess':
+          'predefinedProcess', // subprocess fue renombrado a predefinedProcess
+    };
+
+    // Si el tipo está en el mapa de migración, usar el nuevo nombre
+    final migratedType = migrationMap[typeString] ?? typeString;
+
+    try {
+      return NodeType.values.byName(migratedType);
+    } catch (e) {
+      // Si aún así falla, usar terminal como valor por defecto
+      print(
+          'Warning: Unknown node type "$typeString", using terminal as default');
+      return NodeType.terminal;
+    }
   }
 }

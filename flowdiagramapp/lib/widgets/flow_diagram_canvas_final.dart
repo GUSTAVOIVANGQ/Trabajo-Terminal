@@ -505,6 +505,23 @@ class FlowDiagramPainter extends CustomPainter {
     }
   }
 
+  /// Draws a dashed path for annotation/comment symbols per ISO 5807
+  void _drawDashedPath(Canvas canvas, Path path, Paint paint) {
+    final pathMetrics = path.computeMetrics();
+    for (final pathMetric in pathMetrics) {
+      double distance = 0.0;
+      const dashLength = 5.0;
+      const gapLength = 5.0;
+      while (distance < pathMetric.length) {
+        canvas.drawPath(
+          pathMetric.extractPath(distance, distance + dashLength),
+          paint,
+        );
+        distance += dashLength + gapLength;
+      }
+    }
+  }
+
   void _drawNode(Canvas canvas, DiagramNode node) {
     canvas.save();
 
@@ -535,16 +552,27 @@ class FlowDiagramPainter extends CustomPainter {
     // Dibujar el fondo del nodo con color específico
     canvas.drawPath(path, nodeFillPaintCustom);
 
+    // Check if this node uses dashed stroke (annotation/comment symbols)
+    final usesDashed = node.usesDashedStroke;
+
     // Dibujar el borde con estilo adecuado según el estado del nodo
     if (node == selectedNode) {
-      canvas.drawPath(path, selectedNodePaint);
+      if (usesDashed) {
+        _drawDashedPath(canvas, path, selectedNodePaint);
+      } else {
+        canvas.drawPath(path, selectedNodePaint);
+      }
     } else if (node == draggingNode) {
       // Estilo especial para nodo que se está arrastrando
       final draggingPaint = Paint()
         ..color = nodeColor
         ..style = PaintingStyle.stroke
         ..strokeWidth = 3.0;
-      canvas.drawPath(path, draggingPaint);
+      if (usesDashed) {
+        _drawDashedPath(canvas, path, draggingPaint);
+      } else {
+        canvas.drawPath(path, draggingPaint);
+      }
 
       // Agregar sombra durante el arrastre
       final shadowPaint = Paint()
@@ -553,10 +581,18 @@ class FlowDiagramPainter extends CustomPainter {
         ..strokeWidth = 1.0;
       canvas.save();
       canvas.translate(2, 2);
-      canvas.drawPath(path, shadowPaint);
+      if (usesDashed) {
+        _drawDashedPath(canvas, path, shadowPaint);
+      } else {
+        canvas.drawPath(path, shadowPaint);
+      }
       canvas.restore();
     } else {
-      canvas.drawPath(path, nodeStrokeCustom);
+      if (usesDashed) {
+        _drawDashedPath(canvas, path, nodeStrokeCustom);
+      } else {
+        canvas.drawPath(path, nodeStrokeCustom);
+      }
     }
 
     // Dibujar texto del nodo
@@ -567,28 +603,36 @@ class FlowDiagramPainter extends CustomPainter {
 
   Color _getNodeColorByType(NodeType type) {
     switch (type) {
-      case NodeType.start:
-        return nodeColors['start']!;
-      case NodeType.end:
-        return nodeColors['end']!;
+      case NodeType.terminal:
+        return nodeColors['terminal']!;
       case NodeType.process:
         return nodeColors['process']!;
       case NodeType.decision:
         return nodeColors['decision']!;
-      case NodeType.input:
-        return nodeColors['input']!;
-      case NodeType.output:
-        return nodeColors['output']!;
-      case NodeType.variable:
-        return nodeColors['variable']!;
-      case NodeType.loop:
-        return nodeColors['loop']!;
-      case NodeType.connector:
-        return nodeColors['connector']!;
-      case NodeType.comment:
-        return nodeColors['comment']!;
-      case NodeType.subprocess:
-        return nodeColors['subprocess']!;
+      case NodeType.data:
+        return nodeColors['data']!;
+      case NodeType.preparation:
+        return nodeColors['preparation'] ?? nodeColors['loop'] ?? Colors.orange;
+      case NodeType.predefinedProcess:
+        return nodeColors['predefinedProcess'] ??
+            nodeColors['subprocess'] ??
+            Colors.purple;
+      default:
+        // ISO 5807 symbols - return a color based on category
+        return _getISOSymbolColor(type);
+    }
+  }
+
+  Color _getISOSymbolColor(NodeType type) {
+    switch (type.isoCategory) {
+      case 'Data':
+        return Colors.blue.shade400;
+      case 'Process':
+        return Colors.green.shade400;
+      case 'Special':
+        return Colors.amber.shade400;
+      default:
+        return Colors.grey;
     }
   }
 

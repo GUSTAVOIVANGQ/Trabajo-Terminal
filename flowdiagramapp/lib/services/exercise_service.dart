@@ -137,7 +137,7 @@ class ExerciseService {
           ExerciseOption(
             id: 'opt_start',
             text: 'Óvalo',
-            nodeType: NodeType.start,
+            nodeType: NodeType.terminal,
             description: 'Forma ovalada para inicio y fin',
           ),
           ExerciseOption(
@@ -155,14 +155,14 @@ class ExerciseService {
           ExerciseOption(
             id: 'opt_input',
             text: 'Paralelogramo',
-            nodeType: NodeType.input,
+            nodeType: NodeType.data,
             description: 'Paralelogramo para entrada',
           ),
         ],
         correctAnswers: ['opt_start'],
         feedback: '¡Correcto! El óvalo se usa para INICIO y FIN del algoritmo.',
         points: 10,
-        relatedNodeType: NodeType.start,
+        relatedNodeType: NodeType.terminal,
       ),
 
       // Ejercicio 2: Distinguir proceso de decisión
@@ -190,13 +190,13 @@ class ExerciseService {
           ExerciseOption(
             id: 'opt_input',
             text: 'Paralelogramo',
-            nodeType: NodeType.input,
+            nodeType: NodeType.data,
             description: 'Para lectura de datos',
           ),
           ExerciseOption(
             id: 'opt_connector',
             text: 'Círculo',
-            nodeType: NodeType.connector,
+//            nodeType: NodeType.connector,
             description: 'Para conectar páginas',
           ),
         ],
@@ -219,7 +219,7 @@ class ExerciseService {
           ExerciseOption(
             id: 'match_1',
             text: 'Óvalo → Inicio/Fin',
-            nodeType: NodeType.start,
+            nodeType: NodeType.terminal,
           ),
           ExerciseOption(
             id: 'match_2',
@@ -234,7 +234,7 @@ class ExerciseService {
           ExerciseOption(
             id: 'match_4',
             text: 'Paralelogramo → Entrada/Salida',
-            nodeType: NodeType.input,
+            nodeType: NodeType.data,
           ),
         ],
         correctAnswers: ['match_1', 'match_2', 'match_3', 'match_4'],
@@ -260,7 +260,7 @@ class ExerciseService {
         feedback:
             '¡Correcto! Un diagrama debe tener UN SOLO nodo de inicio y puede tener varios de fin.',
         points: 10,
-        relatedNodeType: NodeType.start,
+        relatedNodeType: NodeType.terminal,
       ),
     ];
   }
@@ -293,7 +293,7 @@ class ExerciseService {
           ExerciseOption(
             id: 'opt_loop',
             text: 'Hexágono',
-            nodeType: NodeType.loop,
+            nodeType: NodeType.preparation,
             description: 'Para preparación de bucles',
           ),
         ],
@@ -390,7 +390,7 @@ class ExerciseService {
           ExerciseOption(
             id: 'opt_input',
             text: 'Paralelogramo',
-            nodeType: NodeType.input,
+            nodeType: NodeType.data,
             description: 'Para entrada y salida',
           ),
           ExerciseOption(
@@ -402,7 +402,7 @@ class ExerciseService {
           ExerciseOption(
             id: 'opt_variable',
             text: 'Hexágono',
-            nodeType: NodeType.variable,
+            nodeType: NodeType.process,
             description: 'Para variables',
           ),
         ],
@@ -410,7 +410,7 @@ class ExerciseService {
         feedback:
             '¡Correcto! El paralelogramo se usa para ENTRADA y SALIDA de datos.',
         points: 10,
-        relatedNodeType: NodeType.input,
+        relatedNodeType: NodeType.data,
       ),
 
       // Ejercicio 2: Distinguir variable de proceso
@@ -442,7 +442,7 @@ class ExerciseService {
         feedback:
             '¡Bien! El símbolo de variable se usa para DECLARAR variables (int edad).',
         points: 15,
-        relatedNodeType: NodeType.variable,
+        relatedNodeType: NodeType.process,
       ),
 
       // Ejercicio 3: Verdadero o Falso sobre entrada/salida
@@ -462,7 +462,7 @@ class ExerciseService {
         feedback:
             '¡Correcto! El paralelogramo se usa para AMBOS: leer (entrada) y mostrar (salida).',
         points: 10,
-        relatedNodeType: NodeType.input,
+        relatedNodeType: NodeType.data,
       ),
     ];
   }
@@ -546,7 +546,7 @@ class ExerciseService {
           ExerciseOption(
             id: 'opt_1',
             text: 'Para conectar partes del diagrama en diferentes páginas',
-            nodeType: NodeType.connector,
+//            nodeType: NodeType.connector,
           ),
           ExerciseOption(
             id: 'opt_2',
@@ -561,7 +561,7 @@ class ExerciseService {
         feedback:
             '¡Perfecto! Los conectores unen partes del diagrama que están separadas.',
         points: 20,
-        relatedNodeType: NodeType.connector,
+//        relatedNodeType: NodeType.connector,
       ),
 
       // Ejercicio 2: Identificar comentario
@@ -576,7 +576,7 @@ class ExerciseService {
           ExerciseOption(
             id: 'opt_comment',
             text: 'Rectángulo con esquina doblada',
-            nodeType: NodeType.comment,
+//            nodeType: NodeType.comment,
             description: 'Para anotaciones',
           ),
           ExerciseOption(
@@ -587,14 +587,14 @@ class ExerciseService {
           ExerciseOption(
             id: 'opt_connector',
             text: 'Círculo',
-            nodeType: NodeType.connector,
+//            nodeType: NodeType.connector,
           ),
         ],
         correctAnswers: ['opt_comment'],
         feedback:
             '¡Excelente! El rectángulo con esquina doblada es para COMENTARIOS.',
         points: 15,
-        relatedNodeType: NodeType.comment,
+//        relatedNodeType: NodeType.comment,
       ),
 
       // Ejercicio 3: Identificar subproceso
@@ -609,7 +609,7 @@ class ExerciseService {
           ExerciseOption(
             id: 'opt_subprocess',
             text: 'Rectángulo con doble línea vertical',
-            nodeType: NodeType.subprocess,
+            nodeType: NodeType.predefinedProcess,
             description: 'Para funciones',
           ),
           ExerciseOption(
@@ -620,14 +620,14 @@ class ExerciseService {
           ExerciseOption(
             id: 'opt_loop',
             text: 'Hexágono',
-            nodeType: NodeType.loop,
+            nodeType: NodeType.preparation,
           ),
         ],
         correctAnswers: ['opt_subprocess'],
         feedback:
             '¡Perfecto! El rectángulo con doble línea representa SUBPROCESOS.',
         points: 20,
-        relatedNodeType: NodeType.subprocess,
+        relatedNodeType: NodeType.predefinedProcess,
       ),
     ];
   }

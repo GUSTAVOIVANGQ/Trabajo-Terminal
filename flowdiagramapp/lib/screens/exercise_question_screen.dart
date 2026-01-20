@@ -7,6 +7,8 @@ import '../themes/app_themes.dart';
 import '../services/theme_service.dart';
 import '../widgets/exercise_result_dialog.dart';
 
+// Nota: Los simbolos "connector" y "comment" han sido comentados en el servicio de ejercicios porque no están definidos en DiagramNode.dart
+
 class ExerciseQuestionScreen extends StatefulWidget {
   final List<Exercise> exercises;
   final ExerciseCategory category;
@@ -408,27 +410,25 @@ class _ExerciseQuestionScreenState extends State<ExerciseQuestionScreen>
 
   Color _getNodeColor(NodeType nodeType, Map<String, Color> nodeColors) {
     switch (nodeType) {
-      case NodeType.start:
-        return nodeColors['start']!;
-      case NodeType.end:
-        return nodeColors['end']!;
+      case NodeType.terminal:
+        return nodeColors['terminal'] ?? nodeColors['start'] ?? Colors.green;
       case NodeType.process:
-        return nodeColors['process']!;
+        return nodeColors['process'] ?? Colors.blue;
       case NodeType.decision:
-        return nodeColors['decision']!;
-      case NodeType.input:
-      case NodeType.output:
-        return nodeColors['input']!;
-      case NodeType.variable:
-        return nodeColors['variable']!;
-      case NodeType.loop:
-        return nodeColors['loop']!;
-      case NodeType.connector:
-        return nodeColors['connector']!;
-      case NodeType.comment:
-        return nodeColors['comment']!;
-      case NodeType.subprocess:
-        return nodeColors['subprocess']!;
+        return nodeColors['decision'] ?? Colors.orange;
+      case NodeType.data:
+        return nodeColors['data'] ?? nodeColors['input'] ?? Colors.purple;
+      case NodeType.preparation:
+        return nodeColors['preparation'] ??
+            nodeColors['loop'] ??
+            Colors.deepOrange;
+      case NodeType.predefinedProcess:
+        return nodeColors['predefinedProcess'] ??
+            nodeColors['subprocess'] ??
+            Colors.indigo;
+      default:
+        // Para símbolos ISO 5807 adicionales
+        return Colors.grey;
     }
   }
 

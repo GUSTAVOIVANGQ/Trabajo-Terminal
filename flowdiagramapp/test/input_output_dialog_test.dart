@@ -56,10 +56,11 @@ void testOutputNodeParsing() {
 }
 
 // Función para simular la creación de nodos (para referencia)
+// Now uses NodeType.data for both input and output (ISO 5807 compliant)
 DiagramNode createTestInputNode(String text) {
   return DiagramNode(
     id: 'test_input',
-    type: NodeType.input,
+    type: NodeType.data, // Changed from NodeType.input to NodeType.data
     position: const Offset(0, 0),
     text: text,
   );
@@ -68,7 +69,7 @@ DiagramNode createTestInputNode(String text) {
 DiagramNode createTestOutputNode(String text) {
   return DiagramNode(
     id: 'test_output',
-    type: NodeType.output,
+    type: NodeType.data, // Changed from NodeType.output to NodeType.data
     position: const Offset(0, 0),
     text: text,
   );

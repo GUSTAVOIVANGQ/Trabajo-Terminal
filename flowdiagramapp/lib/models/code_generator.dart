@@ -9,11 +9,16 @@ class CodeGenerator {
     List<Connection> connections,
     ProgrammingLanguage language,
   ) {
-    // Verificar que exista un nodo de inicio
-    final startNodes =
-        nodes.where((node) => node.type == NodeType.start).toList();
+    // Verificar que exista un nodo terminal de inicio
+    final startNodes = nodes
+        .where((node) =>
+            node.type == NodeType.terminal &&
+            (node.text.toLowerCase().contains('inicio') ||
+                node.text.toLowerCase().contains('start') ||
+                node.text.isEmpty))
+        .toList();
     if (startNodes.isEmpty) {
-      return "// Error: El diagrama debe tener un nodo de inicio";
+      return "// Error: El diagrama debe tener un nodo terminal de inicio";
     }
     final DiagramNode startNode = startNodes.first;
 
@@ -23,6 +28,283 @@ class CodeGenerator {
     } else {
       return "// La generación de código para este lenguaje estará disponible próximamente";
     }
+  }
+
+  // ============================================================
+  // MÉTODOS DE DETECCIÓN INTELIGENTE (FASE 3)
+  // ============================================================
+
+  /// Detecta si un nodo es parte de una estructura switch
+  /// Prioridad 1: Metadata explícito
+  /// Prioridad 2: Patrón de texto
+  static bool _isSwitchStatement(DiagramNode node) {
+    // Prioridad 1: Metadata explícito
+    if (node.metadata['structureType'] == 'switch' &&
+        node.metadata['role'] == 'switch-header') {
+      return true;
+    }
+
+    // Prioridad 2: Patrón de texto
+    final text = node.text.trim().toLowerCase();
+    return text.startsWith('switch(') || text.startsWith('switch (');
+  }
+
+  /// Detecta el tipo de bucle (for, while, do-while)
+  /// Prioridad 1: Metadata explícito
+  /// Prioridad 2: Patrón de texto
+  static String _detectLoopType(DiagramNode node) {
+    // Prioridad 1: Metadata explícito
+    if (node.metadata['loopType'] != null) {
+      return node.metadata['loopType'];
+    }
+
+    // Prioridad 2: Palabra clave explícita en el texto
+    final text = node.text.trim().toLowerCase();
+    if (text.startsWith('for(') || text.startsWith('for (')) {
+      return 'for';
+    }
+    if (text.startsWith('while(') || text.startsWith('while (')) {
+      return 'while';
+    }
+    if (text.startsWith('do ') || text.contains('do {')) {
+      return 'do-while';
+    }
+
+    // Prioridad 3: Análisis de patrón
+    // For típicamente tiene 3 partes: init; condition; increment
+    if (text.split(';').length >= 3) {
+      return 'for';
+    }
+
+    // Por defecto: while
+    return 'while';
+  }
+
+  /// Detecta si un nodo de decisión es un case de switch
+  static bool _isSwitchCase(DiagramNode node) {
+    return node.metadata['structureType'] == 'switch' &&
+        node.metadata['role'] == 'switch-case';
+  }
+
+  /// Verifica si un nodo forma parte de una estructura de bucle basado en metadata
+  static bool _isLoopNode(DiagramNode node) {
+    return node.metadata['structureType'] == 'loop';
+  }
+
+  /// Genera código switch completo basado en metadata
+  static void _generateSwitchCode(
+    DiagramNode switchNode,
+    List<DiagramNode> allNodes,
+    List<Connection> connections,
+    StringBuffer code,
+    String indent,
+    Map<String, bool> processedNodes,
+  ) {
+    // Extraer variable del switch (desde metadata o texto)
+    String switchVar = switchNode.metadata['variable'] ??
+        _extractSwitchVariable(switchNode.text);
+
+    code.writeln("${indent}switch ($switchVar) {");
+
+    // Buscar todos los nodos case conectados
+    final outConnections =
+        connections.where((conn) => conn.source == switchNode).toList();
+
+    for (final connection in outConnections) {
+      final targetNode = connection.target;
+
+      // Verificar si es un case
+      if (_isSwitchCase(targetNode)) {
+        String caseValue = targetNode.metadata['caseValue'] ??
+            _extractCaseValue(targetNode.text);
+        code.writeln("${indent}    case $caseValue:");
+
+        // Generar código del cuerpo del case
+        _generateSwitchCaseBody(targetNode, allNodes, connections, code,
+            indent + "        ", processedNodes);
+
+        code.writeln("${indent}        break;");
+      }
+    }
+
+    // Agregar default si existe
+    final defaultCase = outConnections.firstWhere(
+      (conn) => conn.target.metadata['role'] == 'switch-default',
+      orElse: () =>
+          Connection(source: switchNode, target: switchNode, label: ''),
+    );
+
+    if (defaultCase.target.id != switchNode.id) {
+      code.writeln("${indent}    default:");
+      _generateSwitchCaseBody(defaultCase.target, allNodes, connections, code,
+          indent + "        ", processedNodes);
+      code.writeln("${indent}        break;");
+    }
+
+    code.writeln("${indent}}");
+
+    // Marcar switch como procesado
+    processedNodes[switchNode.id] = true;
+
+    // Procesar nodos después del switch
+    _processNextNodes(
+        switchNode, allNodes, connections, code, indent, processedNodes);
+  }
+
+  /// Genera el cuerpo de un case en un switch
+  static void _generateSwitchCaseBody(
+    DiagramNode caseNode,
+    List<DiagramNode> allNodes,
+    List<Connection> connections,
+    StringBuffer code,
+    String indent,
+    Map<String, bool> processedNodes,
+  ) {
+    processedNodes[caseNode.id] = true;
+
+    // Buscar nodos conectados al case (cuerpo del case)
+    final caseConnections =
+        connections.where((conn) => conn.source == caseNode).toList();
+
+    for (final connection in caseConnections) {
+      final targetNode = connection.target;
+
+      // No procesar otros cases ni el nodo switch
+      if (!_isSwitchCase(targetNode) && !_isSwitchStatement(targetNode)) {
+        _generateCNodeCode(
+            targetNode, allNodes, connections, code, indent, processedNodes);
+      }
+    }
+  }
+
+  /// Extrae la variable del switch desde el texto
+  static String _extractSwitchVariable(String text) {
+    // Buscar patrón switch(variable)
+    final match =
+        RegExp(r'switch\s*\(\s*(\w+)\s*\)').firstMatch(text.toLowerCase());
+    if (match != null) {
+      return match.group(1) ?? 'x';
+    }
+    return 'x';
+  }
+
+  /// Extrae el valor del case desde el texto
+  static String _extractCaseValue(String text) {
+    // Buscar patrón case valor:
+    final match = RegExp(r'case\s+(.+?)\s*:').firstMatch(text.toLowerCase());
+    if (match != null) {
+      return match.group(1)?.trim() ?? '0';
+    }
+    return '0';
+  }
+
+  /// Genera código for loop basado en metadata
+  static void _generateForLoopCode(
+    DiagramNode loopNode,
+    List<DiagramNode> allNodes,
+    List<Connection> connections,
+    StringBuffer code,
+    String indent,
+    Map<String, bool> processedNodes,
+  ) {
+    // Extraer parámetros del for desde metadata o texto
+    String initialization = loopNode.metadata['initialization'] ??
+        _extractForInitialization(loopNode.text);
+    String condition =
+        loopNode.metadata['condition'] ?? _extractForCondition(loopNode.text);
+    String increment =
+        loopNode.metadata['increment'] ?? _extractForIncrement(loopNode.text);
+
+    code.writeln("${indent}for ($initialization; $condition; $increment) {");
+
+    _generateLoopBody(
+        loopNode, allNodes, connections, code, indent + "    ", processedNodes);
+
+    code.writeln("${indent}}");
+
+    // Procesar nodos después del bucle
+    _processLoopExit(
+        loopNode, allNodes, connections, code, indent, processedNodes);
+  }
+
+  /// Extrae la inicialización del for desde el texto
+  static String _extractForInitialization(String text) {
+    // Buscar patrón for(init; condition; increment)
+    final match = RegExp(r'for\s*\(\s*([^;]+);').firstMatch(text);
+    if (match != null) {
+      return match.group(1)?.trim() ?? 'int i = 0';
+    }
+    return 'int i = 0';
+  }
+
+  /// Extrae la condición del for desde el texto
+  static String _extractForCondition(String text) {
+    // Buscar patrón for(init; condition; increment)
+    final match = RegExp(r'for\s*\([^;]+;\s*([^;]+);').firstMatch(text);
+    if (match != null) {
+      return match.group(1)?.trim() ?? 'i < 10';
+    }
+    return 'i < 10';
+  }
+
+  /// Extrae el incremento del for desde el texto
+  static String _extractForIncrement(String text) {
+    // Buscar patrón for(init; condition; increment)
+    final match = RegExp(r'for\s*\([^;]+;[^;]+;\s*([^)]+)\)').firstMatch(text);
+    if (match != null) {
+      return match.group(1)?.trim() ?? 'i++';
+    }
+    return 'i++';
+  }
+
+  /// Genera código while loop basado en metadata
+  static void _generateWhileLoopCode(
+    DiagramNode loopNode,
+    List<DiagramNode> allNodes,
+    List<Connection> connections,
+    StringBuffer code,
+    String indent,
+    Map<String, bool> processedNodes,
+  ) {
+    // Extraer condición desde metadata o texto
+    String condition =
+        loopNode.metadata['condition'] ?? _extractLoopCondition(loopNode.text);
+
+    code.writeln("${indent}while ($condition) {");
+
+    _generateLoopBody(
+        loopNode, allNodes, connections, code, indent + "    ", processedNodes);
+
+    code.writeln("${indent}}");
+
+    // Procesar nodos después del bucle
+    _processLoopExit(
+        loopNode, allNodes, connections, code, indent, processedNodes);
+  }
+
+  /// Genera código do-while loop
+  static void _generateDoWhileLoopCode(
+    DiagramNode loopNode,
+    List<DiagramNode> allNodes,
+    List<Connection> connections,
+    StringBuffer code,
+    String indent,
+    Map<String, bool> processedNodes,
+  ) {
+    code.writeln("${indent}do {");
+
+    _generateLoopBody(
+        loopNode, allNodes, connections, code, indent + "    ", processedNodes);
+
+    // Extraer condición
+    String condition =
+        loopNode.metadata['condition'] ?? _extractLoopCondition(loopNode.text);
+
+    code.writeln("${indent}} while ($condition);");
+
+    // Procesar nodos después del bucle
+    _processLoopExit(
+        loopNode, allNodes, connections, code, indent, processedNodes);
   }
 
   // Genera código C
@@ -42,17 +324,6 @@ class CodeGenerator {
     code.writeln("#include <stdlib.h>");
     code.writeln("#include <stdbool.h>");
     code.writeln("");
-
-    // Declarar variables utilizadas en el diagrama
-    List<DiagramNode> variableNodes =
-        nodes.where((node) => node.type == NodeType.variable).toList();
-    if (variableNodes.isNotEmpty) {
-      code.writeln("// Declaración de variables");
-      for (var node in variableNodes) {
-        code.writeln(_formatCVariableDeclaration(node.text));
-      }
-      code.writeln("");
-    }
 
     // Función principal
     code.writeln("int main() {");
@@ -93,38 +364,56 @@ class CodeGenerator {
     }
     processedNodes[node.id] = true;
 
+    // ============ DETECCIÓN DE ESTRUCTURAS SWITCH ============
+    if (node.type == NodeType.process && _isSwitchStatement(node)) {
+      _generateSwitchCode(
+          node, allNodes, connections, code, indent, processedNodes);
+      return;
+    }
+
+    // ============ DETECCIÓN DE BUCLES CON METADATA ============
+    if (node.type == NodeType.decision && _isLoopNode(node)) {
+      final loopType = _detectLoopType(node);
+
+      if (loopType == 'for') {
+        _generateForLoopCode(
+            node, allNodes, connections, code, indent, processedNodes);
+      } else if (loopType == 'while') {
+        _generateWhileLoopCode(
+            node, allNodes, connections, code, indent, processedNodes);
+      } else if (loopType == 'do-while') {
+        _generateDoWhileLoopCode(
+            node, allNodes, connections, code, indent, processedNodes);
+      }
+      return;
+    }
+
     switch (node.type) {
-      case NodeType.start:
-        // El nodo de inicio no genera código específico
-        _processNextNodes(
-          node,
-          allNodes,
-          connections,
-          code,
-          indent,
-          processedNodes,
-        );
+      case NodeType.terminal:
+        // Determinar si es inicio o fin según el texto
+        final isStart = node.text.toLowerCase().contains('inicio') ||
+            node.text.toLowerCase().contains('start') ||
+            node.text.isEmpty;
+        final isEnd = node.text.toLowerCase().contains('fin') ||
+            node.text.toLowerCase().contains('end') ||
+            node.text.toLowerCase().contains('terminar');
+
+        if (isStart) {
+          // El nodo terminal de inicio no genera código específico
+          _processNextNodes(
+            node,
+            allNodes,
+            connections,
+            code,
+            indent,
+            processedNodes,
+          );
+        } else if (isEnd) {
+          code.writeln("${indent}// Fin del programa");
+        }
         break;
 
-      case NodeType.end:
-        code.writeln("${indent}// Fin del programa");
-        break;
-
-      case NodeType.comment:
-        // Los comentarios se agregan tal cual al código
-        code.writeln("${indent}${node.text}");
-        // Los comentarios no generan flujo de control adicional
-        _processNextNodes(
-          node,
-          allNodes,
-          connections,
-          code,
-          indent,
-          processedNodes,
-        );
-        break;
-
-      case NodeType.subprocess:
+      case NodeType.predefinedProcess:
         // Los subprocesos se traducen en llamadas a función
         code.writeln("${indent}// Llamada a subproceso/función");
         code.writeln("${indent}${_formatSubprocessCall(node.text)};");
@@ -153,12 +442,25 @@ class CodeGenerator {
 
       case NodeType.decision:
         code.writeln("${indent}// Decisión: ${node.text}");
-        
+
+        // FASE 3: Detectar si es un switch statement
+        if (_isSwitchStatement(node)) {
+          _generateSwitchCode(
+            node,
+            allNodes,
+            connections,
+            code,
+            indent,
+            processedNodes,
+          );
+          break; // Salir del switch, ya procesamos el nodo
+        }
+
         // Verificar si este nodo de decisión es parte de un bucle while
         // (tiene una conexión de retorno desde uno de sus descendientes)
         final outConnections =
             connections.where((conn) => conn.source == node).toList();
-        
+
         bool isWhileLoop = false;
         if (outConnections.isNotEmpty) {
           // Verificar si hay un camino que regresa a este nodo
@@ -169,11 +471,11 @@ class CodeGenerator {
             }
           }
         }
-        
+
         if (isWhileLoop) {
           // Generar un bucle while
           code.writeln("${indent}while (${_formatCCondition(node.text)}) {");
-          
+
           // Procesar el cuerpo del bucle (rama verdadera)
           if (outConnections.isNotEmpty) {
             final trueConnection = outConnections.firstWhere(
@@ -184,12 +486,12 @@ class CodeGenerator {
                   conn.label.toLowerCase().contains('yes'),
               orElse: () => outConnections.first,
             );
-            
+
             // Procesar el cuerpo del bucle con una copia del estado de procesamiento
             // para permitir la repetición
             final loopProcessedNodes = Map<String, bool>.from(processedNodes);
             loopProcessedNodes[node.id] = false; // Permitir volver a este nodo
-            
+
             _generateCNodeCode(
               trueConnection.target,
               allNodes,
@@ -199,9 +501,9 @@ class CodeGenerator {
               loopProcessedNodes,
             );
           }
-          
+
           code.writeln("${indent}}");
-          
+
           // Procesar lo que viene después del bucle (rama falsa)
           if (outConnections.length > 1) {
             final falseConnection = outConnections.firstWhere(
@@ -211,7 +513,7 @@ class CodeGenerator {
                   conn.label.toLowerCase().contains('no'),
               orElse: () => outConnections[1],
             );
-            
+
             _generateCNodeCode(
               falseConnection.target,
               allNodes,
@@ -267,9 +569,31 @@ class CodeGenerator {
         }
         break;
 
-      case NodeType.input:
-        code.writeln("${indent}// Entrada: ${node.text}");
-        code.writeln("${indent}${_formatCInputStatement(node.text)};");
+      case NodeType.data:
+        // Detectar si es entrada o salida basándose en el texto
+        final dataText = node.text.toLowerCase();
+        final isInput = dataText.contains('leer') ||
+            dataText.contains('input') ||
+            dataText.contains('ingresar') ||
+            dataText.contains('scanf');
+        final isOutput = dataText.contains('mostrar') ||
+            dataText.contains('imprimir') ||
+            dataText.contains('print') ||
+            dataText.contains('escribir') ||
+            dataText.contains('printf');
+
+        if (isInput) {
+          code.writeln("${indent}// Entrada: ${node.text}");
+          code.writeln("${indent}${_formatCInputStatement(node.text)};");
+        } else if (isOutput) {
+          code.writeln("${indent}// Salida: ${node.text}");
+          code.writeln("${indent}${_formatCOutputStatement(node.text)};");
+        } else {
+          // Por defecto, considerar como salida
+          code.writeln("${indent}// Dato: ${node.text}");
+          code.writeln("${indent}${_formatCOutputStatement(node.text)};");
+        }
+
         _processNextNodes(
           node,
           allNodes,
@@ -280,39 +604,13 @@ class CodeGenerator {
         );
         break;
 
-      case NodeType.output:
-        code.writeln("${indent}// Salida: ${node.text}");
-        code.writeln("${indent}${_formatCOutputStatement(node.text)};");
-        _processNextNodes(
-          node,
-          allNodes,
-          connections,
-          code,
-          indent,
-          processedNodes,
-        );
-        break;
-
-      case NodeType.variable:
-        code.writeln("${indent}// Inicialización de variable: ${node.text}");
-        code.writeln("${indent}${_formatCVariableInitialization(node.text)};");
-        _processNextNodes(
-          node,
-          allNodes,
-          connections,
-          code,
-          indent,
-          processedNodes,
-        );
-        break;
-
-      case NodeType.loop:
+      case NodeType.preparation:
         // Analizar si es una inicialización simple o una estructura de bucle completa
         final loopText = node.text.toLowerCase();
-        
+
         // Si el texto parece una inicialización simple (variable = valor)
-        if (!loopText.contains('while') && 
-            !loopText.contains('for') && 
+        if (!loopText.contains('while') &&
+            !loopText.contains('for') &&
             !loopText.contains('do') &&
             !loopText.contains('mientras') &&
             !loopText.contains('para') &&
@@ -321,7 +619,7 @@ class CodeGenerator {
           // Es una inicialización, generar el código y continuar
           code.writeln("${indent}// Inicialización");
           code.writeln("${indent}${_formatCProcessStatement(node.text)};");
-          
+
           // Buscar el siguiente nodo (debería ser la decisión del bucle)
           _processNextNodes(
             node,
@@ -345,37 +643,22 @@ class CodeGenerator {
         }
         break;
 
-      case NodeType.connector:
-        // Los conectores son puntos de referencia para dividir diagramas grandes
-        final label = _extractConnectorLabel(node.text);
-        
-        // Generar una etiqueta goto en C
-        if (node.text.contains('←') || node.text.contains('DESDE')) {
-          // Conector de entrada - generar una etiqueta
-          code.writeln("${indent}// Conector de entrada: $label");
-          code.writeln("${indent}connector_$label:");
-        } else if (node.text.contains('→') || node.text.contains('HACIA')) {
-          // Conector de salida - generar un goto
-          code.writeln("${indent}// Conector de salida: $label");
-          code.writeln("${indent}goto connector_$label;");
-        } else {
-          // Conector bidireccional o sin tipo específico
-          code.writeln("${indent}// Conector: $label");
-          code.writeln("${indent}connector_$label:");
+      // ISO 5807 symbols without code generation
+      // These symbols are for documentation and structural purposes only
+      default:
+        // Comment the symbol in generated code for documentation
+        if (node.type.hasCodeGeneration == false) {
+          code.writeln(
+              "${indent}// [ISO 5807] ${node.type.isoName}: ${node.text}");
         }
-        
-        // Procesar nodos siguientes solo si es entrada o bidireccional
-        if (node.text.contains('←') || node.text.contains('⇄') || 
-            node.text.contains('DESDE') || !node.text.contains('→')) {
-          _processNextNodes(
-            node,
-            allNodes,
-            connections,
-            code,
-            indent,
-            processedNodes,
-          );
-        }
+        _processNextNodes(
+          node,
+          allNodes,
+          connections,
+          code,
+          indent,
+          processedNodes,
+        );
         break;
     }
   }
@@ -390,7 +673,7 @@ class CodeGenerator {
     Map<String, bool> processedNodes,
   ) {
     // Encuentra el siguiente nodo para procesos lineales (no decisiones ni bucles)
-    if (node.type != NodeType.decision && node.type != NodeType.loop) {
+    if (node.type != NodeType.decision && node.type != NodeType.preparation) {
       final outConnections =
           connections.where((conn) => conn.source == node).toList();
       for (final connection in outConnections) {
@@ -662,20 +945,80 @@ class CodeGenerator {
 
   // Formatea una declaración de proceso para C
   static String _formatCProcessStatement(String text) {
+    String trimmedText = text.trim();
+
+    // Si el texto termina con punto y coma, removerlo para evitar duplicación
+    if (trimmedText.endsWith(';')) {
+      trimmedText = trimmedText.substring(0, trimmedText.length - 1);
+    }
+
+    // Si es una declaración struct, formatearla correctamente
+    if (trimmedText.startsWith('struct ')) {
+      // Si contiene llaves, es una definición completa de struct
+      if (trimmedText.contains('{') && trimmedText.contains('}')) {
+        return trimmedText;
+      }
+      // Si no tiene llaves, puede ser una declaración de variable tipo struct
+      return trimmedText;
+    }
+
+    // Si es una declaración de puntero (contiene * después de un tipo)
+    if (_isPointerDeclaration(trimmedText)) {
+      return trimmedText;
+    }
+
+    // Si es una declaración de tipo (int, float, char, double, bool)
+    if (_isTypeDeclaration(trimmedText)) {
+      return trimmedText;
+    }
+
     // Si ya contiene una asignación, usarla directamente
-    if (text.contains('=') && !text.contains('==')) {
-      return text;
+    if (trimmedText.contains('=') && !trimmedText.contains('==')) {
+      return trimmedText;
     }
 
     // Intentar convertir la descripción del proceso a código C
-    return text;
+    return trimmedText;
+  }
+
+  // Verifica si el texto es una declaración de tipo de dato
+  static bool _isTypeDeclaration(String text) {
+    final types = [
+      'int',
+      'float',
+      'double',
+      'char',
+      'bool',
+      'void',
+      'long',
+      'short',
+      'unsigned',
+      'signed',
+      'const'
+    ];
+    final lowerText = text.toLowerCase().trim();
+    for (var type in types) {
+      if (lowerText.startsWith('$type ') ||
+          lowerText.startsWith('const $type ')) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  // Verifica si el texto es una declaración de puntero
+  static bool _isPointerDeclaration(String text) {
+    // Patrón: tipo *nombre o tipo* nombre
+    final pointerPattern = RegExp(
+        r'^(const\s+)?(int|float|double|char|void|long|short|unsigned|signed)\s*\*');
+    return pointerPattern.hasMatch(text.toLowerCase().trim());
   }
 
   // Formatea una condición para C
   static String _formatCCondition(String text) {
     // Remover símbolos de interrogación y espacios extra
     String cleanText = text.replaceAll('¿', '').replaceAll('?', '').trim();
-    
+
     // Si ya contiene operadores de comparación, usarla directamente
     if (cleanText.contains('==') ||
         cleanText.contains('>') ||
@@ -701,7 +1044,18 @@ class CodeGenerator {
 
   // Formatea una declaración de entrada para C
   static String _formatCInputStatement(String text) {
-    String varName = text.trim();
+    String trimmedText = text.trim();
+
+    // Si ya es una sentencia scanf completa, devolverla tal cual
+    if (trimmedText.startsWith('scanf(') && trimmedText.contains(')')) {
+      // Remover el punto y coma final si existe para evitar duplicación
+      if (trimmedText.endsWith(';')) {
+        return trimmedText.substring(0, trimmedText.length - 1);
+      }
+      return trimmedText;
+    }
+
+    String varName = trimmedText;
 
     // Si el texto contiene una asignación o especificación de variable
     if (text.contains('=')) {
@@ -728,6 +1082,17 @@ class CodeGenerator {
 
   // Formatea una declaración de salida para C
   static String _formatCOutputStatement(String text) {
+    String trimmedText = text.trim();
+
+    // Si ya es una sentencia printf completa, devolverla tal cual
+    if (trimmedText.startsWith('printf(') && trimmedText.contains(')')) {
+      // Remover el punto y coma final si existe para evitar duplicación
+      if (trimmedText.endsWith(';')) {
+        return trimmedText.substring(0, trimmedText.length - 1);
+      }
+      return trimmedText;
+    }
+
     // Si parece una variable sola, la mostramos
     if (_isSimpleVariableName(text)) {
       return "printf(\"%d\\n\", $text)";
@@ -742,87 +1107,10 @@ class CodeGenerator {
     return "printf(\"$text\\n\")";
   }
 
-  // Formatea una declaración de variable para C
-  static String _formatCVariableDeclaration(String text) {
-    if (text.contains('=')) {
-      // Ya tiene inicialización, determinar tipo de variable
-      String varName = text.split('=')[0].trim();
-      String varValue = text.split('=')[1].trim();
-
-      if (varValue.contains('.')) {
-        return "float $text";
-      } else if (varValue.contains('"') || varValue.contains("'")) {
-        if (varValue.length == 3) {
-          // 'a' (char con comillas simples)
-          return "char $text";
-        } else {
-          return "char $varName[100] = $varValue";
-        }
-      } else {
-        return "int $text";
-      }
-    } else if (text.toLowerCase().contains('entero') ||
-        text.toLowerCase().contains('int')) {
-      String varName =
-          text.replaceAll('entero', '').replaceAll('int', '').trim();
-      return "int $varName";
-    } else if (text.toLowerCase().contains('flotante') ||
-        text.toLowerCase().contains('float') ||
-        text.toLowerCase().contains('decimal')) {
-      String varName = text
-          .replaceAll('flotante', '')
-          .replaceAll('float', '')
-          .replaceAll('decimal', '')
-          .trim();
-      return "float $varName";
-    } else if (text.toLowerCase().contains('caracter') ||
-        text.toLowerCase().contains('char')) {
-      String varName =
-          text.replaceAll('caracter', '').replaceAll('char', '').trim();
-      return "char $varName";
-    } else {
-      // Por defecto, int
-      return "int $text";
-    }
-  }
-
-  // Formatea una inicialización de variable para C
-  static String _formatCVariableInitialization(String text) {
-    // Si ya contiene una asignación, usarla directamente
-    if (text.contains('=')) {
-      // Verificar si ya está correctamente declarada con tipo
-      if (text.contains('int') ||
-          text.contains('float') ||
-          text.contains('double') ||
-          text.contains('char')) {
-        return text;
-      }
-
-      return text;
-    }
-
-    // Si no tiene asignación, asignar un valor predeterminado según contexto
-    return "$text = 0";
-  }
-
   // Verifica si el texto parece un nombre de variable simple
   static bool _isSimpleVariableName(String text) {
     final simpleName = RegExp(r'^[a-zA-Z_][a-zA-Z0-9_]*$');
     return simpleName.hasMatch(text.trim());
-  }
-
-  // Extrae la etiqueta de un conector (sin símbolos de dirección)
-  static String _extractConnectorLabel(String text) {
-    return text
-        .replaceAll('←', '')
-        .replaceAll('→', '')
-        .replaceAll('⇄', '')
-        .replaceAll('DESDE:', '')
-        .replaceAll('HACIA:', '')
-        .replaceAll('TO:', '')
-        .replaceAll('FROM:', '')
-        .replaceAll('CONECTOR:', '')
-        .trim();
   }
 
   // Formatea una llamada a subproceso/función
@@ -835,7 +1123,7 @@ class CodeGenerator {
       }
       return text;
     }
-    
+
     // Si no tiene formato de función, agregarlo
     return "$text()";
   }

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../widgets/flow_diagram_canvas_final.dart';
 import '../widgets/node_palette.dart';
+import '../widgets/programming_concepts_palette.dart';
+import '../widgets/editor_side_panel.dart';
 import '../widgets/node_editor_dialog.dart';
 import '../widgets/validation_result_dialog.dart';
 import 'load_diagram_screen.dart';
@@ -174,11 +176,14 @@ class _EditorScreenState extends State<EditorScreen> {
       ),
       body: Row(
         children: [
-          // Panel lateral con la paleta de nodos
-          NodePalette(
+          // Panel lateral con pestañas para símbolos y conceptos
+          EditorSidePanel(
             onNodeSelected: (nodeType) {
               // No seleccionar automáticamente el nodo si estamos en modo conexión
               _addNode(nodeType, autoSelect: !isConnecting);
+            },
+            onConceptSelected: (conceptType) {
+              _addConcept(conceptType);
             },
           ),
 
@@ -227,8 +232,8 @@ class _EditorScreenState extends State<EditorScreen> {
                           isConnecting = false;
                           connectionStart = null;
                         } else {
-                          // _showSnackBar(
-                          //     'No puedes conectar un nodo consigo mismo');
+                          _showSnackBar(
+                              'No puedes conectar un nodo consigo mismo');
                         }
                       } else {
                         // Si no estamos en modo conexión, simplemente seleccionamos el nodo
@@ -436,10 +441,623 @@ class _EditorScreenState extends State<EditorScreen> {
     _editSelectedNode();
   }
 
+  void _addConcept(ProgrammingConceptType conceptType) {
+    // Calcular posición central para el nuevo nodo
+    final centerPosition = Offset(
+      (MediaQuery.of(context).size.width / 2 - panOffset.dx) / currentScale,
+      (MediaQuery.of(context).size.height / 2 - panOffset.dy) / currentScale,
+    );
+
+    switch (conceptType) {
+      // ==========================================
+      // FASE 1: Nodos simples (1 símbolo)
+      // ==========================================
+      case ProgrammingConceptType.scanf:
+        _addScanfConcept(centerPosition);
+        break;
+      case ProgrammingConceptType.printf:
+        _addPrintfConcept(centerPosition);
+        break;
+      case ProgrammingConceptType.declareInt:
+        _addDeclareIntConcept(centerPosition);
+        break;
+      case ProgrammingConceptType.assignment:
+        _addAssignmentConcept(centerPosition);
+        break;
+      case ProgrammingConceptType.function:
+        _addFunctionConcept(centerPosition);
+        break;
+      case ProgrammingConceptType.struct:
+        _addStructConcept(centerPosition);
+        break;
+      case ProgrammingConceptType.pointer:
+        _addPointerConcept(centerPosition);
+        break;
+
+      // ==========================================
+      // FASE 2: Estructuras compuestas
+      // ==========================================
+      case ProgrammingConceptType.loopFor:
+        _addForLoopConcept(centerPosition);
+        break;
+      case ProgrammingConceptType.loopWhile:
+        _addWhileLoopConcept(centerPosition);
+        break;
+      case ProgrammingConceptType.ifElse:
+        _addIfElseConcept(centerPosition);
+        break;
+      case ProgrammingConceptType.switchStructure:
+        _addSwitchConcept(centerPosition);
+        break;
+    }
+  }
+
+  // ==========================================
+  // FASE 1: Implementación de conceptos simples
+  // ==========================================
+
+  /// Agrega un nodo de entrada scanf() - Símbolo ISO 5807: Paralelogramo (data)
+  void _addScanfConcept(Offset position) {
+    final node = DiagramNode(
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      type: NodeType.data,
+      position: position,
+      text: 'scanf("%d", &x)',
+    );
+
+    setState(() {
+      nodes.add(node);
+      selectedNode = node;
+      _hasUnsavedChanges = true;
+    });
+
+    _metricsService.trackUserAction(
+      action: 'concepto_agregado',
+      category: 'editor',
+      metadata: {'concept_type': 'scanf', 'node_type': 'data'},
+    );
+
+    // Mostrar diálogo para personalizar
+    _editSelectedNode();
+  }
+
+  /// Agrega un nodo de salida printf() - Símbolo ISO 5807: Paralelogramo (data)
+  void _addPrintfConcept(Offset position) {
+    final node = DiagramNode(
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      type: NodeType.data,
+      position: position,
+      text: 'printf("Resultado: %d\\n", x)',
+    );
+
+    setState(() {
+      nodes.add(node);
+      selectedNode = node;
+      _hasUnsavedChanges = true;
+    });
+
+    _metricsService.trackUserAction(
+      action: 'concepto_agregado',
+      category: 'editor',
+      metadata: {'concept_type': 'printf', 'node_type': 'data'},
+    );
+
+    _editSelectedNode();
+  }
+
+  /// Agrega un nodo de declaración de entero - Símbolo ISO 5807: Rectángulo (process)
+  void _addDeclareIntConcept(Offset position) {
+    final node = DiagramNode(
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      type: NodeType.process,
+      position: position,
+      text: 'int x = 0',
+    );
+
+    setState(() {
+      nodes.add(node);
+      selectedNode = node;
+      _hasUnsavedChanges = true;
+    });
+
+    _metricsService.trackUserAction(
+      action: 'concepto_agregado',
+      category: 'editor',
+      metadata: {'concept_type': 'declareInt', 'node_type': 'process'},
+    );
+
+    _editSelectedNode();
+  }
+
+  /// Agrega un nodo de asignación - Símbolo ISO 5807: Rectángulo (process)
+  void _addAssignmentConcept(Offset position) {
+    final node = DiagramNode(
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      type: NodeType.process,
+      position: position,
+      text: 'x = valor',
+    );
+
+    setState(() {
+      nodes.add(node);
+      selectedNode = node;
+      _hasUnsavedChanges = true;
+    });
+
+    _metricsService.trackUserAction(
+      action: 'concepto_agregado',
+      category: 'editor',
+      metadata: {'concept_type': 'assignment', 'node_type': 'process'},
+    );
+
+    _editSelectedNode();
+  }
+
+  /// Agrega un nodo de función/subproceso - Símbolo ISO 5807: Rectángulo con doble línea (predefinedProcess)
+  void _addFunctionConcept(Offset position) {
+    final node = DiagramNode(
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      type: NodeType.predefinedProcess,
+      position: position,
+      text: 'miFuncion()',
+    );
+
+    setState(() {
+      nodes.add(node);
+      selectedNode = node;
+      _hasUnsavedChanges = true;
+    });
+
+    _metricsService.trackUserAction(
+      action: 'concepto_agregado',
+      category: 'editor',
+      metadata: {'concept_type': 'function', 'node_type': 'predefinedProcess'},
+    );
+
+    _editSelectedNode();
+  }
+
+  /// Agrega un nodo de estructura (struct) - Símbolo ISO 5807: Rectángulo (process)
+  void _addStructConcept(Offset position) {
+    final node = DiagramNode(
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      type: NodeType.process,
+      position: position,
+      text: 'struct Punto { int x; int y; }',
+    );
+
+    setState(() {
+      nodes.add(node);
+      selectedNode = node;
+      _hasUnsavedChanges = true;
+    });
+
+    _metricsService.trackUserAction(
+      action: 'concepto_agregado',
+      category: 'editor',
+      metadata: {'concept_type': 'struct', 'node_type': 'process'},
+    );
+
+    _editSelectedNode();
+  }
+
+  /// Agrega un nodo de puntero - Símbolo ISO 5807: Rectángulo (process)
+  void _addPointerConcept(Offset position) {
+    final node = DiagramNode(
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      type: NodeType.process,
+      position: position,
+      text: 'int *ptr = NULL',
+    );
+
+    setState(() {
+      nodes.add(node);
+      selectedNode = node;
+      _hasUnsavedChanges = true;
+    });
+
+    _metricsService.trackUserAction(
+      action: 'concepto_agregado',
+      category: 'editor',
+      metadata: {'concept_type': 'pointer', 'node_type': 'process'},
+    );
+
+    _editSelectedNode();
+  }
+
+  // ==========================================
+  // FASE 2: Implementación de estructuras compuestas
+  // ==========================================
+
+  /// Agrega estructura For Loop (2 nodos + conexiones)
+  /// Basado en diagrama ISO 5807:
+  /// - 1 nodo decisión (condición del for)
+  /// - 1 nodo proceso (cuerpo del for)
+  /// - Conexión de retorno del proceso al nodo de decisión
+  void _addForLoopConcept(Offset position) {
+    final timestamp = DateTime.now().millisecondsSinceEpoch;
+
+    // Nodo 1: Decisión (condición del bucle)
+    final decisionNode = DiagramNode(
+      id: '${timestamp}_for_decision',
+      type: NodeType.decision,
+      position: position,
+      text: 'i < 10',
+      metadata: {
+        'structureType': 'loop',
+        'loopType': 'for',
+        'role': 'loop-condition',
+      },
+    );
+
+    // Nodo 2: Proceso (cuerpo del for)
+    final bodyNode = DiagramNode(
+      id: '${timestamp}_for_body',
+      type: NodeType.process,
+      position: Offset(position.dx, position.dy + 150),
+      text: '// Cuerpo del for\ni++',
+      metadata: {
+        'structureType': 'loop',
+        'loopType': 'for',
+        'role': 'loop-body',
+      },
+    );
+
+    // Crear conexiones
+    final trueConnection = Connection(
+      source: decisionNode,
+      target: bodyNode,
+      label: 'Sí',
+    );
+
+    // Conexión de retorno (loop back)
+    final loopBackConnection = Connection(
+      source: bodyNode,
+      target: decisionNode,
+      label: '',
+      isLoopBack: true,
+    );
+
+    setState(() {
+      nodes.addAll([decisionNode, bodyNode]);
+      connections.addAll([trueConnection, loopBackConnection]);
+      selectedNode = decisionNode;
+      _hasUnsavedChanges = true;
+    });
+
+    _metricsService.trackUserAction(
+      action: 'concepto_agregado',
+      category: 'editor',
+      metadata: {'concept_type': 'forLoop', 'nodes_created': 2},
+    );
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text(
+            'Estructura For creada. Conecta la salida "No" para continuar el flujo.'),
+        duration: Duration(seconds: 2),
+      ),
+    );
+  }
+
+  /// Agrega estructura While Loop (2 nodos + conexiones)
+  /// Basado en diagrama ISO 5807:
+  /// - 1 nodo decisión (Test Condition)
+  /// - 1 nodo proceso (while loop body)
+  /// - Conexión de retorno del proceso al nodo de decisión
+  void _addWhileLoopConcept(Offset position) {
+    final timestamp = DateTime.now().millisecondsSinceEpoch;
+
+    // Nodo 1: Decisión (condición del while)
+    final decisionNode = DiagramNode(
+      id: '${timestamp}_while_decision',
+      type: NodeType.decision,
+      position: position,
+      text: 'condicion',
+      metadata: {
+        'structureType': 'loop',
+        'loopType': 'while',
+        'role': 'loop-condition',
+      },
+    );
+
+    // Nodo 2: Proceso (cuerpo del while)
+    final bodyNode = DiagramNode(
+      id: '${timestamp}_while_body',
+      type: NodeType.process,
+      position: Offset(position.dx, position.dy + 150),
+      text: '// Cuerpo del while',
+      metadata: {
+        'structureType': 'loop',
+        'loopType': 'while',
+        'role': 'loop-body',
+      },
+    );
+
+    // Crear conexiones
+    final trueConnection = Connection(
+      source: decisionNode,
+      target: bodyNode,
+      label: 'Verdadero',
+    );
+
+    // Conexión de retorno (loop back)
+    final loopBackConnection = Connection(
+      source: bodyNode,
+      target: decisionNode,
+      label: '',
+      isLoopBack: true,
+    );
+
+    setState(() {
+      nodes.addAll([decisionNode, bodyNode]);
+      connections.addAll([trueConnection, loopBackConnection]);
+      selectedNode = decisionNode;
+      _hasUnsavedChanges = true;
+    });
+
+    _metricsService.trackUserAction(
+      action: 'concepto_agregado',
+      category: 'editor',
+      metadata: {'concept_type': 'whileLoop', 'nodes_created': 2},
+    );
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text(
+            'Estructura While creada. Conecta la salida "Falso" para continuar el flujo.'),
+        duration: Duration(seconds: 2),
+      ),
+    );
+  }
+
+  /// Agrega estructura If-Else (3 nodos + conexiones)
+  /// Basado en diagrama ISO 5807:
+  /// - 1 nodo decisión (condición)
+  /// - 1 nodo proceso (rama if/verdadero)
+  /// - 1 nodo proceso (rama else/falso)
+  void _addIfElseConcept(Offset position) {
+    final timestamp = DateTime.now().millisecondsSinceEpoch;
+
+    // Nodo 1: Decisión (condición)
+    final decisionNode = DiagramNode(
+      id: '${timestamp}_if_decision',
+      type: NodeType.decision,
+      position: position,
+      text: 'x > 0',
+    );
+
+    // Nodo 2: Proceso (rama if - verdadero)
+    final ifNode = DiagramNode(
+      id: '${timestamp}_if_true',
+      type: NodeType.process,
+      position: Offset(position.dx - 120, position.dy + 150),
+      text: '// Bloque if',
+    );
+
+    // Nodo 3: Proceso (rama else - falso)
+    final elseNode = DiagramNode(
+      id: '${timestamp}_if_false',
+      type: NodeType.process,
+      position: Offset(position.dx + 120, position.dy + 150),
+      text: '// Bloque else',
+    );
+
+    // Crear conexiones
+    final trueConnection = Connection(
+      source: decisionNode,
+      target: ifNode,
+      label: 'Sí',
+    );
+
+    final falseConnection = Connection(
+      source: decisionNode,
+      target: elseNode,
+      label: 'No',
+    );
+
+    setState(() {
+      nodes.addAll([decisionNode, ifNode, elseNode]);
+      connections.addAll([trueConnection, falseConnection]);
+      selectedNode = decisionNode;
+      _hasUnsavedChanges = true;
+    });
+
+    _metricsService.trackUserAction(
+      action: 'concepto_agregado',
+      category: 'editor',
+      metadata: {'concept_type': 'ifElse', 'nodes_created': 3},
+    );
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text(
+            'Estructura If-Else creada. Puedes conectar las salidas a los siguientes nodos.'),
+        duration: Duration(seconds: 2),
+      ),
+    );
+  }
+
+  /// Agrega estructura Switch (8 nodos + conexiones)
+  /// Basado en diagrama ISO 5807:
+  /// - 1 nodo proceso (switch expression)
+  /// - 3 nodos decisión (case 1, case 2, case n/default check)
+  /// - 4 nodos proceso (statement blocks para cada caso + default)
+  void _addSwitchConcept(Offset position) {
+    final timestamp = DateTime.now().millisecondsSinceEpoch;
+
+    // Espaciado vertical entre niveles
+    const double verticalSpacing = 120.0;
+    const double horizontalOffset = 200.0;
+
+    // Nodo 1: Proceso (expresión del switch)
+    final switchExprNode = DiagramNode(
+      id: '${timestamp}_switch_expr',
+      type: NodeType.process,
+      position: position,
+      text: 'switch(opcion)',
+      metadata: {
+        'structureType': 'switch',
+        'role': 'switch-header',
+        'variable': 'opcion',
+      },
+    );
+
+    // Nodo 2: Decisión case 1
+    final case1Decision = DiagramNode(
+      id: '${timestamp}_case1_decision',
+      type: NodeType.decision,
+      position: Offset(position.dx, position.dy + verticalSpacing),
+      text: 'opcion == 1',
+      metadata: {
+        'structureType': 'switch',
+        'role': 'switch-case',
+        'caseValue': '1',
+        'parentSwitch': 'opcion',
+      },
+    );
+
+    // Nodo 3: Proceso case 1
+    final case1Process = DiagramNode(
+      id: '${timestamp}_case1_process',
+      type: NodeType.process,
+      position:
+          Offset(position.dx + horizontalOffset, position.dy + verticalSpacing),
+      text: '// Caso 1',
+      metadata: {
+        'structureType': 'switch',
+        'role': 'switch-case-body',
+        'caseValue': '1',
+      },
+    );
+
+    // Nodo 4: Decisión case 2
+    final case2Decision = DiagramNode(
+      id: '${timestamp}_case2_decision',
+      type: NodeType.decision,
+      position: Offset(position.dx, position.dy + verticalSpacing * 2),
+      text: 'opcion == 2',
+      metadata: {
+        'structureType': 'switch',
+        'role': 'switch-case',
+        'caseValue': '2',
+        'parentSwitch': 'opcion',
+      },
+    );
+
+    // Nodo 5: Proceso case 2
+    final case2Process = DiagramNode(
+      id: '${timestamp}_case2_process',
+      type: NodeType.process,
+      position: Offset(
+          position.dx + horizontalOffset, position.dy + verticalSpacing * 2),
+      text: '// Caso 2',
+      metadata: {
+        'structureType': 'switch',
+        'role': 'switch-case-body',
+        'caseValue': '2',
+      },
+    );
+
+    // Nodo 6: Decisión case n (o verificación default)
+    final caseNDecision = DiagramNode(
+      id: '${timestamp}_caseN_decision',
+      type: NodeType.decision,
+      position: Offset(position.dx, position.dy + verticalSpacing * 3),
+      text: 'opcion == n',
+      metadata: {
+        'structureType': 'switch',
+        'role': 'switch-case',
+        'caseValue': 'n',
+        'parentSwitch': 'opcion',
+      },
+    );
+
+    // Nodo 7: Proceso case n
+    final caseNProcess = DiagramNode(
+      id: '${timestamp}_caseN_process',
+      type: NodeType.process,
+      position: Offset(
+          position.dx + horizontalOffset, position.dy + verticalSpacing * 3),
+      text: '// Caso n',
+      metadata: {
+        'structureType': 'switch',
+        'role': 'switch-case-body',
+        'caseValue': 'n',
+      },
+    );
+
+    // Nodo 8: Proceso default
+    final defaultProcess = DiagramNode(
+      id: '${timestamp}_default_process',
+      type: NodeType.process,
+      position: Offset(position.dx, position.dy + verticalSpacing * 4),
+      text: '// Default',
+      metadata: {
+        'structureType': 'switch',
+        'role': 'switch-default',
+        'parentSwitch': 'opcion',
+      },
+    );
+
+    // Crear conexiones
+    final List<Connection> switchConnections = [
+      // switch expr -> case 1 decision
+      Connection(source: switchExprNode, target: case1Decision, label: ''),
+
+      // case 1 decision -> case 1 process (true)
+      Connection(source: case1Decision, target: case1Process, label: 'Sí'),
+
+      // case 1 decision -> case 2 decision (false)
+      Connection(source: case1Decision, target: case2Decision, label: 'No'),
+
+      // case 2 decision -> case 2 process (true)
+      Connection(source: case2Decision, target: case2Process, label: 'Sí'),
+
+      // case 2 decision -> case n decision (false)
+      Connection(source: case2Decision, target: caseNDecision, label: 'No'),
+
+      // case n decision -> case n process (true)
+      Connection(source: caseNDecision, target: caseNProcess, label: 'Sí'),
+
+      // case n decision -> default process (false)
+      Connection(source: caseNDecision, target: defaultProcess, label: 'No'),
+    ];
+
+    setState(() {
+      nodes.addAll([
+        switchExprNode,
+        case1Decision,
+        case1Process,
+        case2Decision,
+        case2Process,
+        caseNDecision,
+        caseNProcess,
+        defaultProcess,
+      ]);
+      connections.addAll(switchConnections);
+      selectedNode = switchExprNode;
+      _hasUnsavedChanges = true;
+    });
+
+    _metricsService.trackUserAction(
+      action: 'concepto_agregado',
+      category: 'editor',
+      metadata: {'concept_type': 'switch', 'nodes_created': 8},
+    );
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text(
+            'Estructura Switch creada con 8 nodos. Puedes editar cada nodo y conectar las salidas.'),
+        duration: Duration(seconds: 3),
+      ),
+    );
+  }
+
   void _createConnection(DiagramNode source, DiagramNode target) {
     // No crear conexión si es el mismo nodo
     if (source == target) {
-      // _showSnackBar('No se puede conectar un nodo consigo mismo');
       connectionStart = null;
       isConnecting = false;
       return;
@@ -757,41 +1375,43 @@ class _EditorScreenState extends State<EditorScreen> {
   // Obtener nombre legible del tipo de nodo
   String _getNodeTypeName(NodeType type) {
     switch (type) {
-      case NodeType.start:
-        return 'Inicio';
-      case NodeType.end:
-        return 'Fin';
+      case NodeType.terminal:
+        return 'Terminal';
       case NodeType.process:
         return 'Proceso';
       case NodeType.decision:
         return 'Decisión';
-      case NodeType.loop:
-        return 'Bucle/Preparación';
-      case NodeType.input:
-        return 'Entrada';
-      case NodeType.output:
-        return 'Salida';
-      case NodeType.variable:
-        return 'Variable';
-      case NodeType.connector:
-        return 'Conector';
-      case NodeType.comment:
-        return 'Comentario';
-      case NodeType.subprocess:
+      case NodeType.preparation:
+        return 'Preparación';
+      case NodeType.data:
+        return 'Dato';
+      case NodeType.predefinedProcess:
         return 'Subproceso/Función';
+      default:
+        return type.isoName;
     }
   }
 
   bool _isValidConnection(DiagramNode source, DiagramNode target) {
-    // Un nodo final no puede tener salidas
-    if (source.type == NodeType.end) {
-      // _showSnackBar('Un nodo de fin no puede tener conexiones de salida');
+    // Un nodo terminal de fin no puede tener salidas
+    final sourceIsEnd = source.type == NodeType.terminal &&
+        (source.text.toLowerCase().contains('fin') ||
+            source.text.toLowerCase().contains('end') ||
+            source.text.toLowerCase().contains('terminar'));
+
+    if (sourceIsEnd) {
+      // _showSnackBar('Un nodo terminal de fin no puede tener conexiones de salida');
       return false;
     }
 
-    // Un nodo inicio no puede tener entradas
-    if (target.type == NodeType.start) {
-      // _showSnackBar('Un nodo de inicio no puede tener conexiones de entrada');
+    // Un nodo terminal de inicio no puede tener entradas
+    final targetIsStart = target.type == NodeType.terminal &&
+        (target.text.toLowerCase().contains('inicio') ||
+            target.text.toLowerCase().contains('start') ||
+            target.text.isEmpty);
+
+    if (targetIsStart) {
+      // _showSnackBar('Un nodo terminal de inicio no puede tener conexiones de entrada');
       return false;
     }
 
@@ -819,7 +1439,7 @@ class _EditorScreenState extends State<EditorScreen> {
 
     if (result != null) {
       setState(() {
-        // Si el resultado es un NodeDialogResult (condición de bucle)
+        // Si el resultado es un NodeDialogResult (condición de bucle o switch)
         if (result is NodeDialogResult) {
           selectedNode!.text = result.text;
 
@@ -830,6 +1450,16 @@ class _EditorScreenState extends State<EditorScreen> {
               result.loopVariable ?? '',
               result.loopLimit ?? '',
               result.loopCondition ?? '<',
+            );
+          }
+
+          // Si se debe generar la estructura de switch-case
+          if (result.generateSwitchStructure) {
+            _generateSwitchStructure(
+              selectedNode!,
+              result.switchVariable ?? '',
+              result.switchCases ?? [],
+              result.hasDefaultCase,
             );
           }
         } else if (result is String) {
@@ -896,6 +1526,132 @@ class _EditorScreenState extends State<EditorScreen> {
     // _showSnackBar(
     //   'Estructura de bucle creada. Conecta la salida "Falso" para continuar el flujo.',
     // );
+  }
+
+  /// Genera automáticamente la estructura básica de switch-case
+  ///
+  /// Transforma el nodo de decisión en un nodo de proceso que representa
+  /// la expresión del switch, y crea múltiples nodos de decisión (rombos)
+  /// conectados para representar cada caso.
+  ///
+  /// Estructura generada:
+  /// 1. Nodo de proceso (rectángulo) - expresión switch(variable)
+  /// 2. Múltiples nodos de decisión (rombos) - uno por cada caso
+  /// 3. Conexiones desde el proceso a cada rombo case
+  void _generateSwitchStructure(
+    DiagramNode originalNode,
+    String switchVariable,
+    List<SwitchCaseData> switchCases,
+    bool hasDefaultCase,
+  ) {
+    // Guardar la posición del nodo original
+    final originalPosition = originalNode.position;
+
+    // Crear un nuevo nodo de proceso para reemplazar el nodo de decisión original
+    final processNode = DiagramNode(
+      id: originalNode.id, // Mantener el mismo ID
+      type: NodeType.process,
+      position: originalPosition,
+      text: 'switch($switchVariable)',
+    );
+
+    // Remover el nodo original y agregar el nuevo nodo de proceso
+    nodes.remove(originalNode);
+    nodes.add(processNode);
+
+    // También necesitamos actualizar todas las conexiones que apuntaban al nodo original
+    for (final connection in connections) {
+      if (connection.source == originalNode) {
+        // Reemplazar la referencia en la conexión
+        final newConnection = Connection(
+          source: processNode,
+          target: connection.target,
+          label: connection.label,
+          isLoopBack: connection.isLoopBack,
+        );
+        connections.remove(connection);
+        connections.add(newConnection);
+      }
+      if (connection.target == originalNode) {
+        final newConnection = Connection(
+          source: connection.source,
+          target: processNode,
+          label: connection.label,
+          isLoopBack: connection.isLoopBack,
+        );
+        connections.remove(connection);
+        connections.add(newConnection);
+      }
+    }
+
+    // Actualizar selectedNode para que apunte al nuevo nodo
+    selectedNode = processNode;
+
+    // Espaciado entre nodos de caso
+    const double horizontalSpacing = 180.0;
+    const double verticalOffset = 150.0;
+
+    // Calcular la posición inicial para centrar los casos
+    final double totalWidth = (switchCases.length - 1) * horizontalSpacing;
+    final double startX = originalPosition.dx - (totalWidth / 2);
+
+    // Crear un nodo de decisión (rombo) para cada caso
+    for (int i = 0; i < switchCases.length; i++) {
+      final caseData = switchCases[i];
+
+      // Calcular posición del rombo (distribuidos horizontalmente)
+      final casePosition = Offset(
+        startX + (i * horizontalSpacing),
+        originalPosition.dy + verticalOffset,
+      );
+
+      // Crear nodo de decisión para el caso
+      final caseNode = DiagramNode(
+        id: '${DateTime.now().millisecondsSinceEpoch}_case_$i',
+        type: NodeType.decision,
+        position: casePosition,
+        text: caseData.label.isNotEmpty
+            ? caseData.label
+            : 'case ${caseData.value}',
+      );
+
+      // Agregar el nodo de caso
+      nodes.add(caseNode);
+
+      // Crear conexión desde el nodo switch al nodo case
+      final caseConnection = Connection(
+        source: processNode,
+        target: caseNode,
+        label: 'case ${caseData.value}',
+      );
+
+      connections.add(caseConnection);
+    }
+
+    // Si hay caso default, crear un nodo adicional
+    if (hasDefaultCase) {
+      final defaultPosition = Offset(
+        startX + (switchCases.length * horizontalSpacing),
+        originalPosition.dy + verticalOffset,
+      );
+
+      final defaultNode = DiagramNode(
+        id: '${DateTime.now().millisecondsSinceEpoch}_default',
+        type: NodeType.decision,
+        position: defaultPosition,
+        text: 'default',
+      );
+
+      nodes.add(defaultNode);
+
+      final defaultConnection = Connection(
+        source: processNode,
+        target: defaultNode,
+        label: 'default',
+      );
+
+      connections.add(defaultConnection);
+    }
   }
 
   void _deleteSelectedNode() {

@@ -2,13 +2,11 @@ import 'package:flutter/material.dart';
 import '../models/diagram_node.dart';
 import 'process_node_dialog.dart';
 import 'decision_node_dialog.dart';
-import 'input_node_dialog.dart';
-import 'output_node_dialog.dart';
-import 'variable_node_dialog.dart';
+import 'data_node_dialog.dart';
 import 'preparation_node_dialog.dart';
+import 'subprocess_node_dialog.dart';
 import 'connector_node_dialog.dart';
 import 'comment_node_dialog.dart';
-import 'subprocess_node_dialog.dart';
 
 class NodeEditorDialog extends StatefulWidget {
   final DiagramNode node;
@@ -46,52 +44,40 @@ class _NodeEditorDialogState extends State<NodeEditorDialog> {
       return DecisionNodeDialog(node: widget.node);
     }
 
-    // Para nodos de entrada, usar el diálogo especializado
-    if (widget.node.type == NodeType.input) {
-      return InputNodeDialog(node: widget.node);
+    // Para nodos de datos (entrada/salida), usar el diálogo especializado
+    if (widget.node.type == NodeType.data) {
+      return DataNodeDialog(node: widget.node);
     }
 
-    // Para nodos de salida, usar el diálogo especializado
-    if (widget.node.type == NodeType.output) {
-      return OutputNodeDialog(node: widget.node);
-    }
-
-    // Para nodos de variable, usar el diálogo especializado
-    if (widget.node.type == NodeType.variable) {
-      return VariableNodeDialog(node: widget.node);
-    }
-
-    // Para nodos de preparación/inicialización (loop), usar el diálogo especializado
-    if (widget.node.type == NodeType.loop) {
+    // Para nodos de preparación/inicialización, usar el diálogo especializado
+    if (widget.node.type == NodeType.preparation) {
       return PreparationNodeDialog(node: widget.node);
     }
 
-    // Para nodos de conector, usar el diálogo especializado
-    if (widget.node.type == NodeType.connector) {
+    // Para nodos de subproceso/predefined process, usar el diálogo especializado
+    if (widget.node.type == NodeType.predefinedProcess) {
+      return SubprocessNodeDialog(node: widget.node);
+    }
+
+    // Para nodos de conector (in-page y off-page), usar el diálogo especializado
+    if (widget.node.type == NodeType.connector ||
+        widget.node.type == NodeType.offPageConnector) {
       return ConnectorNodeDialog(node: widget.node);
     }
 
-    // Para nodos de comentario, usar el diálogo especializado
-    if (widget.node.type == NodeType.comment) {
+    // Para nodos de comentario/anotación, usar el diálogo especializado
+    if (widget.node.type == NodeType.comment ||
+        widget.node.type == NodeType.annotation) {
       return CommentNodeDialog(node: widget.node);
-    }
-
-    // Para nodos de subproceso, usar el diálogo especializado
-    if (widget.node.type == NodeType.subprocess) {
-      return SubprocessNodeDialog(node: widget.node);
     }
 
     String dialogTitle;
     String hintText;
 
     switch (widget.node.type) {
-      case NodeType.start:
-        dialogTitle = 'Editar Nodo de Inicio';
-        hintText = 'Texto opcional para el nodo de inicio';
-        break;
-      case NodeType.end:
-        dialogTitle = 'Editar Nodo de Fin';
-        hintText = 'Texto opcional para el nodo de fin';
+      case NodeType.terminal:
+        dialogTitle = 'Editar Nodo Terminal';
+        hintText = 'Escribe "Inicio", "Fin" u otro texto';
         break;
       case NodeType.process:
         dialogTitle = 'Editar Proceso';
@@ -101,34 +87,23 @@ class _NodeEditorDialogState extends State<NodeEditorDialog> {
         dialogTitle = 'Editar Condición';
         hintText = '¿Condición? (ej: edad >= 18)';
         break;
-      case NodeType.loop:
-        dialogTitle = 'Editar Bucle';
+      case NodeType.preparation:
+        dialogTitle = 'Editar Preparación';
+        hintText = 'Inicialización de bucle (ej: i = 0, contador = 1)';
+        break;
+      case NodeType.data:
+        dialogTitle = 'Editar Dato';
         hintText =
-            'Condición del bucle (ej: while(i < 10) o for(i=0; i<10; i++))';
+            'Describe entrada o salida (ej: leer edad, mostrar resultado)';
         break;
-      case NodeType.input:
-        dialogTitle = 'Editar Entrada';
-        hintText = 'Describe la entrada (ej: leer variable)';
-        break;
-      case NodeType.output:
-        dialogTitle = 'Editar Salida';
-        hintText = 'Describe la salida (ej: mostrar resultado)';
-        break;
-      case NodeType.variable:
-        dialogTitle = 'Editar Variable';
-        hintText = 'Declaración de variable (ej: int contador = 0)';
-        break;
-      case NodeType.connector:
-        dialogTitle = 'Editar Conector';
-        hintText = 'Etiqueta del conector (ej: A, B, C)';
-        break;
-      case NodeType.comment:
-        dialogTitle = 'Editar Comentario';
-        hintText = 'Texto del comentario o nota';
-        break;
-      case NodeType.subprocess:
+      case NodeType.predefinedProcess:
         dialogTitle = 'Editar Subproceso/Función';
         hintText = 'Nombre de la función (ej: calcularPromedio)';
+        break;
+      // ISO 5807 symbols without specialized dialogs use default
+      default:
+        dialogTitle = 'Editar ${widget.node.type.isoName}';
+        hintText = 'Ingrese el texto del nodo';
         break;
     }
 
@@ -171,28 +146,20 @@ class _NodeEditorDialogState extends State<NodeEditorDialog> {
 
   String _getNodeTypeName(NodeType type) {
     switch (type) {
-      case NodeType.start:
-        return 'Inicio';
-      case NodeType.end:
-        return 'Fin';
+      case NodeType.terminal:
+        return 'Terminal (Inicio/Fin)';
       case NodeType.process:
         return 'Proceso';
       case NodeType.decision:
         return 'Decisión';
-      case NodeType.loop:
-        return 'Bucle';
-      case NodeType.input:
-        return 'Entrada';
-      case NodeType.output:
-        return 'Salida';
-      case NodeType.variable:
-        return 'Variable';
-      case NodeType.connector:
-        return 'Conector';
-      case NodeType.comment:
-        return 'Comentario';
-      case NodeType.subprocess:
+      case NodeType.preparation:
+        return 'Preparación';
+      case NodeType.data:
+        return 'Dato (Entrada/Salida)';
+      case NodeType.predefinedProcess:
         return 'Subproceso/Función';
+      default:
+        return type.isoName;
     }
   }
 }
