@@ -236,7 +236,7 @@ class DiagramCodeOptimizer {
 }
 ```
 
-### 6. Generador de Código Mejorado (Modificar Existente)
+### 6. Generador de Código Mejorado (creado nuevo archivo)
 ```dart
 class EnhancedCodeGenerator {
   String generateOptimizedCode(

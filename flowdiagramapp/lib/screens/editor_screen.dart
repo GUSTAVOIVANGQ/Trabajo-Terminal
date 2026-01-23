@@ -6,6 +6,7 @@ import '../widgets/programming_concepts_palette.dart';
 import '../widgets/editor_side_panel.dart';
 import '../widgets/node_editor_dialog.dart';
 import '../widgets/validation_result_dialog.dart';
+import '../widgets/compiler_results_dialog.dart'; // Dialog del compilador
 import 'load_diagram_screen.dart';
 import '../widgets/save_diagram_dialog.dart';
 import '../models/diagram_node.dart';
@@ -16,6 +17,7 @@ import '../models/node_dialog_result.dart';
 import '../services/database_service.dart';
 import '../services/metrics_service.dart'; // Nueva importación
 import '../services/diagram_export_service.dart'; // Importación para exportación
+import '../compiler/compiler.dart'; // Compilador completo
 
 class EditorScreen extends StatefulWidget {
   final SavedDiagram? initialDiagram;
@@ -100,10 +102,57 @@ class _EditorScreenState extends State<EditorScreen> {
             tooltip: 'Cargar diagrama',
             onPressed: () => _navigateToLoadDiagram(context),
           ),
-          IconButton(
+          // Menú de generación de código con dos opciones
+          PopupMenuButton<String>(
             icon: const Icon(Icons.code),
             tooltip: 'Generar código',
-            onPressed: _generateCode,
+            onSelected: (value) {
+              if (value == 'simple') {
+                _generateCode();
+              } else if (value == 'compiler') {
+                _compileWithFullPipeline();
+              }
+            },
+            itemBuilder: (context) => [
+              const PopupMenuItem(
+                value: 'simple',
+                child: Row(
+                  children: [
+                    Icon(Icons.flash_on, color: Colors.orange),
+                    SizedBox(width: 8),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Generador Simple'),
+                        Text(
+                          'Traducción directa a C',
+                          style: TextStyle(fontSize: 11, color: Colors.grey),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              const PopupMenuItem(
+                value: 'compiler',
+                child: Row(
+                  children: [
+                    Icon(Icons.precision_manufacturing, color: Colors.blue),
+                    SizedBox(width: 8),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Compilador Avanzado'),
+                        Text(
+                          'Análisis completo + Optimización',
+                          style: TextStyle(fontSize: 11, color: Colors.grey),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
           // Menú de exportación
           PopupMenuButton<String>(
@@ -1707,7 +1756,7 @@ class _EditorScreenState extends State<EditorScreen> {
     );
   }
 
-  // Método para generar código
+  // Método para generar código con el generador simple (original)
   void _generateCode() {
     // Primero validamos el diagrama
     final validationResult = DiagramValidator.validateDiagram(
@@ -1736,10 +1785,73 @@ class _EditorScreenState extends State<EditorScreen> {
         'connections_count': connections.length,
         'code_lines': code.split('\n').length,
         'language': 'c',
+        'generator': 'simple',
       },
     );
 
     _showCodeDialog(code);
+  }
+
+  // Método para compilar con el pipeline completo (todas las fases)
+  void _compileWithFullPipeline() {
+    // Verificar que hay nodos en el diagrama
+    if (nodes.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('El diagrama está vacío'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    // Crear el compilador con opciones
+    final compiler = DiagramCompilerPipeline(
+      options: const CompilerOptions(
+        optimizationLevel: 2, // Nivel estándar de optimización
+        generateComments: true,
+        strictTypeChecking: false,
+      ),
+    );
+
+    // Compilar el diagrama
+    final result = compiler.compile(nodes, connections);
+
+    // También generar código con el generador legacy para mostrar en la pestaña de código
+    String? legacyCode;
+    if (result.success || result.errors.errorCount == 0) {
+      legacyCode = CodeGenerator.generateCode(
+        nodes,
+        connections,
+        ProgrammingLanguage.c,
+      );
+    }
+
+    // Registrar métrica de compilación
+    _metricsService.trackUserAction(
+      action: 'compilacion_completa',
+      category: 'code_generation',
+      metadata: {
+        'nodes_count': nodes.length,
+        'connections_count': connections.length,
+        'success': result.success,
+        'errors': result.errors.errorCount,
+        'warnings': result.errors.warningCount,
+        'compilation_time_ms': result.metrics.compilationTimeMs,
+        'tokens_generated': result.metrics.tokensGenerated,
+        'symbols_in_table': result.metrics.symbolsInTable,
+        'generator': 'compiler_pipeline',
+      },
+    );
+
+    // Mostrar el diálogo de resultados del compilador
+    showDialog(
+      context: context,
+      builder: (context) => CompilerResultsDialog(
+        result: result,
+        legacyCode: legacyCode,
+      ),
+    );
   }
 
   // Mostrar el diálogo con el código generado

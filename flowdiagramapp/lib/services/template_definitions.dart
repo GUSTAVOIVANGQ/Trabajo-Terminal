@@ -52,7 +52,7 @@ class TemplateDefinitions {
       type: NodeType.comment,
       position: const Offset(420, 50),
       text:
-          "Programa básico que muestra un mensaje en pantalla.\nConcepto: printf() - salida estándar",
+          "/* Programa básico que muestra un mensaje en pantalla.\nConcepto: printf() - salida estándar */",
     );
 
     final startNode = DiagramNode(
@@ -106,7 +106,7 @@ class TemplateDefinitions {
       type: NodeType.comment,
       position: const Offset(420, 50),
       text:
-          "Declara variables de tipo int, float y char.\nConcepto: Tipos de datos primitivos en C",
+          "/* Declara variables de tipo int, float y char.\nConcepto: Tipos de datos primitivos en C */",
     );
 
     final startNode = DiagramNode(
@@ -120,11 +120,11 @@ class TemplateDefinitions {
       id: "process_${baseId}_2",
       type: NodeType.process,
       position: const Offset(250, 150),
-      text: "int entero = 10",
+      text: "int x = 10",
       metadata: {
         'processType': 'initialization',
         'varType': 'int',
-        'varName': 'entero',
+        'varName': 'x',
         'value': '10'
       },
     );
@@ -133,11 +133,11 @@ class TemplateDefinitions {
       id: "process_${baseId}_3",
       type: NodeType.process,
       position: const Offset(250, 250),
-      text: "float decimal = 3.14",
+      text: "float y = 3.14",
       metadata: {
         'processType': 'initialization',
         'varType': 'float',
-        'varName': 'decimal',
+        'varName': 'y',
         'value': '3.14'
       },
     );
@@ -146,11 +146,11 @@ class TemplateDefinitions {
       id: "process_${baseId}_4",
       type: NodeType.process,
       position: const Offset(250, 350),
-      text: "char letra = 'A'",
+      text: "char z = 'A'",
       metadata: {
         'processType': 'initialization',
         'varType': 'char',
-        'varName': 'letra',
+        'varName': 'z',
         'value': "'A'"
       },
     );
@@ -159,7 +159,7 @@ class TemplateDefinitions {
       id: "output_${baseId}_5",
       type: NodeType.data,
       position: const Offset(250, 450),
-      text: "Escribir entero, decimal, letra",
+      text: "Escribir x, y, z",
       metadata: {'isOutput': true, 'outputType': 'variables'},
     );
 
@@ -210,7 +210,7 @@ class TemplateDefinitions {
       type: NodeType.comment,
       position: const Offset(420, 50),
       text:
-          "Realiza las 5 operaciones aritméticas básicas.\nConcepto: Operadores +, -, *, /, %",
+          "/* Realiza las 5 operaciones aritméticas básicas.\nConcepto: Operadores +, -, *, /, % */",
     );
 
     final startNode = DiagramNode(
@@ -339,7 +339,7 @@ class TemplateDefinitions {
       type: NodeType.comment,
       position: const Offset(420, 50),
       text:
-          "Convierte temperatura de Celsius a Fahrenheit.\nFórmula: F = (C × 9/5) + 32",
+          "/* Convierte temperatura de Celsius a Fahrenheit.\nFórmula: F = (C × 9/5) + 32 */",
     );
 
     final startNode = DiagramNode(
@@ -422,7 +422,7 @@ class TemplateDefinitions {
       type: NodeType.comment,
       position: const Offset(500, 50),
       text:
-          "Determina si un número es par o impar.\nConcepto: if-else, operador módulo (%)",
+          "/* Determina si un número es par o impar.\nConcepto: if-else, operador módulo (%) */",
     );
 
     final startNode = DiagramNode(
@@ -510,7 +510,8 @@ class TemplateDefinitions {
       id: "comment_${baseId}_0",
       type: NodeType.comment,
       position: const Offset(550, 50),
-      text: "Encuentra el mayor de tres números.\nConcepto: if-else anidados",
+      text:
+          "/* Encuentra el mayor de tres números.\nConcepto: if-else anidados */",
     );
 
     final startNode = DiagramNode(
@@ -639,7 +640,7 @@ class TemplateDefinitions {
       type: NodeType.comment,
       position: const Offset(550, 50),
       text:
-          "Calculadora con menú de opciones.\nConcepto: switch-case (if-else múltiple)",
+          "/* Calculadora con menú de opciones.\nConcepto: switch-case (if-else múltiple) */",
     );
 
     final startNode = DiagramNode(
@@ -818,7 +819,7 @@ class TemplateDefinitions {
       type: NodeType.comment,
       position: const Offset(500, 50),
       text:
-          "Clasifica un triángulo según sus lados.\nConcepto: Operadores lógicos (&&, ||)",
+          "/* Clasifica un triángulo según sus lados.\nConcepto: Operadores lógicos (&&, ||) */",
     );
 
     final startNode = DiagramNode(
@@ -932,7 +933,7 @@ class TemplateDefinitions {
       type: NodeType.comment,
       position: const Offset(500, 50),
       text:
-          "Cuenta del 1 al N usando while.\nConcepto: Bucle pre-condición con símbolo de decisión (rombo)",
+          "/* Cuenta del 1 al N usando while.\nConcepto: Bucle pre-condición con símbolo de decisión (rombo) */",
     );
 
     // Nodo inicial
@@ -1063,7 +1064,7 @@ class TemplateDefinitions {
       type: NodeType.comment,
       position: const Offset(500, 50),
       text:
-          "Valida entrada de número positivo.\nConcepto: Bucle do-while (post-condición)",
+          "/* Valida entrada de número positivo.\nConcepto: Bucle do-while (post-condición) */",
     );
 
     final startNode = DiagramNode(
@@ -1177,7 +1178,7 @@ class TemplateDefinitions {
       type: NodeType.comment,
       position: const Offset(500, 50),
       text:
-          "Genera la tabla de multiplicar del 1 al 10.\nConcepto: Bucle for controlado",
+          "/* Genera la tabla de multiplicar del 1 al 10.\nConcepto: Bucle for controlado */",
     );
 
     final startNode = DiagramNode(
@@ -1283,7 +1284,7 @@ class TemplateDefinitions {
       type: NodeType.comment,
       position: const Offset(500, 50),
       text:
-          "Calcula el factorial de N usando un acumulador.\nConcepto: Acumulador en bucle for",
+          "/* Calcula el factorial de N usando un acumulador.\nConcepto: Acumulador en bucle for */",
     );
 
     final startNode = DiagramNode(
@@ -1398,7 +1399,7 @@ class TemplateDefinitions {
       type: NodeType.comment,
       position: const Offset(520, 50),
       text:
-          "Suma todos los elementos de un arreglo.\nConcepto: Declaración y recorrido de arreglos",
+          "/* Suma todos los elementos de un arreglo.\nConcepto: Declaración y recorrido de arreglos */",
     );
 
     final startNode = DiagramNode(
@@ -1545,7 +1546,7 @@ class TemplateDefinitions {
       type: NodeType.comment,
       position: const Offset(550, 50),
       text:
-          "Busca un elemento en un arreglo (búsqueda lineal).\nConcepto: Recorrido con bandera de búsqueda",
+          "/* Busca un elemento en un arreglo (búsqueda lineal).\nConcepto: Recorrido con bandera de búsqueda */",
     );
 
     final startNode = DiagramNode(
@@ -1697,7 +1698,7 @@ class TemplateDefinitions {
       type: NodeType.comment,
       position: const Offset(580, 50),
       text:
-          "Ordena un arreglo usando Bubble Sort.\nCompara elementos adyacentes e intercambia si están desordenados.\nComplejidad: O(n²)",
+          "/* Ordena un arreglo usando Bubble Sort.\nCompara elementos adyacentes e intercambia si están desordenados.\nComplejidad: O(n²) */",
     );
 
     final startNode = DiagramNode(
@@ -1876,7 +1877,7 @@ class TemplateDefinitions {
       type: NodeType.comment,
       position: const Offset(580, 50),
       text:
-          "Ordena un arreglo usando Selection Sort.\nBusca el mínimo en cada iteración y lo coloca al inicio.\nComplejidad: O(n²)",
+          "/* Ordena un arreglo usando Selection Sort.\nBusca el mínimo en cada iteración y lo coloca al inicio.\nComplejidad: O(n²) */",
     );
 
     final startNode = DiagramNode(
@@ -2078,7 +2079,7 @@ class TemplateDefinitions {
       type: NodeType.comment,
       position: const Offset(500, 50),
       text:
-          "Demuestra el uso de funciones con parámetros y retorno.\nConcepto: Subproceso predefinido, paso por valor",
+          "/* Demuestra el uso de funciones con parámetros y retorno.\nConcepto: Subproceso predefinido, paso por valor */",
     );
 
     final startNode = DiagramNode(
@@ -2211,7 +2212,7 @@ class TemplateDefinitions {
       type: NodeType.comment,
       position: const Offset(500, 50),
       text:
-          "Calcula factorial usando una función separada.\nConcepto: Modularización con subprocesos",
+          "/* Calcula factorial usando una función separada.\nConcepto: Modularización con subprocesos */",
     );
 
     final startNode = DiagramNode(
@@ -2360,7 +2361,7 @@ class TemplateDefinitions {
       type: NodeType.comment,
       position: const Offset(500, 50),
       text:
-          "Intercambia dos variables usando apuntadores.\nConcepto: Paso por referencia con * y &",
+          "/* Intercambia dos variables usando apuntadores.\nConcepto: Paso por referencia con * y & */",
     );
 
     final startNode = DiagramNode(
@@ -2523,7 +2524,7 @@ class TemplateDefinitions {
       type: NodeType.comment,
       position: const Offset(500, 50),
       text:
-          "Recorre un arreglo usando aritmética de apuntadores.\nConcepto: *(ptr+i) equivale a arr[i]",
+          "/* Recorre un arreglo usando aritmética de apuntadores.\nConcepto: *(ptr+i) equivale a arr[i] */",
     );
 
     final startNode = DiagramNode(

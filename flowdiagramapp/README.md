@@ -85,7 +85,6 @@ El producto principal es implementar un compilador fuente a fuente (Diagramas de
 - **Validación sintáctica básica** (estructura del diagrama)
 - **Detección de errores estructurales** (nodos desconectados, múltiples inicios, etc.)
 - **Generación de código directo** (traducción 1:1 de nodos a C)
-- **✨ NUEVO: Generación correcta de switch, for y while con metadata** (Enero 2026)
 
 ### Lo que FALTA para un compilador completo:
 
@@ -94,12 +93,12 @@ El producto principal es implementar un compilador fuente a fuente (Diagramas de
 3. Análisis Semántico
 4. Optimización
 
-**🎯 Plan de Desarrollo Actualizado:**
+**🎯 Plan de Desarrollo propuesto:**
 
-## **FASE 1: Análisis Léxico Visual (2-3 semanas)**
+## **FASE 1: Análisis Léxico Visual**
 **Objetivo:** Tokenizar y analizar el contenido de cada nodo
 
-### **Semana 1-2: Implementación del Lexer**
+### **Implementación del Lexer**
 ```dart
 // Crear: lib/compiler/lexical_analyzer.dart
 class DiagramLexicalAnalyzer {
@@ -118,10 +117,10 @@ class DiagramLexicalAnalyzer {
 
 ---
 
-## **FASE 2: Análisis Sintáctico Visual (3-4 semanas)**
+## **FASE 2: Análisis Sintáctico Visual**
 **Objetivo:** Validar sintaxis y construir AST
 
-### **Semana 3-5: Parser de Expresiones**
+### **Parser de Expresiones**
 ```dart
 // Crear: lib/compiler/syntax_analyzer.dart
 class DiagramSyntaxAnalyzer {
@@ -140,10 +139,10 @@ class DiagramSyntaxAnalyzer {
 
 ---
 
-## **FASE 3: Análisis Semántico Visual (4-5 semanas)**
+## **FASE 3: Análisis Semántico Visual**
 **Objetivo:** Verificar coherencia lógica y tipos
 
-### **Semana 6-9: Análisis Semántico**
+### **Análisis Semántico**
 ```dart
 // Crear: lib/compiler/semantic_analyzer.dart
 class DiagramSemanticAnalyzer {
@@ -162,10 +161,10 @@ class DiagramSemanticAnalyzer {
 
 ---
 
-## **FASE 4: Optimización Básica (2-3 semanas)**
+## **FASE 4: Optimización Básica**
 **Objetivo:** Mejorar el código generado
 
-### **Semana 10-12: Optimizador**
+### **Optimizador**
 ```dart
 // Crear: lib/compiler/code_optimizer.dart
 class DiagramCodeOptimizer {
@@ -182,12 +181,13 @@ class DiagramCodeOptimizer {
 
 ---
 
-## **FASE 5: Integración y Documentación (1-2 semanas)**
+## **FASE 5: Integración y Documentación**
 **Objetivo:** Integrar todo y documentar
 
-### **Semana 13-14: Integración Final**
+### **Integración Final**
 ```dart
-// Modificar: lib/models/code_generator.dart
+// No modificar: lib/models/code_generator.dart
+// Crear nuevo archivo
 class EnhancedCodeGenerator {
   String generateOptimizedCode(
     List<DiagramNode> nodes,
@@ -583,18 +583,18 @@ lib/
   - Reducción de 11 a 9 símbolos esenciales conforme a estándar internacional
 - [X] Programacion de las estructuras generadas por cada boton del panel "C concepts"
 - [x] 20 plantillas implementadas usando de referencia el temario de Fundamentos de Programación (ESCOM ISC 2020)
+- [X] Generación de código C y validacion estructural mejorada
 
 ### 🔄 En Desarrollo
 
-- [ ] Generación de código C funcional mejorada
+- [ ] Implementar las fases de un transpilador: análisis léxico, sintáctico, semántico representacion intermedia, tabla de simbolos y generacion de código c funcional
 - [ ] Tutorial integrado para cada tipo de nodo
-- [ ] Validación semántica entre nodos de preparación y decisión
-- [ ] Plantillas de bucles comunes (contador, suma, búsqueda)
 
 ### 🎯 Próximas Funcionalidades
 
 - [ ] Compartir diagramas
-- [ ] Exportación de código a archivos
+- [ ] Exportación de diagramas a JPG/PNG
+- [ ] Exportación de código a archivos .c
 
 ## 📄 Licencia
 

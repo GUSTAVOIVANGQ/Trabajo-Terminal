@@ -1602,19 +1602,12 @@ class CodeGenerator {
             .where((v) => v.isNotEmpty && !_isKeyword(v.toLowerCase()))
             .toList();
         if (vars.isNotEmpty) {
-          final formatSpecifiers = vars.map((v) => '%d').join(' ');
+          final formatSpecifiers =
+              vars.map((v) => _getFormatSpecifierForVar(v)).join(' ');
           return "printf(\"$stringContent $formatSpecifiers\\n\", ${vars.join(', ')})";
         }
       }
       return "printf(\"$stringContent\\n\")";
-    }
-
-    // Extraer variables del texto de salida
-    String varName = _extractVariableNameFromOutput(trimmedText);
-
-    // Si parece una variable sola, la mostramos
-    if (_isSimpleVariableName(varName)) {
-      return "printf(\"%d\\n\", $varName)";
     }
 
     // Si no tiene formato especial, lo tratamos como texto a mostrar
@@ -1627,8 +1620,25 @@ class CodeGenerator {
       // Extraer lo que se debe mostrar
       final content =
           trimmedText.substring(trimmedText.indexOf(' ') + 1).trim();
+
+      // Verificar si hay múltiples variables separadas por comas
+      if (content.contains(',')) {
+        final vars = content
+            .split(',')
+            .map((v) => v.trim())
+            .where((v) => v.isNotEmpty && _isSimpleVariableName(v))
+            .toList();
+        if (vars.isNotEmpty) {
+          // Generar especificadores de formato para cada variable
+          final formatSpecifiers =
+              vars.map((v) => _getFormatSpecifierForVar(v)).join(' ');
+          return "printf(\"$formatSpecifiers\\n\", ${vars.join(', ')})";
+        }
+      }
+
+      // Una sola variable
       if (_isSimpleVariableName(content)) {
-        return "printf(\"%d\\n\", $content)";
+        return "printf(\"${_getFormatSpecifierForVar(content)}\\n\", $content)";
       } else if (content.startsWith('"') && content.endsWith('"')) {
         return "printf(${content.substring(0, content.length)}\\n\")";
       } else {
@@ -1637,7 +1647,71 @@ class CodeGenerator {
       }
     }
 
+    // Extraer variables del texto de salida
+    String varName = _extractVariableNameFromOutput(trimmedText);
+
+    // Si parece una variable sola, la mostramos
+    if (_isSimpleVariableName(varName)) {
+      return "printf(\"${_getFormatSpecifierForVar(varName)}\\n\", $varName)";
+    }
+
     return "printf(\"$trimmedText\\n\")";
+  }
+
+  /// Determina el especificador de formato para una variable basándose en su nombre
+  /// Por convención: nombres que sugieren tipo (ej: 'y' para float, 'z' para char)
+  /// Esta es una heurística simple - el compilador avanzado usa la tabla de símbolos
+  static String _getFormatSpecifierForVar(String varName) {
+    // Convenciones comunes:
+    // - Variables que empiezan con 'c' o 'ch' o tienen 'char' suelen ser char
+    // - Variables que tienen 'float', 'f', 'y' (por convención matemática) suelen ser float
+    // - Variables que tienen 'double', 'd' suelen ser double
+    // - El resto se asume int
+    final lowerName = varName.toLowerCase();
+
+    // Detectar char
+    if (lowerName == 'c' ||
+        lowerName == 'z' ||
+        lowerName.startsWith('ch') ||
+        lowerName.contains('char') ||
+        lowerName == 'letra' ||
+        lowerName == 'caracter') {
+      return '%c';
+    }
+
+    // Detectar float/double
+    if (lowerName == 'y' ||
+        lowerName == 'f' ||
+        lowerName.contains('float') ||
+        lowerName.contains('decimal') ||
+        lowerName.contains('real') ||
+        lowerName == 'pi' ||
+        lowerName == 'e' ||
+        lowerName.contains('promedio') ||
+        lowerName.contains('average') ||
+        lowerName.contains('celsius') ||
+        lowerName.contains('fahrenheit') ||
+        lowerName.contains('temp')) {
+      return '%f';
+    }
+
+    // Detectar double
+    if (lowerName == 'd' || lowerName.contains('double')) {
+      return '%lf';
+    }
+
+    // Detectar string
+    if (lowerName.contains('str') ||
+        lowerName.contains('nombre') ||
+        lowerName.contains('texto') ||
+        lowerName.contains('cadena') ||
+        lowerName.contains('message') ||
+        lowerName.contains('name')) {
+      return '%s';
+    }
+
+    // Por defecto: int
+    return '%d';
   }
 
   // Extrae el nombre de la variable de un texto de salida
