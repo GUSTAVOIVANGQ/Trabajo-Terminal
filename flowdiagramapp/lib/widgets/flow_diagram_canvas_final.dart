@@ -4,6 +4,67 @@ import '../themes/app_themes.dart';
 import '../services/theme_service.dart';
 import 'dart:math' as math;
 
+enum _ConnectionDirection { top, bottom, left, right }
+
+_ConnectionDirection _getFaceDirection(Offset point, DiagramNode node) {
+  const double epsilon = 5.0; // Increased tolerance
+  if ((point.dy - node.position.dy).abs() < epsilon)
+    return _ConnectionDirection.top;
+  if ((point.dy - (node.position.dy + node.size.height)).abs() < epsilon)
+    return _ConnectionDirection.bottom;
+  if ((point.dx - node.position.dx).abs() < epsilon)
+    return _ConnectionDirection.left;
+  if ((point.dx - (node.position.dx + node.size.width)).abs() < epsilon)
+    return _ConnectionDirection.right;
+  return _ConnectionDirection.bottom;
+}
+
+List<Offset> _getOrthogonalRoute(
+    Offset start, Offset end, DiagramNode source, DiagramNode target,
+    {int seed = 0}) {
+  final startDir = _getFaceDirection(start, source);
+  final endDir = _getFaceDirection(end, target);
+
+  final points = <Offset>[];
+
+  // Aplicar un pequeño desplazamiento determinista basado en la semilla
+  // para evitar que líneas superpuestas se dibujen exactamente una sobre otra
+  // Se usa un rango aproximado de -10 a +10
+  final double offset = ((seed * 13) % 41 - 20) * 0.5;
+
+  final midX = (start.dx + end.dx) / 2 + offset;
+  final midY = (start.dy + end.dy) / 2 + offset;
+
+  // Case 1: Vertical -> Vertical
+  if ((startDir == _ConnectionDirection.top ||
+          startDir == _ConnectionDirection.bottom) &&
+      (endDir == _ConnectionDirection.top ||
+          endDir == _ConnectionDirection.bottom)) {
+    points.add(Offset(start.dx, midY));
+    points.add(Offset(end.dx, midY));
+  }
+  // Case 2: Horizontal -> Horizontal
+  else if ((startDir == _ConnectionDirection.left ||
+          startDir == _ConnectionDirection.right) &&
+      (endDir == _ConnectionDirection.left ||
+          endDir == _ConnectionDirection.right)) {
+    points.add(Offset(midX, start.dy));
+    points.add(Offset(midX, end.dy));
+  }
+  // Case 3: Vertical -> Horizontal
+  else if (startDir == _ConnectionDirection.top ||
+      startDir == _ConnectionDirection.bottom) {
+    points.add(Offset(start.dx, end.dy));
+  }
+  // Case 4: Horizontal -> Vertical
+  else {
+    points.add(Offset(end.dx, start.dy));
+  }
+
+  points.add(end);
+  return points;
+}
+
 extension OffsetExtensions on Offset {
   Offset normalize() {
     final length = math.sqrt(dx * dx + dy * dy);
@@ -18,6 +79,7 @@ class FlowDiagramCanvas extends StatefulWidget {
   final Offset panOffset;
   final double scale;
   final Function(DragUpdateDetails) onPanUpdate;
+  final Function(ScaleStartDetails)? onScaleStart;
   final Function(ScaleUpdateDetails) onScaleUpdate;
   final Function(DiagramNode?) onNodeTap;
   final Function(DiagramNode) onNodeLongPress;
@@ -33,6 +95,7 @@ class FlowDiagramCanvas extends StatefulWidget {
     required this.panOffset,
     required this.scale,
     required this.onPanUpdate,
+    this.onScaleStart,
     required this.onScaleUpdate,
     required this.onNodeTap,
     required this.onNodeLongPress,
@@ -153,11 +216,28 @@ class _FlowDiagramCanvasState extends State<FlowDiagramCanvas>
           }
         }
       } else {
-        // Para flechas rectas, verificar solo el segmento directo
-        final distance = _distanceToLine(scaledPosition, start, end);
-        if (distance < hitDistance) {
-          return connection;
+        // Usar la ruta ortogonal para verificar la colisión en cada segmento
+        // Usamos una combinación de los IDs de los nodos para la semilla
+        final seed =
+            connection.source.id.hashCode ^ connection.target.id.hashCode;
+        final route = _getOrthogonalRoute(
+            start, end, connection.source, connection.target,
+            seed: seed);
+
+        Offset currentStart = start;
+        bool hit = false;
+
+        for (final nextPoint in route) {
+          final distance =
+              _distanceToLine(scaledPosition, currentStart, nextPoint);
+          if (distance < hitDistance) {
+            hit = true;
+            break;
+          }
+          currentStart = nextPoint;
         }
+
+        if (hit) return connection;
       }
     }
 
@@ -224,6 +304,8 @@ class _FlowDiagramCanvasState extends State<FlowDiagramCanvas>
           setState(() {
             dragStart = details.localFocalPoint;
           });
+          // Notificar al padre que inicia un gesto de escala/pan (no sobre un nodo)
+          widget.onScaleStart?.call(details);
         }
       },
 
@@ -693,8 +775,26 @@ class FlowDiagramPainter extends CustomPainter {
       // El penúltimo punto es point4 (antes de llegar a end)
       penultimatePoint = point4;
     } else {
-      // Línea recta normal
-      path.lineTo(end.dx, end.dy);
+      // Usar ruta ortogonal para conexiones normales
+      final seed =
+          connection.source.id.hashCode ^ connection.target.id.hashCode;
+      final route = _getOrthogonalRoute(
+          start, end, connection.source, connection.target,
+          seed: seed);
+
+      for (final p in route) {
+        path.lineTo(p.dx, p.dy);
+      }
+
+      if (route.isNotEmpty) {
+        if (route.length > 1) {
+          penultimatePoint = route[route.length - 2];
+        } else {
+          penultimatePoint = start;
+        }
+      } else {
+        path.lineTo(end.dx, end.dy);
+      }
     }
 
     canvas.drawPath(path, connectionPaint);

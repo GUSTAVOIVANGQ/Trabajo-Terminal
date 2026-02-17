@@ -279,7 +279,10 @@ class DiagramLexicalAnalyzer {
   /// Analyze a single node
   NodeLexicalResult analyzeNode(DiagramNode node) {
     _currentNodeId = node.id;
-    final tokens = tokenize(node.text, nodeId: node.id);
+
+    // Normalizar el texto antes de tokenizar
+    final normalizedText = _normalizeText(node.text, node.type);
+    final tokens = tokenize(normalizedText, nodeId: node.id);
 
     return NodeLexicalResult(
       nodeId: node.id,
@@ -288,6 +291,23 @@ class DiagramLexicalAnalyzer {
       tokens: tokens,
       errors: List.from(_errors),
     );
+  }
+
+  /// Normaliza el texto del nodo según su tipo
+  /// Para nodos de decisión, quita los signos de interrogación
+  String _normalizeText(String text, NodeType nodeType) {
+    if (nodeType == NodeType.decision) {
+      // Quitar signos de interrogación al inicio y al final
+      // Esto permite que el compilador acepte tanto "¿b > c?" como "b > c"
+      return text.replaceAll('¿', '').replaceAll('?', '').trim();
+    }
+    return text;
+  }
+
+  /// Tokenize a diagram node (with automatic text normalization)
+  List<Token> tokenizeNode(DiagramNode node) {
+    final normalizedText = _normalizeText(node.text, node.type);
+    return tokenize(normalizedText, nodeId: node.id);
   }
 
   /// Tokenize a string of text
@@ -321,31 +341,55 @@ class DiagramLexicalAnalyzer {
   }
 
   /// Extract symbols from lexical result and add to symbol table
+  /// Supports multiple variable declarations: int a, b, c
   void _extractSymbols(NodeLexicalResult result, DiagramNode node) {
     final tokens = result.significantTokens;
 
-    // Pattern: type identifier = value OR type identifier
+    // Pattern: type identifier [= value] [, identifier [= value]]*
+    // Examples: "int a", "int a, b, c", "int x = 5", "int a = 1, b = 2"
     for (int i = 0; i < tokens.length; i++) {
       final token = tokens[i];
 
       // Check for type keywords
       if (_isTypeKeyword(token.type)) {
         final dataType = _tokenTypeToDataType(token.type);
+        int j = i + 1;
 
-        // Next token should be an identifier
-        if (i + 1 < tokens.length &&
-            tokens[i + 1].type == TokenType.identifier) {
-          final nameToken = tokens[i + 1];
+        // Parse all variable names after the type (comma-separated)
+        while (j < tokens.length) {
+          // Expect identifier
+          if (tokens[j].type != TokenType.identifier) break;
+
+          final nameToken = tokens[j];
+          j++;
+
+          // Check for array brackets
+          if (j < tokens.length && tokens[j].type == TokenType.leftBracket) {
+            // Skip array size and closing bracket
+            while (
+                j < tokens.length && tokens[j].type != TokenType.rightBracket) {
+              j++;
+            }
+            if (j < tokens.length) j++; // Skip ]
+          }
 
           // Check if it's an initialization
           bool isInitialized = false;
           dynamic initialValue;
 
-          if (i + 2 < tokens.length &&
-              tokens[i + 2].type == TokenType.opAssign) {
+          if (j < tokens.length && tokens[j].type == TokenType.opAssign) {
             isInitialized = true;
-            if (i + 3 < tokens.length) {
-              initialValue = tokens[i + 3].value ?? tokens[i + 3].lexeme;
+            j++; // Skip =
+
+            // Get the value (could be a literal, identifier, or expression)
+            if (j < tokens.length) {
+              initialValue = tokens[j].value ?? tokens[j].lexeme;
+              // Skip to next comma or end
+              while (j < tokens.length &&
+                  tokens[j].type != TokenType.comma &&
+                  tokens[j].type != TokenType.semicolon) {
+                j++;
+              }
             }
           }
 
@@ -358,7 +402,18 @@ class DiagramLexicalAnalyzer {
             isInitialized: isInitialized,
             initialValue: initialValue,
           );
+
+          // Check for comma (more variables follow)
+          if (j < tokens.length && tokens[j].type == TokenType.comma) {
+            j++; // Skip comma and continue to next variable
+          } else {
+            break; // End of declaration
+          }
         }
+
+        // Move main index past the processed declaration
+        i = j - 1;
+        continue;
       }
 
       // Also check for assignments without explicit type (type inference)
@@ -418,19 +473,48 @@ class DiagramLexicalAnalyzer {
       }
     }
 
-    // Format specifier (for printf/scanf) - check BEFORE single-char tokens
-    // because % could be modulo or format specifier
+    // Format specifier (for printf/scanf) vs modulo operator
+    // This needs careful handling because % is used for both:
+    // - Format specifiers: %d, %f, %s, %+5.2f, etc.
+    // - Modulo operator: a % b
     if (char == '%') {
       if (!_isAtEnd()) {
         final nextChar = _peek();
-        // Check if it looks like a format specifier
-        if (_isAlpha(nextChar) ||
-            '+-# 0'.contains(nextChar) ||
-            _isDigit(nextChar)) {
+        // Format specifiers MUST start with (immediately after %):
+        // - A conversion specifier: d, i, o, u, x, X, e, E, f, F, g, G, a, A, c, s, p, n, %, l, h
+        // - A format flag: +, -, #, 0 (NOT space - too ambiguous with modulo)
+        // - A digit for width: %5d, %10s
+        // - A precision specifier: %.2f
+        //
+        // Space is intentionally NOT supported as a flag because:
+        // "a % b" and "a % 0" should be modulo, not format specifier
+        if (_isFormatConversionChar(nextChar)) {
+          // Direct conversion specifier: %d, %f, %s, etc.
+          return _scanFormatSpecifier(startLine, startColumn);
+        } else if ('+-#0'.contains(nextChar)) {
+          // Format flags (excluding space to avoid ambiguity)
+          return _scanFormatSpecifier(startLine, startColumn);
+        } else if (_isDigit(nextChar)) {
+          // Width specifier: %5d, %10s (but nextChar must be non-zero digit to avoid %0 being confused with operand 0)
+          // Actually, %0d is valid for zero-padding, so we need to check further
+          // Look ahead: if digit is followed by another digit or a format char, it's a format
+          if (_position + 1 < _text.length) {
+            final charAfter = _text[_position + 1];
+            if (_isDigit(charAfter) ||
+                _isFormatConversionChar(charAfter) ||
+                charAfter == '.') {
+              return _scanFormatSpecifier(startLine, startColumn);
+            }
+          }
+          // If it's just a single digit followed by non-format char, it might be modulo
+          // e.g., "x % 5" where 5 is the operand
+        } else if (nextChar == '.') {
+          // Precision specifier: %.2f
           return _scanFormatSpecifier(startLine, startColumn);
         }
+        // Space and other characters after % means it's modulo
       }
-      // Otherwise it's the modulo operator (including when % is at end of input)
+      // Otherwise it's the modulo operator
       return Token(
         type: TokenType.opModulo,
         lexeme: char,
@@ -801,6 +885,12 @@ class DiagramLexicalAnalyzer {
   }
 
   bool _isAlphaNumeric(String char) => _isAlpha(char) || _isDigit(char);
+
+  /// Check if character is a valid printf format conversion specifier
+  /// Valid specifiers: d, i, o, u, x, X, e, E, f, F, g, G, a, A, c, s, p, n, %
+  bool _isFormatConversionChar(String char) {
+    return 'diouxXeEfFgGaAcspn%lh'.contains(char);
+  }
 
   bool _isTypeKeyword(TokenType type) {
     return type == TokenType.kwInt ||

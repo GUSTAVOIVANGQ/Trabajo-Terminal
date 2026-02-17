@@ -220,80 +220,111 @@ class TemplateDefinitions {
       text: "Inicio",
     );
 
-    final inputANode = DiagramNode(
-      id: "input_${baseId}_2",
-      type: NodeType.data,
+    // Declaración de variables de entrada (agrupadas)
+    final declareInputVarsNode = DiagramNode(
+      id: "process_${baseId}_2",
+      type: NodeType.process,
       position: const Offset(250, 150),
+      text: "int a, b",
+      metadata: {
+        'processType': 'declaration',
+        'varType': 'int',
+        'varNames': ['a', 'b']
+      },
+    );
+
+    // Declaración de variables de resultado (agrupadas)
+    final declareResultVarsNode = DiagramNode(
+      id: "process_${baseId}_3",
+      type: NodeType.process,
+      position: const Offset(250, 250),
+      text: "int suma, resta, multiplicacion, division, modulo",
+      metadata: {
+        'processType': 'declaration',
+        'varType': 'int',
+        'varNames': ['suma', 'resta', 'multiplicacion', 'division', 'modulo']
+      },
+    );
+
+    // Entrada de datos
+    final inputANode = DiagramNode(
+      id: "input_${baseId}_4",
+      type: NodeType.data,
+      position: const Offset(250, 350),
       text: "Leer a",
       metadata: {'isOutput': false, 'inputType': 'int', 'varName': 'a'},
     );
 
     final inputBNode = DiagramNode(
-      id: "input_${baseId}_3",
+      id: "input_${baseId}_5",
       type: NodeType.data,
-      position: const Offset(250, 250),
+      position: const Offset(250, 450),
       text: "Leer b",
       metadata: {'isOutput': false, 'inputType': 'int', 'varName': 'b'},
     );
 
+    // Operaciones aritméticas
     final sumNode = DiagramNode(
-      id: "process_${baseId}_4",
+      id: "process_${baseId}_6",
       type: NodeType.process,
-      position: const Offset(250, 350),
+      position: const Offset(250, 550),
       text: "suma = a + b",
       metadata: {'processType': 'arithmetic', 'operator': '+'},
     );
 
     final subNode = DiagramNode(
-      id: "process_${baseId}_5",
+      id: "process_${baseId}_7",
       type: NodeType.process,
-      position: const Offset(250, 450),
+      position: const Offset(250, 650),
       text: "resta = a - b",
       metadata: {'processType': 'arithmetic', 'operator': '-'},
     );
 
     final mulNode = DiagramNode(
-      id: "process_${baseId}_6",
+      id: "process_${baseId}_8",
       type: NodeType.process,
-      position: const Offset(250, 550),
+      position: const Offset(250, 750),
       text: "multiplicacion = a * b",
       metadata: {'processType': 'arithmetic', 'operator': '*'},
     );
 
     final divNode = DiagramNode(
-      id: "process_${baseId}_7",
+      id: "process_${baseId}_9",
       type: NodeType.process,
-      position: const Offset(250, 650),
+      position: const Offset(250, 850),
       text: "division = a / b",
       metadata: {'processType': 'arithmetic', 'operator': '/'},
     );
 
     final modNode = DiagramNode(
-      id: "process_${baseId}_8",
+      id: "process_${baseId}_10",
       type: NodeType.process,
-      position: const Offset(250, 750),
+      position: const Offset(250, 950),
       text: "modulo = a % b",
       metadata: {'processType': 'arithmetic', 'operator': '%'},
     );
 
+    // Salida de resultados
     final outputNode = DiagramNode(
-      id: "output_${baseId}_9",
+      id: "output_${baseId}_11",
       type: NodeType.data,
-      position: const Offset(250, 850),
+      position: const Offset(250, 1050),
       text: "Escribir suma, resta, multiplicacion, division, modulo",
       metadata: {'isOutput': true, 'outputType': 'variables'},
     );
 
     final endNode = DiagramNode(
-      id: "end_${baseId}_10",
+      id: "end_${baseId}_12",
       type: NodeType.terminal,
-      position: const Offset(250, 950),
+      position: const Offset(250, 1150),
       text: "Fin",
     );
 
     final nodes = [
       commentNode,
       startNode,
+      declareInputVarsNode,
+      declareResultVarsNode,
       inputANode,
       inputBNode,
       sumNode,
@@ -306,7 +337,12 @@ class TemplateDefinitions {
     ];
 
     final connections = [
-      Connection(source: startNode, target: inputANode, label: ""),
+      Connection(source: startNode, target: declareInputVarsNode, label: ""),
+      Connection(
+          source: declareInputVarsNode,
+          target: declareResultVarsNode,
+          label: ""),
+      Connection(source: declareResultVarsNode, target: inputANode, label: ""),
       Connection(source: inputANode, target: inputBNode, label: ""),
       Connection(source: inputBNode, target: sumNode, label: ""),
       Connection(source: sumNode, target: subNode, label: ""),
@@ -349,40 +385,54 @@ class TemplateDefinitions {
       text: "Inicio",
     );
 
-    final inputNode = DiagramNode(
-      id: "input_${baseId}_2",
-      type: NodeType.data,
+    // Declaración de variables
+    final declareVarsNode = DiagramNode(
+      id: "process_${baseId}_2",
+      type: NodeType.process,
       position: const Offset(250, 150),
+      text: "float celsius, fahrenheit",
+      metadata: {
+        'processType': 'declaration',
+        'varType': 'float',
+        'varNames': ['celsius', 'fahrenheit']
+      },
+    );
+
+    final inputNode = DiagramNode(
+      id: "input_${baseId}_3",
+      type: NodeType.data,
+      position: const Offset(250, 250),
       text: "Leer celsius",
       metadata: {'isOutput': false, 'inputType': 'float', 'varName': 'celsius'},
     );
 
     final processNode = DiagramNode(
-      id: "process_${baseId}_3",
+      id: "process_${baseId}_4",
       type: NodeType.process,
-      position: const Offset(250, 250),
+      position: const Offset(250, 350),
       text: "fahrenheit = (celsius * 9.0 / 5.0) + 32.0",
       metadata: {'processType': 'arithmetic'},
     );
 
     final outputNode = DiagramNode(
-      id: "output_${baseId}_4",
+      id: "output_${baseId}_5",
       type: NodeType.data,
-      position: const Offset(250, 350),
+      position: const Offset(250, 450),
       text: "Escribir fahrenheit",
       metadata: {'isOutput': true, 'outputType': 'float'},
     );
 
     final endNode = DiagramNode(
-      id: "end_${baseId}_5",
+      id: "end_${baseId}_6",
       type: NodeType.terminal,
-      position: const Offset(250, 450),
+      position: const Offset(250, 550),
       text: "Fin",
     );
 
     final nodes = [
       commentNode,
       startNode,
+      declareVarsNode,
       inputNode,
       processNode,
       outputNode,
@@ -390,7 +440,8 @@ class TemplateDefinitions {
     ];
 
     final connections = [
-      Connection(source: startNode, target: inputNode, label: ""),
+      Connection(source: startNode, target: declareVarsNode, label: ""),
+      Connection(source: declareVarsNode, target: inputNode, label: ""),
       Connection(source: inputNode, target: processNode, label: ""),
       Connection(source: processNode, target: outputNode, label: ""),
       Connection(source: outputNode, target: endNode, label: ""),
@@ -432,47 +483,61 @@ class TemplateDefinitions {
       text: "Inicio",
     );
 
-    final inputNode = DiagramNode(
-      id: "input_${baseId}_2",
-      type: NodeType.data,
+    // Declaración de variable
+    final declareVarNode = DiagramNode(
+      id: "process_${baseId}_2",
+      type: NodeType.process,
       position: const Offset(250, 150),
+      text: "int numero",
+      metadata: {
+        'processType': 'declaration',
+        'varType': 'int',
+        'varName': 'numero'
+      },
+    );
+
+    final inputNode = DiagramNode(
+      id: "input_${baseId}_3",
+      type: NodeType.data,
+      position: const Offset(250, 250),
       text: "Leer numero",
       metadata: {'isOutput': false, 'inputType': 'int', 'varName': 'numero'},
     );
 
     final decisionNode = DiagramNode(
-      id: "decision_${baseId}_3",
+      id: "decision_${baseId}_4",
       type: NodeType.decision,
-      position: const Offset(250, 270),
+      position: const Offset(250, 370),
       text: "numero % 2 == 0",
     );
 
     final outputParNode = DiagramNode(
-      id: "output_${baseId}_4",
+      id: "output_${baseId}_5",
       type: NodeType.data,
-      position: const Offset(420, 400),
+      position: const Offset(420, 500),
       text: "Escribir \"El número es par\"",
       metadata: {'isOutput': true, 'outputType': 'string'},
     );
 
     final outputImparNode = DiagramNode(
-      id: "output_${baseId}_5",
+      id: "output_${baseId}_6",
       type: NodeType.data,
-      position: const Offset(80, 400),
+      position: const Offset(80, 500),
       text: "Escribir \"El número es impar\"",
       metadata: {'isOutput': true, 'outputType': 'string'},
     );
 
     final endNode = DiagramNode(
-      id: "end_${baseId}_6",
+      id: "end_${baseId}_7",
       type: NodeType.terminal,
-      position: const Offset(250, 530),
+      position: const Offset(250, 630),
       text: "Fin",
     );
 
     final nodes = [
       commentNode,
       startNode,
+      declareVarNode,
       inputNode,
       decisionNode,
       outputParNode,
@@ -481,7 +546,8 @@ class TemplateDefinitions {
     ];
 
     final connections = [
-      Connection(source: startNode, target: inputNode, label: ""),
+      Connection(source: startNode, target: declareVarNode, label: ""),
+      Connection(source: declareVarNode, target: inputNode, label: ""),
       Connection(source: inputNode, target: decisionNode, label: ""),
       Connection(source: decisionNode, target: outputParNode, label: "Sí"),
       Connection(source: decisionNode, target: outputImparNode, label: "No"),
@@ -521,77 +587,91 @@ class TemplateDefinitions {
       text: "Inicio",
     );
 
-    final inputANode = DiagramNode(
-      id: "input_${baseId}_2",
-      type: NodeType.data,
+    // Declaración de variables
+    final declareVarsNode = DiagramNode(
+      id: "process_${baseId}_2",
+      type: NodeType.process,
       position: const Offset(300, 140),
+      text: "int a, b, c",
+      metadata: {
+        'processType': 'declaration',
+        'varType': 'int',
+        'varNames': ['a', 'b', 'c']
+      },
+    );
+
+    final inputANode = DiagramNode(
+      id: "input_${baseId}_3",
+      type: NodeType.data,
+      position: const Offset(300, 230),
       text: "Leer a, b, c",
       metadata: {'isOutput': false, 'inputType': 'int'},
     );
 
     final decision1Node = DiagramNode(
-      id: "decision_${baseId}_3",
+      id: "decision_${baseId}_4",
       type: NodeType.decision,
-      position: const Offset(300, 250),
+      position: const Offset(300, 340),
       text: "a > b",
     );
 
     final decision2Node = DiagramNode(
-      id: "decision_${baseId}_4",
+      id: "decision_${baseId}_5",
       type: NodeType.decision,
-      position: const Offset(480, 370),
+      position: const Offset(480, 460),
       text: "a > c",
     );
 
     final decision3Node = DiagramNode(
-      id: "decision_${baseId}_5",
+      id: "decision_${baseId}_6",
       type: NodeType.decision,
-      position: const Offset(120, 370),
+      position: const Offset(120, 460),
       text: "b > c",
     );
 
     final outputANode = DiagramNode(
-      id: "output_${baseId}_6",
+      id: "output_${baseId}_7",
       type: NodeType.data,
-      position: const Offset(580, 490),
+      position: const Offset(580, 580),
       text: "Escribir \"Mayor: \", a",
       metadata: {'isOutput': true},
     );
 
     final outputCNode1 = DiagramNode(
-      id: "output_${baseId}_7",
+      id: "output_${baseId}_8",
       type: NodeType.data,
-      position: const Offset(380, 490),
+      position: const Offset(380, 580),
       text: "Escribir \"Mayor: \", c",
       metadata: {'isOutput': true},
     );
 
     final outputBNode = DiagramNode(
-      id: "output_${baseId}_8",
+      id: "output_${baseId}_9",
       type: NodeType.data,
-      position: const Offset(20, 490),
+      position: const Offset(20, 580),
       text: "Escribir \"Mayor: \", b",
       metadata: {'isOutput': true},
     );
 
     final outputCNode2 = DiagramNode(
-      id: "output_${baseId}_9",
+      id: "output_${baseId}_10",
       type: NodeType.data,
-      position: const Offset(220, 490),
+      position: const Offset(220, 580),
       text: "Escribir \"Mayor: \", c",
       metadata: {'isOutput': true},
     );
 
     final endNode = DiagramNode(
-      id: "end_${baseId}_10",
+      id: "end_${baseId}_11",
       type: NodeType.terminal,
-      position: const Offset(300, 610),
+      position: const Offset(300, 700),
       text: "Fin",
     );
 
     final nodes = [
       commentNode,
       startNode,
+      declareVarsNode,
       inputANode,
       decision1Node,
       decision2Node,
@@ -604,7 +684,8 @@ class TemplateDefinitions {
     ];
 
     final connections = [
-      Connection(source: startNode, target: inputANode, label: ""),
+      Connection(source: startNode, target: declareVarsNode, label: ""),
+      Connection(source: declareVarsNode, target: inputANode, label: ""),
       Connection(source: inputANode, target: decision1Node, label: ""),
       Connection(source: decision1Node, target: decision2Node, label: "Sí"),
       Connection(source: decision1Node, target: decision3Node, label: "No"),
@@ -650,116 +731,143 @@ class TemplateDefinitions {
       text: "Inicio",
     );
 
-    final inputNumsNode = DiagramNode(
-      id: "input_${baseId}_2",
-      type: NodeType.data,
+    // Declaración de variables
+    final declareVarsNode = DiagramNode(
+      id: "process_${baseId}_2",
+      type: NodeType.process,
       position: const Offset(300, 140),
+      text: "float a, b, resultado",
+      metadata: {
+        'processType': 'declaration',
+        'varType': 'float',
+        'varNames': ['a', 'b', 'resultado']
+      },
+    );
+
+    final declareOpcionNode = DiagramNode(
+      id: "process_${baseId}_3",
+      type: NodeType.process,
+      position: const Offset(300, 230),
+      text: "int opcion",
+      metadata: {
+        'processType': 'declaration',
+        'varType': 'int',
+        'varName': 'opcion'
+      },
+    );
+
+    final inputNumsNode = DiagramNode(
+      id: "input_${baseId}_4",
+      type: NodeType.data,
+      position: const Offset(300, 320),
       text: "Leer a, b",
       metadata: {'isOutput': false, 'inputType': 'float'},
     );
 
     final outputMenuNode = DiagramNode(
-      id: "output_${baseId}_3",
+      id: "output_${baseId}_5",
       type: NodeType.data,
-      position: const Offset(300, 230),
+      position: const Offset(300, 410),
       text: "Escribir \"1-Suma, 2-Resta, 3-Mult, 4-Div\"",
       metadata: {'isOutput': true, 'outputType': 'string'},
     );
 
     final inputOpcionNode = DiagramNode(
-      id: "input_${baseId}_4",
+      id: "input_${baseId}_6",
       type: NodeType.data,
-      position: const Offset(300, 320),
+      position: const Offset(300, 500),
       text: "Leer opcion",
       metadata: {'isOutput': false, 'inputType': 'int', 'varName': 'opcion'},
     );
 
     final decision1Node = DiagramNode(
-      id: "decision_${baseId}_5",
+      id: "decision_${baseId}_7",
       type: NodeType.decision,
-      position: const Offset(300, 430),
+      position: const Offset(300, 610),
       text: "opcion == 1",
       metadata: {'switchVar': 'opcion', 'caseValue': '1'},
     );
 
     final processSumaNode = DiagramNode(
-      id: "process_${baseId}_6",
+      id: "process_${baseId}_8",
       type: NodeType.process,
-      position: const Offset(520, 430),
+      position: const Offset(520, 610),
       text: "resultado = a + b",
     );
 
     final decision2Node = DiagramNode(
-      id: "decision_${baseId}_7",
+      id: "decision_${baseId}_9",
       type: NodeType.decision,
-      position: const Offset(300, 550),
+      position: const Offset(300, 730),
       text: "opcion == 2",
       metadata: {'switchVar': 'opcion', 'caseValue': '2'},
     );
 
     final processRestaNode = DiagramNode(
-      id: "process_${baseId}_8",
+      id: "process_${baseId}_10",
       type: NodeType.process,
-      position: const Offset(520, 550),
+      position: const Offset(520, 730),
       text: "resultado = a - b",
     );
 
     final decision3Node = DiagramNode(
-      id: "decision_${baseId}_9",
+      id: "decision_${baseId}_11",
       type: NodeType.decision,
-      position: const Offset(300, 670),
+      position: const Offset(300, 850),
       text: "opcion == 3",
       metadata: {'switchVar': 'opcion', 'caseValue': '3'},
     );
 
     final processMultNode = DiagramNode(
-      id: "process_${baseId}_10",
+      id: "process_${baseId}_12",
       type: NodeType.process,
-      position: const Offset(520, 670),
+      position: const Offset(520, 850),
       text: "resultado = a * b",
     );
 
     final decision4Node = DiagramNode(
-      id: "decision_${baseId}_11",
+      id: "decision_${baseId}_13",
       type: NodeType.decision,
-      position: const Offset(300, 790),
+      position: const Offset(300, 970),
       text: "opcion == 4",
       metadata: {'switchVar': 'opcion', 'caseValue': '4'},
     );
 
     final processDivNode = DiagramNode(
-      id: "process_${baseId}_12",
+      id: "process_${baseId}_14",
       type: NodeType.process,
-      position: const Offset(520, 790),
+      position: const Offset(520, 970),
       text: "resultado = a / b",
     );
 
     final outputErrorNode = DiagramNode(
-      id: "output_${baseId}_13",
+      id: "output_${baseId}_15",
       type: NodeType.data,
-      position: const Offset(300, 910),
+      position: const Offset(300, 1090),
       text: "Escribir \"Opción inválida\"",
       metadata: {'isOutput': true, 'outputType': 'string'},
     );
 
     final outputResultNode = DiagramNode(
-      id: "output_${baseId}_14",
+      id: "output_${baseId}_16",
       type: NodeType.data,
-      position: const Offset(520, 910),
+      position: const Offset(520, 1090),
       text: "Escribir resultado",
       metadata: {'isOutput': true},
     );
 
     final endNode = DiagramNode(
-      id: "end_${baseId}_15",
+      id: "end_${baseId}_17",
       type: NodeType.terminal,
-      position: const Offset(400, 1020),
+      position: const Offset(400, 1200),
       text: "Fin",
     );
 
     final nodes = [
       commentNode,
       startNode,
+      declareVarsNode,
+      declareOpcionNode,
       inputNumsNode,
       outputMenuNode,
       inputOpcionNode,
@@ -777,7 +885,9 @@ class TemplateDefinitions {
     ];
 
     final connections = [
-      Connection(source: startNode, target: inputNumsNode, label: ""),
+      Connection(source: startNode, target: declareVarsNode, label: ""),
+      Connection(source: declareVarsNode, target: declareOpcionNode, label: ""),
+      Connection(source: declareOpcionNode, target: inputNumsNode, label: ""),
       Connection(source: inputNumsNode, target: outputMenuNode, label: ""),
       Connection(source: outputMenuNode, target: inputOpcionNode, label: ""),
       Connection(source: inputOpcionNode, target: decision1Node, label: ""),
@@ -829,62 +939,76 @@ class TemplateDefinitions {
       text: "Inicio",
     );
 
-    final inputNode = DiagramNode(
-      id: "input_${baseId}_2",
-      type: NodeType.data,
+    // Declaración de variables
+    final declareVarsNode = DiagramNode(
+      id: "process_${baseId}_2",
+      type: NodeType.process,
       position: const Offset(280, 140),
+      text: "float a, b, c",
+      metadata: {
+        'processType': 'declaration',
+        'varType': 'float',
+        'varNames': ['a', 'b', 'c']
+      },
+    );
+
+    final inputNode = DiagramNode(
+      id: "input_${baseId}_3",
+      type: NodeType.data,
+      position: const Offset(280, 230),
       text: "Leer a, b, c",
       metadata: {'isOutput': false, 'inputType': 'float'},
     );
 
     final decision1Node = DiagramNode(
-      id: "decision_${baseId}_3",
+      id: "decision_${baseId}_4",
       type: NodeType.decision,
-      position: const Offset(280, 260),
+      position: const Offset(280, 350),
       text: "a == b && b == c",
     );
 
     final outputEquiNode = DiagramNode(
-      id: "output_${baseId}_4",
+      id: "output_${baseId}_5",
       type: NodeType.data,
-      position: const Offset(500, 260),
+      position: const Offset(500, 350),
       text: "Escribir \"Equilátero\"",
       metadata: {'isOutput': true, 'outputType': 'string'},
     );
 
     final decision2Node = DiagramNode(
-      id: "decision_${baseId}_5",
+      id: "decision_${baseId}_6",
       type: NodeType.decision,
-      position: const Offset(280, 400),
+      position: const Offset(280, 490),
       text: "a == b || b == c || a == c",
     );
 
     final outputIsoNode = DiagramNode(
-      id: "output_${baseId}_6",
+      id: "output_${baseId}_7",
       type: NodeType.data,
-      position: const Offset(500, 400),
+      position: const Offset(500, 490),
       text: "Escribir \"Isósceles\"",
       metadata: {'isOutput': true, 'outputType': 'string'},
     );
 
     final outputEscNode = DiagramNode(
-      id: "output_${baseId}_7",
+      id: "output_${baseId}_8",
       type: NodeType.data,
-      position: const Offset(280, 520),
+      position: const Offset(280, 610),
       text: "Escribir \"Escaleno\"",
       metadata: {'isOutput': true, 'outputType': 'string'},
     );
 
     final endNode = DiagramNode(
-      id: "end_${baseId}_8",
+      id: "end_${baseId}_9",
       type: NodeType.terminal,
-      position: const Offset(380, 640),
+      position: const Offset(380, 730),
       text: "Fin",
     );
 
     final nodes = [
       commentNode,
       startNode,
+      declareVarsNode,
       inputNode,
       decision1Node,
       outputEquiNode,
@@ -895,7 +1019,8 @@ class TemplateDefinitions {
     ];
 
     final connections = [
-      Connection(source: startNode, target: inputNode, label: ""),
+      Connection(source: startNode, target: declareVarsNode, label: ""),
+      Connection(source: declareVarsNode, target: inputNode, label: ""),
       Connection(source: inputNode, target: decision1Node, label: ""),
       Connection(source: decision1Node, target: outputEquiNode, label: "Sí"),
       Connection(source: decision1Node, target: decision2Node, label: "No"),
@@ -944,24 +1069,36 @@ class TemplateDefinitions {
       text: "Inicio",
     );
 
+    // Declaración de variables
+    final declareVarsNode = DiagramNode(
+      id: "process_${baseId}_2",
+      type: NodeType.process,
+      position: const Offset(280, 140),
+      text: "int limite, contador",
+      metadata: {
+        'processType': 'declaration',
+        'varType': 'int',
+        'varNames': ['limite', 'contador']
+      },
+    );
+
     // Leer el límite
     final inputNode = DiagramNode(
-      id: "input_${baseId}_2",
+      id: "input_${baseId}_3",
       type: NodeType.data,
-      position: const Offset(280, 140),
+      position: const Offset(280, 230),
       text: "Leer limite",
       metadata: {'isOutput': false, 'inputType': 'int', 'varName': 'limite'},
     );
 
     // Inicializar contador (instrucciones antes del ciclo)
     final initNode = DiagramNode(
-      id: "process_${baseId}_3",
+      id: "process_${baseId}_4",
       type: NodeType.process,
-      position: const Offset(280, 230),
+      position: const Offset(280, 320),
       text: "contador = 1",
       metadata: {
-        'processType': 'initialization',
-        'varType': 'int',
+        'processType': 'assignment',
         'varName': 'contador',
         'value': '1'
       },
@@ -969,50 +1106,51 @@ class TemplateDefinitions {
 
     // Nodo de decisión del while (rombo) - símbolo correcto según ISO 5807
     final whileDecisionNode = DiagramNode(
-      id: "decision_${baseId}_4",
+      id: "decision_${baseId}_5",
       type: NodeType.decision,
-      position: const Offset(280, 340),
+      position: const Offset(280, 430),
       text: "contador <= limite",
     );
 
     // Cuerpo del ciclo: Escribir contador
     final outputContadorNode = DiagramNode(
-      id: "output_${baseId}_5",
+      id: "output_${baseId}_6",
       type: NodeType.data,
-      position: const Offset(500, 340),
+      position: const Offset(500, 430),
       text: "Escribir contador",
       metadata: {'isOutput': true},
     );
 
     // Cuerpo del ciclo: Incrementar contador
     final incrementNode = DiagramNode(
-      id: "process_${baseId}_6",
+      id: "process_${baseId}_7",
       type: NodeType.process,
-      position: const Offset(500, 450),
+      position: const Offset(500, 540),
       text: "contador = contador + 1",
       metadata: {'processType': 'increment'},
     );
 
     // Después del ciclo: mensaje de fin
     final outputFinNode = DiagramNode(
-      id: "output_${baseId}_7",
+      id: "output_${baseId}_8",
       type: NodeType.data,
-      position: const Offset(280, 550),
+      position: const Offset(280, 640),
       text: "Escribir \"Fin del conteo\"",
       metadata: {'isOutput': true, 'outputType': 'string'},
     );
 
     // Nodo final
     final endNode = DiagramNode(
-      id: "end_${baseId}_8",
+      id: "end_${baseId}_9",
       type: NodeType.terminal,
-      position: const Offset(280, 650),
+      position: const Offset(280, 740),
       text: "Fin",
     );
 
     final nodes = [
       commentNode,
       startNode,
+      declareVarsNode,
       inputNode,
       initNode,
       whileDecisionNode,
@@ -1024,7 +1162,8 @@ class TemplateDefinitions {
 
     final connections = [
       // Secuencia inicial
-      Connection(source: startNode, target: inputNode, label: ""),
+      Connection(source: startNode, target: declareVarsNode, label: ""),
+      Connection(source: declareVarsNode, target: inputNode, label: ""),
       Connection(source: inputNode, target: initNode, label: ""),
       Connection(source: initNode, target: whileDecisionNode, label: ""),
       // Rama "Sí" - entra al cuerpo del ciclo
@@ -1055,6 +1194,8 @@ class TemplateDefinitions {
   }
 
   /// P10: Validación de Entrada (Do-While)
+  /// Estructura correcta de do-while según diagrama estándar:
+  /// Entrada -> Cuerpo (proceso) -> Condición (decisión) -> True: loop back al cuerpo, False: sale
   static Future<SavedDiagram> createValidacionDoWhileTemplate() async {
     final now = DateTime.now();
     final baseId = now.millisecondsSinceEpoch;
@@ -1074,85 +1215,86 @@ class TemplateDefinitions {
       text: "Inicio",
     );
 
-    final loopStartNode = DiagramNode(
-      id: "loop_${baseId}_2",
-      type: NodeType.preparation,
-      position: const Offset(280, 150),
-      text: "do",
-      metadata: {'loopType': 'do-while-start'},
+    // Declaración de variable
+    final declareVarNode = DiagramNode(
+      id: "process_${baseId}_2",
+      type: NodeType.process,
+      position: const Offset(280, 140),
+      text: "int numero",
+      metadata: {
+        'processType': 'declaration',
+        'varType': 'int',
+        'varName': 'numero'
+      },
     );
 
-    final outputPromptNode = DiagramNode(
-      id: "output_${baseId}_3",
-      type: NodeType.data,
-      position: const Offset(280, 250),
-      text: "Escribir \"Ingrese un número positivo:\"",
-      metadata: {'isOutput': true, 'outputType': 'string'},
-    );
-
-    final inputNode = DiagramNode(
-      id: "input_${baseId}_4",
-      type: NodeType.data,
-      position: const Offset(280, 350),
+    // Cuerpo del do-while: Pedir entrada (este nodo se ejecuta primero)
+    final bodyNode = DiagramNode(
+      id: "process_${baseId}_3",
+      type: NodeType.process,
+      position: const Offset(280, 240),
       text: "Leer numero",
-      metadata: {'isOutput': false, 'inputType': 'int', 'varName': 'numero'},
+      metadata: {
+        'structureType': 'loop',
+        'loopType': 'do-while',
+        'role': 'loop-body',
+        'isOutput': false,
+        'inputType': 'int',
+        'varName': 'numero'
+      },
     );
 
-    final decisionNode = DiagramNode(
-      id: "decision_${baseId}_5",
+    // Condición del do-while (se evalúa después del cuerpo)
+    final conditionNode = DiagramNode(
+      id: "decision_${baseId}_4",
       type: NodeType.decision,
-      position: const Offset(280, 470),
+      position: const Offset(280, 380),
       text: "numero <= 0",
-      metadata: {'loopType': 'do-while-condition'},
-    );
-
-    final outputErrorNode = DiagramNode(
-      id: "output_${baseId}_6",
-      type: NodeType.data,
-      position: const Offset(500, 470),
-      text: "Escribir \"Error: debe ser positivo\"",
-      metadata: {'isOutput': true, 'outputType': 'string'},
+      metadata: {
+        'structureType': 'loop',
+        'loopType': 'do-while',
+        'role': 'loop-condition',
+        'condition': 'numero <= 0'
+      },
     );
 
     final outputSuccessNode = DiagramNode(
-      id: "output_${baseId}_7",
+      id: "output_${baseId}_5",
       type: NodeType.data,
-      position: const Offset(280, 600),
+      position: const Offset(280, 520),
       text: "Escribir \"Número válido:\", numero",
       metadata: {'isOutput': true},
     );
 
     final endNode = DiagramNode(
-      id: "end_${baseId}_8",
+      id: "end_${baseId}_6",
       type: NodeType.terminal,
-      position: const Offset(280, 700),
+      position: const Offset(280, 620),
       text: "Fin",
     );
 
     final nodes = [
       commentNode,
       startNode,
-      loopStartNode,
-      outputPromptNode,
-      inputNode,
-      decisionNode,
-      outputErrorNode,
+      declareVarNode,
+      bodyNode,
+      conditionNode,
       outputSuccessNode,
       endNode
     ];
 
     final connections = [
-      Connection(source: startNode, target: loopStartNode, label: ""),
-      Connection(source: loopStartNode, target: outputPromptNode, label: ""),
-      Connection(source: outputPromptNode, target: inputNode, label: ""),
-      Connection(source: inputNode, target: decisionNode, label: ""),
-      Connection(source: decisionNode, target: outputErrorNode, label: "Sí"),
+      Connection(source: startNode, target: declareVarNode, label: ""),
+      Connection(source: declareVarNode, target: bodyNode, label: ""),
+      Connection(source: bodyNode, target: conditionNode, label: ""),
+      // Verdadero: la condición se cumple, repetir (loop back al cuerpo)
       Connection(
-          source: outputErrorNode,
-          target: loopStartNode,
-          label: "",
+          source: conditionNode,
+          target: bodyNode,
+          label: "Sí",
           isLoopBack: true),
-      Connection(source: decisionNode, target: outputSuccessNode, label: "No"),
+      // Falso: la condición no se cumple, salir del bucle
+      Connection(source: conditionNode, target: outputSuccessNode, label: "No"),
       Connection(source: outputSuccessNode, target: endNode, label: ""),
     ];
 
@@ -1188,18 +1330,31 @@ class TemplateDefinitions {
       text: "Inicio",
     );
 
-    final inputNode = DiagramNode(
-      id: "input_${baseId}_2",
-      type: NodeType.data,
+    // Declaración de variables
+    final declareVarsNode = DiagramNode(
+      id: "process_${baseId}_2",
+      type: NodeType.process,
       position: const Offset(280, 140),
+      text: "int numero, resultado, i",
+      metadata: {
+        'processType': 'declaration',
+        'varType': 'int',
+        'varNames': ['numero', 'resultado', 'i']
+      },
+    );
+
+    final inputNode = DiagramNode(
+      id: "input_${baseId}_3",
+      type: NodeType.data,
+      position: const Offset(280, 230),
       text: "Leer numero",
       metadata: {'isOutput': false, 'inputType': 'int', 'varName': 'numero'},
     );
 
     final forNode = DiagramNode(
-      id: "loop_${baseId}_3",
+      id: "loop_${baseId}_4",
       type: NodeType.preparation,
-      position: const Offset(280, 250),
+      position: const Offset(280, 340),
       text: "for (i = 1; i <= 10; i++)",
       metadata: {
         'loopType': 'for',
@@ -1210,39 +1365,40 @@ class TemplateDefinitions {
     );
 
     final processNode = DiagramNode(
-      id: "process_${baseId}_4",
+      id: "process_${baseId}_5",
       type: NodeType.process,
-      position: const Offset(500, 250),
+      position: const Offset(500, 340),
       text: "resultado = numero * i",
       metadata: {'processType': 'arithmetic', 'operator': '*'},
     );
 
     final outputNode = DiagramNode(
-      id: "output_${baseId}_5",
+      id: "output_${baseId}_6",
       type: NodeType.data,
-      position: const Offset(500, 360),
+      position: const Offset(500, 450),
       text: "Escribir numero, \"x\", i, \"=\", resultado",
       metadata: {'isOutput': true},
     );
 
     final outputFinNode = DiagramNode(
-      id: "output_${baseId}_6",
+      id: "output_${baseId}_7",
       type: NodeType.data,
-      position: const Offset(280, 470),
+      position: const Offset(280, 560),
       text: "Escribir \"Tabla completada\"",
       metadata: {'isOutput': true, 'outputType': 'string'},
     );
 
     final endNode = DiagramNode(
-      id: "end_${baseId}_7",
+      id: "end_${baseId}_8",
       type: NodeType.terminal,
-      position: const Offset(280, 570),
+      position: const Offset(280, 660),
       text: "Fin",
     );
 
     final nodes = [
       commentNode,
       startNode,
+      declareVarsNode,
       inputNode,
       forNode,
       processNode,
@@ -1252,7 +1408,8 @@ class TemplateDefinitions {
     ];
 
     final connections = [
-      Connection(source: startNode, target: inputNode, label: ""),
+      Connection(source: startNode, target: declareVarsNode, label: ""),
+      Connection(source: declareVarsNode, target: inputNode, label: ""),
       Connection(source: inputNode, target: forNode, label: ""),
       Connection(source: forNode, target: processNode, label: "Verdadero"),
       Connection(source: processNode, target: outputNode, label: ""),
@@ -1294,31 +1451,43 @@ class TemplateDefinitions {
       text: "Inicio",
     );
 
-    final inputNode = DiagramNode(
-      id: "input_${baseId}_2",
-      type: NodeType.data,
+    // Declaración de variables
+    final declareVarsNode = DiagramNode(
+      id: "process_${baseId}_2",
+      type: NodeType.process,
       position: const Offset(280, 140),
+      text: "int n, factorial, i",
+      metadata: {
+        'processType': 'declaration',
+        'varType': 'int',
+        'varNames': ['n', 'factorial', 'i']
+      },
+    );
+
+    final inputNode = DiagramNode(
+      id: "input_${baseId}_3",
+      type: NodeType.data,
+      position: const Offset(280, 230),
       text: "Leer n",
       metadata: {'isOutput': false, 'inputType': 'int', 'varName': 'n'},
     );
 
     final initNode = DiagramNode(
-      id: "process_${baseId}_3",
+      id: "process_${baseId}_4",
       type: NodeType.process,
-      position: const Offset(280, 230),
+      position: const Offset(280, 320),
       text: "factorial = 1",
       metadata: {
-        'processType': 'initialization',
-        'varType': 'int',
+        'processType': 'assignment',
         'varName': 'factorial',
         'value': '1'
       },
     );
 
     final forNode = DiagramNode(
-      id: "loop_${baseId}_4",
+      id: "loop_${baseId}_5",
       type: NodeType.preparation,
-      position: const Offset(280, 340),
+      position: const Offset(280, 430),
       text: "for (i = 1; i <= n; i++)",
       metadata: {
         'loopType': 'for',
@@ -1329,31 +1498,32 @@ class TemplateDefinitions {
     );
 
     final processNode = DiagramNode(
-      id: "process_${baseId}_5",
+      id: "process_${baseId}_6",
       type: NodeType.process,
-      position: const Offset(500, 340),
+      position: const Offset(500, 430),
       text: "factorial = factorial * i",
       metadata: {'processType': 'arithmetic', 'operator': '*'},
     );
 
     final outputNode = DiagramNode(
-      id: "output_${baseId}_6",
+      id: "output_${baseId}_7",
       type: NodeType.data,
-      position: const Offset(280, 470),
+      position: const Offset(280, 560),
       text: "Escribir \"Factorial:\", factorial",
       metadata: {'isOutput': true},
     );
 
     final endNode = DiagramNode(
-      id: "end_${baseId}_7",
+      id: "end_${baseId}_8",
       type: NodeType.terminal,
-      position: const Offset(280, 570),
+      position: const Offset(280, 660),
       text: "Fin",
     );
 
     final nodes = [
       commentNode,
       startNode,
+      declareVarsNode,
       inputNode,
       initNode,
       forNode,
@@ -1363,7 +1533,8 @@ class TemplateDefinitions {
     ];
 
     final connections = [
-      Connection(source: startNode, target: inputNode, label: ""),
+      Connection(source: startNode, target: declareVarsNode, label: ""),
+      Connection(source: declareVarsNode, target: inputNode, label: ""),
       Connection(source: inputNode, target: initNode, label: ""),
       Connection(source: initNode, target: forNode, label: ""),
       Connection(source: forNode, target: processNode, label: "Verdadero"),
@@ -1409,7 +1580,8 @@ class TemplateDefinitions {
       text: "Inicio",
     );
 
-    final declareNode = DiagramNode(
+    // Declaración de arreglo y variable suma
+    final declareArrNode = DiagramNode(
       id: "process_${baseId}_2",
       type: NodeType.process,
       position: const Offset(280, 140),
@@ -1422,10 +1594,22 @@ class TemplateDefinitions {
       },
     );
 
+    final declareSumaNode = DiagramNode(
+      id: "process_${baseId}_3",
+      type: NodeType.process,
+      position: const Offset(280, 230),
+      text: "int suma, i",
+      metadata: {
+        'processType': 'declaration',
+        'varType': 'int',
+        'varNames': ['suma', 'i']
+      },
+    );
+
     final forInputNode = DiagramNode(
-      id: "loop_${baseId}_3",
+      id: "loop_${baseId}_4",
       type: NodeType.preparation,
-      position: const Offset(280, 240),
+      position: const Offset(280, 330),
       text: "for (i = 0; i < 5; i++)",
       metadata: {
         'loopType': 'for',
@@ -1436,30 +1620,25 @@ class TemplateDefinitions {
     );
 
     final inputNode = DiagramNode(
-      id: "input_${baseId}_4",
+      id: "input_${baseId}_5",
       type: NodeType.data,
-      position: const Offset(500, 240),
+      position: const Offset(500, 330),
       text: "Leer arr[i]",
       metadata: {'isOutput': false, 'inputType': 'int'},
     );
 
     final initSumaNode = DiagramNode(
-      id: "process_${baseId}_5",
+      id: "process_${baseId}_6",
       type: NodeType.process,
-      position: const Offset(280, 360),
+      position: const Offset(280, 450),
       text: "suma = 0",
-      metadata: {
-        'processType': 'initialization',
-        'varType': 'int',
-        'varName': 'suma',
-        'value': '0'
-      },
+      metadata: {'processType': 'assignment', 'varName': 'suma', 'value': '0'},
     );
 
     final forSumaNode = DiagramNode(
-      id: "loop_${baseId}_6",
+      id: "loop_${baseId}_7",
       type: NodeType.preparation,
-      position: const Offset(280, 460),
+      position: const Offset(280, 550),
       text: "for (i = 0; i < 5; i++)",
       metadata: {
         'loopType': 'for',
@@ -1470,32 +1649,33 @@ class TemplateDefinitions {
     );
 
     final processSumaNode = DiagramNode(
-      id: "process_${baseId}_7",
+      id: "process_${baseId}_8",
       type: NodeType.process,
-      position: const Offset(500, 460),
+      position: const Offset(500, 550),
       text: "suma = suma + arr[i]",
       metadata: {'processType': 'arithmetic', 'operator': '+'},
     );
 
     final outputNode = DiagramNode(
-      id: "output_${baseId}_8",
+      id: "output_${baseId}_9",
       type: NodeType.data,
-      position: const Offset(280, 580),
+      position: const Offset(280, 670),
       text: "Escribir \"Suma total:\", suma",
       metadata: {'isOutput': true},
     );
 
     final endNode = DiagramNode(
-      id: "end_${baseId}_9",
+      id: "end_${baseId}_10",
       type: NodeType.terminal,
-      position: const Offset(280, 680),
+      position: const Offset(280, 770),
       text: "Fin",
     );
 
     final nodes = [
       commentNode,
       startNode,
-      declareNode,
+      declareArrNode,
+      declareSumaNode,
       forInputNode,
       inputNode,
       initSumaNode,
@@ -1506,8 +1686,9 @@ class TemplateDefinitions {
     ];
 
     final connections = [
-      Connection(source: startNode, target: declareNode, label: ""),
-      Connection(source: declareNode, target: forInputNode, label: ""),
+      Connection(source: startNode, target: declareArrNode, label: ""),
+      Connection(source: declareArrNode, target: declareSumaNode, label: ""),
+      Connection(source: declareSumaNode, target: forInputNode, label: ""),
       Connection(source: forInputNode, target: inputNode, label: "Verdadero"),
       Connection(
           source: inputNode, target: forInputNode, label: "", isLoopBack: true),
@@ -1556,18 +1737,31 @@ class TemplateDefinitions {
       text: "Inicio",
     );
 
-    final declareNode = DiagramNode(
+    // Declaraciones de variables
+    final declareVarsNode = DiagramNode(
       id: "process_${baseId}_2",
       type: NodeType.process,
       position: const Offset(280, 130),
+      text: "int valorBuscado, encontrado, posicion, i",
+      metadata: {
+        'processType': 'declaration',
+        'varType': 'int',
+        'varNames': ['valorBuscado', 'encontrado', 'posicion', 'i']
+      },
+    );
+
+    final declareArrNode = DiagramNode(
+      id: "process_${baseId}_3",
+      type: NodeType.process,
+      position: const Offset(280, 210),
       text: "int arr[5] = {10, 25, 8, 42, 17}",
       metadata: {'processType': 'array_init'},
     );
 
     final inputNode = DiagramNode(
-      id: "input_${baseId}_3",
+      id: "input_${baseId}_4",
       type: NodeType.data,
-      position: const Offset(280, 210),
+      position: const Offset(280, 290),
       text: "Leer valorBuscado",
       metadata: {
         'isOutput': false,
@@ -1577,17 +1771,17 @@ class TemplateDefinitions {
     );
 
     final initVarsNode = DiagramNode(
-      id: "process_${baseId}_4",
+      id: "process_${baseId}_5",
       type: NodeType.process,
-      position: const Offset(280, 290),
+      position: const Offset(280, 370),
       text: "encontrado = 0, posicion = -1",
-      metadata: {'processType': 'initialization'},
+      metadata: {'processType': 'assignment'},
     );
 
     final forNode = DiagramNode(
-      id: "loop_${baseId}_5",
+      id: "loop_${baseId}_6",
       type: NodeType.preparation,
-      position: const Offset(280, 390),
+      position: const Offset(280, 460),
       text: "for (i = 0; i < 5; i++)",
       metadata: {
         'loopType': 'for',
@@ -1598,54 +1792,55 @@ class TemplateDefinitions {
     );
 
     final decisionNode = DiagramNode(
-      id: "decision_${baseId}_6",
+      id: "decision_${baseId}_7",
       type: NodeType.decision,
-      position: const Offset(500, 390),
+      position: const Offset(500, 460),
       text: "arr[i] == valorBuscado",
     );
 
     final foundNode = DiagramNode(
-      id: "process_${baseId}_7",
+      id: "process_${baseId}_8",
       type: NodeType.process,
-      position: const Offset(700, 390),
+      position: const Offset(700, 460),
       text: "encontrado = 1\nposicion = i",
       metadata: {'processType': 'assignment'},
     );
 
     final checkFoundNode = DiagramNode(
-      id: "decision_${baseId}_8",
+      id: "decision_${baseId}_9",
       type: NodeType.decision,
-      position: const Offset(280, 530),
+      position: const Offset(280, 580),
       text: "encontrado == 1",
     );
 
     final outputFoundNode = DiagramNode(
-      id: "output_${baseId}_9",
+      id: "output_${baseId}_10",
       type: NodeType.data,
-      position: const Offset(500, 530),
+      position: const Offset(500, 580),
       text: "Escribir \"Encontrado en posición:\", posicion",
       metadata: {'isOutput': true},
     );
 
     final outputNotFoundNode = DiagramNode(
-      id: "output_${baseId}_10",
+      id: "output_${baseId}_11",
       type: NodeType.data,
-      position: const Offset(280, 650),
+      position: const Offset(280, 700),
       text: "Escribir \"No encontrado\"",
       metadata: {'isOutput': true, 'outputType': 'string'},
     );
 
     final endNode = DiagramNode(
-      id: "end_${baseId}_11",
+      id: "end_${baseId}_12",
       type: NodeType.terminal,
-      position: const Offset(380, 750),
+      position: const Offset(380, 800),
       text: "Fin",
     );
 
     final nodes = [
       commentNode,
       startNode,
-      declareNode,
+      declareVarsNode,
+      declareArrNode,
       inputNode,
       initVarsNode,
       forNode,
@@ -1658,8 +1853,9 @@ class TemplateDefinitions {
     ];
 
     final connections = [
-      Connection(source: startNode, target: declareNode, label: ""),
-      Connection(source: declareNode, target: inputNode, label: ""),
+      Connection(source: startNode, target: declareVarsNode, label: ""),
+      Connection(source: declareVarsNode, target: declareArrNode, label: ""),
+      Connection(source: declareArrNode, target: inputNode, label: ""),
       Connection(source: inputNode, target: initVarsNode, label: ""),
       Connection(source: initVarsNode, target: forNode, label: ""),
       Connection(source: forNode, target: decisionNode, label: "Verdadero"),
@@ -1708,7 +1904,7 @@ class TemplateDefinitions {
       text: "Inicio",
     );
 
-    final declareNode = DiagramNode(
+    final declareArrNode = DiagramNode(
       id: "process_${baseId}_2",
       type: NodeType.process,
       position: const Offset(280, 130),
@@ -1721,26 +1917,38 @@ class TemplateDefinitions {
       },
     );
 
-    final forInputNode = DiagramNode(
-      id: "loop_${baseId}_3",
-      type: NodeType.preparation,
+    final declareTempNode = DiagramNode(
+      id: "process_${baseId}_3",
+      type: NodeType.process,
       position: const Offset(280, 210),
+      text: "int temp, i, j",
+      metadata: {
+        'processType': 'declaration',
+        'varType': 'int',
+        'varNames': ['temp', 'i', 'j']
+      },
+    );
+
+    final forInputNode = DiagramNode(
+      id: "loop_${baseId}_4",
+      type: NodeType.preparation,
+      position: const Offset(280, 300),
       text: "for (i = 0; i < 5; i++)",
       metadata: {'loopType': 'for'},
     );
 
     final inputNode = DiagramNode(
-      id: "input_${baseId}_4",
+      id: "input_${baseId}_5",
       type: NodeType.data,
-      position: const Offset(500, 210),
+      position: const Offset(500, 300),
       text: "Leer arr[i]",
       metadata: {'isOutput': false},
     );
 
     final forINode = DiagramNode(
-      id: "loop_${baseId}_5",
+      id: "loop_${baseId}_6",
       type: NodeType.preparation,
-      position: const Offset(280, 320),
+      position: const Offset(280, 410),
       text: "for (i = 0; i < 4; i++)",
       metadata: {
         'loopType': 'for',
@@ -1751,9 +1959,9 @@ class TemplateDefinitions {
     );
 
     final forJNode = DiagramNode(
-      id: "loop_${baseId}_6",
+      id: "loop_${baseId}_7",
       type: NodeType.preparation,
-      position: const Offset(500, 320),
+      position: const Offset(500, 410),
       text: "for (j = 0; j < 4-i; j++)",
       metadata: {
         'loopType': 'for',
@@ -1764,55 +1972,56 @@ class TemplateDefinitions {
     );
 
     final decisionNode = DiagramNode(
-      id: "decision_${baseId}_7",
+      id: "decision_${baseId}_8",
       type: NodeType.decision,
-      position: const Offset(700, 320),
+      position: const Offset(700, 410),
       text: "arr[j] > arr[j+1]",
     );
 
     final swapNode = DiagramNode(
-      id: "process_${baseId}_8",
+      id: "process_${baseId}_9",
       type: NodeType.process,
-      position: const Offset(700, 460),
+      position: const Offset(700, 550),
       text: "temp = arr[j]\narr[j] = arr[j+1]\narr[j+1] = temp",
       metadata: {'processType': 'swap'},
     );
 
     final outputLabelNode = DiagramNode(
-      id: "output_${baseId}_9",
+      id: "output_${baseId}_10",
       type: NodeType.data,
-      position: const Offset(280, 560),
+      position: const Offset(280, 650),
       text: "Escribir \"Arreglo ordenado:\"",
       metadata: {'isOutput': true, 'outputType': 'string'},
     );
 
     final forOutputNode = DiagramNode(
-      id: "loop_${baseId}_10",
+      id: "loop_${baseId}_11",
       type: NodeType.preparation,
-      position: const Offset(280, 660),
+      position: const Offset(280, 750),
       text: "for (i = 0; i < 5; i++)",
       metadata: {'loopType': 'for'},
     );
 
     final outputNode = DiagramNode(
-      id: "output_${baseId}_11",
+      id: "output_${baseId}_12",
       type: NodeType.data,
-      position: const Offset(500, 660),
+      position: const Offset(500, 750),
       text: "Escribir arr[i]",
       metadata: {'isOutput': true},
     );
 
     final endNode = DiagramNode(
-      id: "end_${baseId}_12",
+      id: "end_${baseId}_13",
       type: NodeType.terminal,
-      position: const Offset(280, 780),
+      position: const Offset(280, 870),
       text: "Fin",
     );
 
     final nodes = [
       commentNode,
       startNode,
-      declareNode,
+      declareArrNode,
+      declareTempNode,
       forInputNode,
       inputNode,
       forINode,
@@ -1826,8 +2035,9 @@ class TemplateDefinitions {
     ];
 
     final connections = [
-      Connection(source: startNode, target: declareNode, label: ""),
-      Connection(source: declareNode, target: forInputNode, label: ""),
+      Connection(source: startNode, target: declareArrNode, label: ""),
+      Connection(source: declareArrNode, target: declareTempNode, label: ""),
+      Connection(source: declareTempNode, target: forInputNode, label: ""),
       Connection(source: forInputNode, target: inputNode, label: "Verdadero"),
       Connection(
           source: inputNode, target: forInputNode, label: "", isLoopBack: true),
@@ -1887,7 +2097,7 @@ class TemplateDefinitions {
       text: "Inicio",
     );
 
-    final declareNode = DiagramNode(
+    final declareArrNode = DiagramNode(
       id: "process_${baseId}_2",
       type: NodeType.process,
       position: const Offset(280, 130),
@@ -1895,111 +2105,124 @@ class TemplateDefinitions {
       metadata: {'processType': 'array_declaration'},
     );
 
-    final forInputNode = DiagramNode(
-      id: "loop_${baseId}_3",
-      type: NodeType.preparation,
+    final declareVarsNode = DiagramNode(
+      id: "process_${baseId}_3",
+      type: NodeType.process,
       position: const Offset(280, 210),
+      text: "int minIdx, temp, i, j",
+      metadata: {
+        'processType': 'declaration',
+        'varType': 'int',
+        'varNames': ['minIdx', 'temp', 'i', 'j']
+      },
+    );
+
+    final forInputNode = DiagramNode(
+      id: "loop_${baseId}_4",
+      type: NodeType.preparation,
+      position: const Offset(280, 300),
       text: "for (i = 0; i < 5; i++)",
       metadata: {'loopType': 'for'},
     );
 
     final inputNode = DiagramNode(
-      id: "input_${baseId}_4",
+      id: "input_${baseId}_5",
       type: NodeType.data,
-      position: const Offset(500, 210),
+      position: const Offset(500, 300),
       text: "Leer arr[i]",
       metadata: {'isOutput': false},
     );
 
     final forINode = DiagramNode(
-      id: "loop_${baseId}_5",
+      id: "loop_${baseId}_6",
       type: NodeType.preparation,
-      position: const Offset(280, 320),
+      position: const Offset(280, 400),
       text: "for (i = 0; i < 4; i++)",
       metadata: {'loopType': 'for'},
     );
 
     final initMinNode = DiagramNode(
-      id: "process_${baseId}_6",
+      id: "process_${baseId}_7",
       type: NodeType.process,
-      position: const Offset(500, 320),
+      position: const Offset(500, 400),
       text: "minIdx = i",
       metadata: {'processType': 'assignment'},
     );
 
     final forJNode = DiagramNode(
-      id: "loop_${baseId}_7",
+      id: "loop_${baseId}_8",
       type: NodeType.preparation,
-      position: const Offset(500, 420),
+      position: const Offset(500, 500),
       text: "for (j = i+1; j < 5; j++)",
       metadata: {'loopType': 'for'},
     );
 
     final decisionMinNode = DiagramNode(
-      id: "decision_${baseId}_8",
+      id: "decision_${baseId}_9",
       type: NodeType.decision,
-      position: const Offset(700, 420),
+      position: const Offset(700, 500),
       text: "arr[j] < arr[minIdx]",
     );
 
     final updateMinNode = DiagramNode(
-      id: "process_${baseId}_9",
+      id: "process_${baseId}_10",
       type: NodeType.process,
-      position: const Offset(700, 540),
+      position: const Offset(700, 620),
       text: "minIdx = j",
       metadata: {'processType': 'assignment'},
     );
 
     final decisionSwapNode = DiagramNode(
-      id: "decision_${baseId}_10",
+      id: "decision_${baseId}_11",
       type: NodeType.decision,
-      position: const Offset(500, 640),
+      position: const Offset(500, 720),
       text: "minIdx != i",
     );
 
     final swapNode = DiagramNode(
-      id: "process_${baseId}_11",
+      id: "process_${baseId}_12",
       type: NodeType.process,
-      position: const Offset(700, 640),
+      position: const Offset(700, 720),
       text: "temp = arr[i]\narr[i] = arr[minIdx]\narr[minIdx] = temp",
       metadata: {'processType': 'swap'},
     );
 
     final outputLabelNode = DiagramNode(
-      id: "output_${baseId}_12",
+      id: "output_${baseId}_13",
       type: NodeType.data,
-      position: const Offset(280, 760),
+      position: const Offset(280, 840),
       text: "Escribir \"Arreglo ordenado:\"",
       metadata: {'isOutput': true, 'outputType': 'string'},
     );
 
     final forOutputNode = DiagramNode(
-      id: "loop_${baseId}_13",
+      id: "loop_${baseId}_14",
       type: NodeType.preparation,
-      position: const Offset(280, 850),
+      position: const Offset(280, 930),
       text: "for (i = 0; i < 5; i++)",
       metadata: {'loopType': 'for'},
     );
 
     final outputNode = DiagramNode(
-      id: "output_${baseId}_14",
+      id: "output_${baseId}_15",
       type: NodeType.data,
-      position: const Offset(500, 850),
+      position: const Offset(500, 930),
       text: "Escribir arr[i]",
       metadata: {'isOutput': true},
     );
 
     final endNode = DiagramNode(
-      id: "end_${baseId}_15",
+      id: "end_${baseId}_16",
       type: NodeType.terminal,
-      position: const Offset(280, 970),
+      position: const Offset(280, 1050),
       text: "Fin",
     );
 
     final nodes = [
       commentNode,
       startNode,
-      declareNode,
+      declareArrNode,
+      declareVarsNode,
       forInputNode,
       inputNode,
       forINode,
@@ -2016,8 +2239,9 @@ class TemplateDefinitions {
     ];
 
     final connections = [
-      Connection(source: startNode, target: declareNode, label: ""),
-      Connection(source: declareNode, target: forInputNode, label: ""),
+      Connection(source: startNode, target: declareArrNode, label: ""),
+      Connection(source: declareArrNode, target: declareVarsNode, label: ""),
+      Connection(source: declareVarsNode, target: forInputNode, label: ""),
       Connection(source: forInputNode, target: inputNode, label: "Verdadero"),
       Connection(
           source: inputNode, target: forInputNode, label: "", isLoopBack: true),
@@ -2089,26 +2313,39 @@ class TemplateDefinitions {
       text: "Inicio",
     );
 
+    // Declaraciones de variables
+    final declareVarsNode = DiagramNode(
+      id: "process_${baseId}_2",
+      type: NodeType.process,
+      position: const Offset(280, 130),
+      text: "int a, b, resultado",
+      metadata: {
+        'processType': 'declaration',
+        'varType': 'int',
+        'varNames': ['a', 'b', 'resultado']
+      },
+    );
+
     final inputANode = DiagramNode(
-      id: "input_${baseId}_2",
+      id: "input_${baseId}_3",
       type: NodeType.data,
-      position: const Offset(280, 140),
+      position: const Offset(280, 210),
       text: "Leer a",
       metadata: {'isOutput': false, 'inputType': 'int', 'varName': 'a'},
     );
 
     final inputBNode = DiagramNode(
-      id: "input_${baseId}_3",
+      id: "input_${baseId}_4",
       type: NodeType.data,
-      position: const Offset(280, 230),
+      position: const Offset(280, 290),
       text: "Leer b",
       metadata: {'isOutput': false, 'inputType': 'int', 'varName': 'b'},
     );
 
     final callFunctionNode = DiagramNode(
-      id: "subprocess_${baseId}_4",
+      id: "subprocess_${baseId}_5",
       type: NodeType.predefinedProcess,
-      position: const Offset(280, 330),
+      position: const Offset(280, 380),
       text: "resultado = Suma(a, b)",
       metadata: {
         'functionName': 'Suma',
@@ -2118,60 +2355,74 @@ class TemplateDefinitions {
     );
 
     final outputNode = DiagramNode(
-      id: "output_${baseId}_5",
+      id: "output_${baseId}_6",
       type: NodeType.data,
-      position: const Offset(280, 430),
+      position: const Offset(280, 470),
       text: "Escribir \"La suma es:\", resultado",
       metadata: {'isOutput': true},
     );
 
     final endNode = DiagramNode(
-      id: "end_${baseId}_6",
+      id: "end_${baseId}_7",
       type: NodeType.terminal,
-      position: const Offset(280, 530),
+      position: const Offset(280, 560),
       text: "Fin",
     );
 
     // Subproceso Suma
     final subStartNode = DiagramNode(
-      id: "sub_start_${baseId}_7",
+      id: "sub_start_${baseId}_8",
       type: NodeType.terminal,
-      position: const Offset(600, 140),
+      position: const Offset(600, 130),
       text: "Inicio Suma(x, y)",
     );
 
-    final subProcessNode = DiagramNode(
-      id: "sub_process_${baseId}_8",
+    final subDeclareNode = DiagramNode(
+      id: "sub_process_${baseId}_9",
       type: NodeType.process,
-      position: const Offset(600, 240),
+      position: const Offset(600, 210),
+      text: "int retorno",
+      metadata: {
+        'processType': 'declaration',
+        'varType': 'int',
+        'varName': 'retorno'
+      },
+    );
+
+    final subProcessNode = DiagramNode(
+      id: "sub_process_${baseId}_10",
+      type: NodeType.process,
+      position: const Offset(600, 290),
       text: "retorno = x + y",
       metadata: {'processType': 'arithmetic'},
     );
 
     final subReturnNode = DiagramNode(
-      id: "sub_return_${baseId}_9",
+      id: "sub_return_${baseId}_11",
       type: NodeType.data,
-      position: const Offset(600, 340),
+      position: const Offset(600, 370),
       text: "return retorno",
       metadata: {'isOutput': true, 'isReturn': true},
     );
 
     final subEndNode = DiagramNode(
-      id: "sub_end_${baseId}_10",
+      id: "sub_end_${baseId}_12",
       type: NodeType.terminal,
-      position: const Offset(600, 440),
+      position: const Offset(600, 450),
       text: "Fin Suma",
     );
 
     final nodes = [
       commentNode,
       startNode,
+      declareVarsNode,
       inputANode,
       inputBNode,
       callFunctionNode,
       outputNode,
       endNode,
       subStartNode,
+      subDeclareNode,
       subProcessNode,
       subReturnNode,
       subEndNode
@@ -2179,13 +2430,15 @@ class TemplateDefinitions {
 
     final connections = [
       // Programa principal
-      Connection(source: startNode, target: inputANode, label: ""),
+      Connection(source: startNode, target: declareVarsNode, label: ""),
+      Connection(source: declareVarsNode, target: inputANode, label: ""),
       Connection(source: inputANode, target: inputBNode, label: ""),
       Connection(source: inputBNode, target: callFunctionNode, label: ""),
       Connection(source: callFunctionNode, target: outputNode, label: ""),
       Connection(source: outputNode, target: endNode, label: ""),
       // Subproceso
-      Connection(source: subStartNode, target: subProcessNode, label: ""),
+      Connection(source: subStartNode, target: subDeclareNode, label: ""),
+      Connection(source: subDeclareNode, target: subProcessNode, label: ""),
       Connection(source: subProcessNode, target: subReturnNode, label: ""),
       Connection(source: subReturnNode, target: subEndNode, label: ""),
     ];
@@ -2222,18 +2475,31 @@ class TemplateDefinitions {
       text: "Inicio",
     );
 
+    // Declaraciones de variables
+    final declareVarsNode = DiagramNode(
+      id: "process_${baseId}_2",
+      type: NodeType.process,
+      position: const Offset(280, 130),
+      text: "int n, resultado",
+      metadata: {
+        'processType': 'declaration',
+        'varType': 'int',
+        'varNames': ['n', 'resultado']
+      },
+    );
+
     final inputNode = DiagramNode(
-      id: "input_${baseId}_2",
+      id: "input_${baseId}_3",
       type: NodeType.data,
-      position: const Offset(280, 140),
+      position: const Offset(280, 210),
       text: "Leer n",
       metadata: {'isOutput': false, 'inputType': 'int', 'varName': 'n'},
     );
 
     final callFunctionNode = DiagramNode(
-      id: "subprocess_${baseId}_3",
+      id: "subprocess_${baseId}_4",
       type: NodeType.predefinedProcess,
-      position: const Offset(280, 240),
+      position: const Offset(280, 300),
       text: "resultado = Factorial(n)",
       metadata: {
         'functionName': 'Factorial',
@@ -2243,75 +2509,89 @@ class TemplateDefinitions {
     );
 
     final outputNode = DiagramNode(
-      id: "output_${baseId}_4",
+      id: "output_${baseId}_5",
       type: NodeType.data,
-      position: const Offset(280, 340),
+      position: const Offset(280, 390),
       text: "Escribir \"Factorial:\", resultado",
       metadata: {'isOutput': true},
     );
 
     final endNode = DiagramNode(
-      id: "end_${baseId}_5",
+      id: "end_${baseId}_6",
       type: NodeType.terminal,
-      position: const Offset(280, 440),
+      position: const Offset(280, 480),
       text: "Fin",
     );
 
     // Subproceso Factorial
     final subStartNode = DiagramNode(
-      id: "sub_start_${baseId}_6",
+      id: "sub_start_${baseId}_7",
       type: NodeType.terminal,
       position: const Offset(600, 50),
       text: "Inicio Factorial(num)",
     );
 
-    final subInitNode = DiagramNode(
-      id: "sub_init_${baseId}_7",
+    final subDeclareNode = DiagramNode(
+      id: "sub_process_${baseId}_8",
       type: NodeType.process,
-      position: const Offset(600, 140),
+      position: const Offset(600, 130),
+      text: "int fact, i",
+      metadata: {
+        'processType': 'declaration',
+        'varType': 'int',
+        'varNames': ['fact', 'i']
+      },
+    );
+
+    final subInitNode = DiagramNode(
+      id: "sub_init_${baseId}_9",
+      type: NodeType.process,
+      position: const Offset(600, 210),
       text: "fact = 1",
-      metadata: {'processType': 'initialization'},
+      metadata: {'processType': 'assignment'},
     );
 
     final subForNode = DiagramNode(
-      id: "sub_loop_${baseId}_8",
+      id: "sub_loop_${baseId}_10",
       type: NodeType.preparation,
-      position: const Offset(600, 240),
+      position: const Offset(600, 300),
       text: "for (i = 1; i <= num; i++)",
       metadata: {'loopType': 'for'},
     );
 
     final subProcessNode = DiagramNode(
-      id: "sub_process_${baseId}_9",
+      id: "sub_process_${baseId}_11",
       type: NodeType.process,
-      position: const Offset(800, 240),
+      position: const Offset(800, 300),
       text: "fact = fact * i",
       metadata: {'processType': 'arithmetic'},
     );
 
     final subReturnNode = DiagramNode(
-      id: "sub_return_${baseId}_10",
+      id: "sub_return_${baseId}_12",
       type: NodeType.data,
-      position: const Offset(600, 370),
+      position: const Offset(600, 420),
       text: "return fact",
       metadata: {'isOutput': true, 'isReturn': true},
     );
 
     final subEndNode = DiagramNode(
-      id: "sub_end_${baseId}_11",
+      id: "sub_end_${baseId}_13",
       type: NodeType.terminal,
-      position: const Offset(600, 470),
+      position: const Offset(600, 510),
       text: "Fin Factorial",
     );
 
     final nodes = [
       commentNode,
       startNode,
+      declareVarsNode,
       inputNode,
       callFunctionNode,
       outputNode,
       endNode,
       subStartNode,
+      subDeclareNode,
       subInitNode,
       subForNode,
       subProcessNode,
@@ -2321,12 +2601,14 @@ class TemplateDefinitions {
 
     final connections = [
       // Programa principal
-      Connection(source: startNode, target: inputNode, label: ""),
+      Connection(source: startNode, target: declareVarsNode, label: ""),
+      Connection(source: declareVarsNode, target: inputNode, label: ""),
       Connection(source: inputNode, target: callFunctionNode, label: ""),
       Connection(source: callFunctionNode, target: outputNode, label: ""),
       Connection(source: outputNode, target: endNode, label: ""),
       // Subproceso
-      Connection(source: subStartNode, target: subInitNode, label: ""),
+      Connection(source: subStartNode, target: subDeclareNode, label: ""),
+      Connection(source: subDeclareNode, target: subInitNode, label: ""),
       Connection(source: subInitNode, target: subForNode, label: ""),
       Connection(
           source: subForNode, target: subProcessNode, label: "Verdadero"),
@@ -2440,34 +2722,46 @@ class TemplateDefinitions {
       text: "Inicio Swap(int *x, int *y)",
     );
 
-    final subTempNode = DiagramNode(
+    final subDeclareNode = DiagramNode(
       id: "sub_process_${baseId}_9",
       type: NodeType.process,
-      position: const Offset(600, 240),
+      position: const Offset(600, 230),
+      text: "int temp",
+      metadata: {
+        'processType': 'declaration',
+        'varType': 'int',
+        'varName': 'temp'
+      },
+    );
+
+    final subTempNode = DiagramNode(
+      id: "sub_process_${baseId}_10",
+      type: NodeType.process,
+      position: const Offset(600, 320),
       text: "temp = *x",
       metadata: {'processType': 'pointer_deref'},
     );
 
     final subAssign1Node = DiagramNode(
-      id: "sub_process_${baseId}_10",
+      id: "sub_process_${baseId}_11",
       type: NodeType.process,
-      position: const Offset(600, 340),
+      position: const Offset(600, 410),
       text: "*x = *y",
       metadata: {'processType': 'pointer_deref'},
     );
 
     final subAssign2Node = DiagramNode(
-      id: "sub_process_${baseId}_11",
+      id: "sub_process_${baseId}_12",
       type: NodeType.process,
-      position: const Offset(600, 440),
+      position: const Offset(600, 500),
       text: "*y = temp",
       metadata: {'processType': 'pointer_deref'},
     );
 
     final subEndNode = DiagramNode(
-      id: "sub_end_${baseId}_12",
+      id: "sub_end_${baseId}_13",
       type: NodeType.terminal,
-      position: const Offset(600, 540),
+      position: const Offset(600, 590),
       text: "Fin Swap",
     );
 
@@ -2481,6 +2775,7 @@ class TemplateDefinitions {
       outputAfterNode,
       endNode,
       subStartNode,
+      subDeclareNode,
       subTempNode,
       subAssign1Node,
       subAssign2Node,
@@ -2496,7 +2791,8 @@ class TemplateDefinitions {
       Connection(source: callSwapNode, target: outputAfterNode, label: ""),
       Connection(source: outputAfterNode, target: endNode, label: ""),
       // Subproceso
-      Connection(source: subStartNode, target: subTempNode, label: ""),
+      Connection(source: subStartNode, target: subDeclareNode, label: ""),
+      Connection(source: subDeclareNode, target: subTempNode, label: ""),
       Connection(source: subTempNode, target: subAssign1Node, label: ""),
       Connection(source: subAssign1Node, target: subAssign2Node, label: ""),
       Connection(source: subAssign2Node, target: subEndNode, label: ""),
@@ -2550,42 +2846,54 @@ class TemplateDefinitions {
       metadata: {'processType': 'pointer_init', 'pointerType': 'int'},
     );
 
-    final outputLabelNode = DiagramNode(
-      id: "output_${baseId}_4",
-      type: NodeType.data,
+    final declareINode = DiagramNode(
+      id: "process_${baseId}_4",
+      type: NodeType.process,
       position: const Offset(280, 320),
+      text: "int i",
+      metadata: {
+        'processType': 'declaration',
+        'varType': 'int',
+        'varName': 'i'
+      },
+    );
+
+    final outputLabelNode = DiagramNode(
+      id: "output_${baseId}_5",
+      type: NodeType.data,
+      position: const Offset(280, 410),
       text: "Escribir \"Recorrido con aritmética de punteros:\"",
       metadata: {'isOutput': true, 'outputType': 'string'},
     );
 
     final forNode = DiagramNode(
-      id: "loop_${baseId}_5",
+      id: "loop_${baseId}_6",
       type: NodeType.preparation,
-      position: const Offset(280, 420),
+      position: const Offset(280, 510),
       text: "for (i = 0; i < 5; i++)",
       metadata: {'loopType': 'for'},
     );
 
     final outputElementNode = DiagramNode(
-      id: "output_${baseId}_6",
+      id: "output_${baseId}_7",
       type: NodeType.data,
-      position: const Offset(500, 420),
+      position: const Offset(500, 510),
       text: "Escribir *(ptr + i)",
       metadata: {'isOutput': true, 'pointerArithmetic': true},
     );
 
     final outputLabel2Node = DiagramNode(
-      id: "output_${baseId}_7",
+      id: "output_${baseId}_8",
       type: NodeType.data,
-      position: const Offset(280, 540),
+      position: const Offset(280, 630),
       text: "Escribir \"Dirección del arreglo:\", ptr",
       metadata: {'isOutput': true},
     );
 
     final endNode = DiagramNode(
-      id: "end_${baseId}_8",
+      id: "end_${baseId}_9",
       type: NodeType.terminal,
-      position: const Offset(280, 640),
+      position: const Offset(280, 730),
       text: "Fin",
     );
 
@@ -2594,6 +2902,7 @@ class TemplateDefinitions {
       startNode,
       declareArrNode,
       declarePtrNode,
+      declareINode,
       outputLabelNode,
       forNode,
       outputElementNode,
@@ -2604,7 +2913,8 @@ class TemplateDefinitions {
     final connections = [
       Connection(source: startNode, target: declareArrNode, label: ""),
       Connection(source: declareArrNode, target: declarePtrNode, label: ""),
-      Connection(source: declarePtrNode, target: outputLabelNode, label: ""),
+      Connection(source: declarePtrNode, target: declareINode, label: ""),
+      Connection(source: declareINode, target: outputLabelNode, label: ""),
       Connection(source: outputLabelNode, target: forNode, label: ""),
       Connection(
           source: forNode, target: outputElementNode, label: "Verdadero"),

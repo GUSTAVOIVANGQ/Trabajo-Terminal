@@ -28,6 +28,7 @@ class _LoadDiagramScreenState extends State<LoadDiagramScreen>
   final MetricsService _metricsService = MetricsService(); // Nuevo servicio
   final TutorialService _tutorialService =
       TutorialService(); // Servicio de tutoriales
+  final AuthService _authService = AuthService(); // Servicio de autenticación
   List<SavedDiagram> _diagrams = [];
   List<SavedDiagram> _templates = [];
   bool _isLoading = true;
@@ -41,13 +42,22 @@ class _LoadDiagramScreenState extends State<LoadDiagramScreen>
     _checkFirstTime();
   }
 
+  /// Obtiene el ID del usuario actual (o 'guest' para invitados)
+  String? _getCurrentUserId() {
+    final user = _authService.currentUser;
+    if (user == null) return null;
+    return user.isGuest ? 'guest_${user.uid}' : user.uid;
+  }
+
   Future<void> _loadData() async {
     setState(() {
       _isLoading = true;
     });
 
     try {
-      final diagrams = await _databaseService.getAllDiagrams();
+      final userId = _getCurrentUserId();
+      // Cargar diagramas filtrados por usuario
+      final diagrams = await _databaseService.getAllDiagrams(userId: userId);
       final templates = await _databaseService.getAllTemplates();
 
       setState(() {

@@ -208,6 +208,37 @@ void main() {
       ]);
     });
 
+    test('Tokenize modulo expression with spaces', () {
+      // This tests the fix for the "% followed by space" issue
+      // "modulo = a % b" should parse % as opModulo, not format specifier
+      final tokens = analyzer.tokenize('modulo = a % b');
+
+      final types =
+          tokens.where((t) => t.isSignificant).map((t) => t.type).toList();
+      expect(types, [
+        TokenType.identifier, // modulo
+        TokenType.opAssign, // =
+        TokenType.identifier, // a
+        TokenType.opModulo, // %
+        TokenType.identifier, // b
+      ]);
+    });
+
+    test('Tokenize modulo by zero', () {
+      // "x % 0" should also parse % as opModulo
+      final tokens = analyzer.tokenize('x = x % 0');
+
+      final types =
+          tokens.where((t) => t.isSignificant).map((t) => t.type).toList();
+      expect(types, [
+        TokenType.identifier, // x
+        TokenType.opAssign, // =
+        TokenType.identifier, // x
+        TokenType.opModulo, // %
+        TokenType.integerLiteral, // 0
+      ]);
+    });
+
     test('Tokenize declaration with initialization', () {
       final tokens = analyzer.tokenize('int contador = 0');
 
@@ -218,6 +249,37 @@ void main() {
         TokenType.identifier,
         TokenType.opAssign,
         TokenType.integerLiteral,
+      ]);
+    });
+
+    test('Tokenize multiple variable declaration', () {
+      // Test: int a, b, c should tokenize correctly
+      final tokens = analyzer.tokenize('int a, b, c');
+
+      final types =
+          tokens.where((t) => t.isSignificant).map((t) => t.type).toList();
+      expect(types, [
+        TokenType.kwInt,
+        TokenType.identifier, // a
+        TokenType.comma,
+        TokenType.identifier, // b
+        TokenType.comma,
+        TokenType.identifier, // c
+      ]);
+    });
+
+    test('Tokenize multiple float variable declaration', () {
+      final tokens = analyzer.tokenize('float x, y, z');
+
+      final types =
+          tokens.where((t) => t.isSignificant).map((t) => t.type).toList();
+      expect(types, [
+        TokenType.kwFloat,
+        TokenType.identifier, // x
+        TokenType.comma,
+        TokenType.identifier, // y
+        TokenType.comma,
+        TokenType.identifier, // z
       ]);
     });
 

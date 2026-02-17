@@ -44,7 +44,8 @@ lib/compiler/
 ├── ast_nodes.dart             # Nodos del AST
 ├── semantic_analyzer.dart     # Fase 3: Análisis Semántico
 ├── symbol_table.dart          # Tabla de símbolos
-└── code_optimizer.dart        # Fase 4: Optimización
+├── code_optimizer.dart        # Fase 4: Optimización
+└── code_generator_advanced.dart # Fase 5: Generación de Código Avanzada
 ```
 
 ---
@@ -345,14 +346,56 @@ class OptimizationResult {
 
 ---
 
-## Fase 5: Integración y UI
+## Fase 5: Generación de Código
 
 ### Descripción
-Integra todas las fases del compilador y proporciona una interfaz de usuario para visualizar los resultados.
+Genera código C funcional a partir del AST optimizado utilizando la **tabla de símbolos** para determinar tipos de datos correctos.
 
-### Componentes de UI
+### Archivo Principal
+`lib/compiler/code_generator_advanced.dart`
 
-#### 1. PopupMenuButton en el Editor
+### Clase Principal
+```dart
+class AdvancedCodeGenerator {
+  CodeGenerationResult generate({
+    required List<DiagramNode> nodes,
+    required List<Connection> connections,
+    required SymbolTable symbolTable,
+    ProgramNode? ast,
+  });
+}
+```
+
+### Características
+- **Tipos correctos**: Usa la tabla de símbolos para determinar `%d`, `%f`, `%c`, `%s`
+- **Múltiples variables**: Soporta `printf("%d %f %c\n", x, y, z);`
+- **Fallback inteligente**: Infiere tipos por convención de nombres si no está en tabla
+- **Comentarios**: Genera comentarios descriptivos del diagrama
+
+### Opciones de Generación
+```dart
+class CodeGenOptions {
+  bool includeComments;     // Incluir comentarios
+  bool includeTimestamp;    // Incluir fecha de generación
+  String indentation;       // Indentación (default: 4 espacios)
+  String targetCStandard;   // c99, c11, c17
+  bool debugMode;           // Modo debug
+}
+```
+
+### Resultado
+```dart
+class CodeGenerationResult {
+  bool success;
+  String code;
+  List<CompilerError> errors;
+  CodeGenMetrics metrics;
+}
+```
+
+### Integración con UI
+
+#### PopupMenuButton en el Editor
 ```dart
 // En editor_screen.dart
 PopupMenuButton<String>(
@@ -469,11 +512,11 @@ class CompilationMetrics {
 ### Ubicación
 ```
 test/compiler/
-├── lexical_analyzer_test.dart      # Tests del analizador léxico
-├── syntax_analyzer_test.dart       # Tests del parser
-├── semantic_analyzer_test.dart     # Tests del analizador semántico
-├── symbol_table_test.dart          # Tests de tabla de símbolos
-└── code_optimizer_test.dart        # Tests del optimizador
+├── lexical_analyzer_test.dart        # Tests del analizador léxico
+├── syntax_analyzer_test.dart         # Tests del parser
+├── semantic_analyzer_test.dart       # Tests del analizador semántico
+├── code_optimizer_test.dart          # Tests del optimizador
+└── code_generator_advanced_test.dart # Tests del generador de código
 ```
 
 ### Ejecutar Tests

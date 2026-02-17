@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../services/auth_service.dart';
 import '../services/theme_service.dart';
+import '../services/sync_service.dart';
+import '../services/database_service.dart';
 import '../models/user_model.dart';
 import 'login_screen.dart';
 import 'metrics_screen.dart';
@@ -17,6 +19,10 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   final AuthService _authService = AuthService();
+  final SyncService _syncService = SyncService();
+  final DatabaseService _databaseService = DatabaseService();
+  bool _isSyncing = false;
+  bool _isDeleting = false;
 
   Future<void> _signOut() async {
     final confirmed = await showDialog<bool>(
@@ -43,6 +49,441 @@ class _ProfileScreenState extends State<ProfileScreen> {
         MaterialPageRoute(builder: (context) => const LoginScreen()),
         (route) => false,
       );
+    }
+  }
+
+  /// Muestra opciones de sincronización
+  void _showSyncOptions() {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Padding(
+                padding: EdgeInsets.all(16),
+                child: Text(
+                  'Opciones de Sincronización',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+              ),
+              ListTile(
+                leading: const Icon(Icons.sync, color: Colors.blue),
+                title: const Text('Sincronización inteligente'),
+                subtitle:
+                    const Text('Sincroniza cambios (los más recientes ganan)'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _performSync();
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.cloud_upload, color: Colors.green),
+                title: const Text('Subir todo a la nube'),
+                subtitle: const Text(
+                    'Sobrescribe los datos en la nube con los locales'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _uploadAll();
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.cloud_download, color: Colors.orange),
+                title: const Text('Descargar todo de la nube'),
+                subtitle: const Text(
+                    'Sobrescribe los datos locales con los de la nube'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _downloadAll();
+                },
+              ),
+              const SizedBox(height: 8),
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Cancelar'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Ejecuta sincronización inteligente
+  Future<void> _performSync() async {
+    setState(() => _isSyncing = true);
+
+    try {
+      final result = await _syncService.syncDiagrams();
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              result.success
+                  ? '✓ Sincronización completada: ${result.uploaded} subidos, ${result.downloaded} descargados'
+                  : '⚠ Sincronización parcial: ${result.errors.join(", ")}',
+            ),
+            backgroundColor: result.success ? Colors.green : Colors.orange,
+            duration: const Duration(seconds: 4),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isSyncing = false);
+      }
+    }
+  }
+
+  /// Sube todos los diagramas a la nube
+  Future<void> _uploadAll() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Subir a la nube'),
+        content: const Text(
+          '¿Estás seguro? Esto sobrescribirá los diagramas en la nube con tus diagramas locales.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Subir'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    setState(() => _isSyncing = true);
+
+    try {
+      final result = await _syncService.uploadAllDiagrams();
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              result.success
+                  ? '✓ ${result.uploaded} diagramas subidos a la nube'
+                  : '⚠ Error: ${result.errors.join(", ")}',
+            ),
+            backgroundColor: result.success ? Colors.green : Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isSyncing = false);
+      }
+    }
+  }
+
+  /// Descarga todos los diagramas de la nube
+  Future<void> _downloadAll() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Descargar de la nube'),
+        content: const Text(
+          '¿Estás seguro? Esto eliminará tus diagramas locales y los reemplazará con los de la nube.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: Colors.orange),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Descargar'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    setState(() => _isSyncing = true);
+
+    try {
+      final result = await _syncService.downloadAllDiagrams();
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              result.success
+                  ? '✓ ${result.downloaded} diagramas descargados de la nube'
+                  : '⚠ Error: ${result.errors.join(", ")}',
+            ),
+            backgroundColor: result.success ? Colors.green : Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isSyncing = false);
+      }
+    }
+  }
+
+  /// Muestra diálogo para eliminar cuenta
+  Future<void> _showDeleteAccountDialog() async {
+    final passwordController = TextEditingController();
+    String? errorMessage;
+    String progressMessage = '';
+    bool isProcessing = false;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: Row(
+            children: [
+              const Icon(Icons.warning_amber_rounded,
+                  color: Colors.red, size: 28),
+              const SizedBox(width: 8),
+              const Text('Eliminar cuenta'),
+            ],
+          ),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  '⚠️ Esta acción es IRREVERSIBLE',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.red,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                const Text(
+                  'Se eliminarán permanentemente:\n'
+                  '• Tu cuenta de usuario\n'
+                  '• Todos tus diagramas sincronizados\n'
+                  '• Tus métricas y progreso\n'
+                  '• Todos los datos asociados',
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: passwordController,
+                  obscureText: true,
+                  enabled: !isProcessing,
+                  decoration: InputDecoration(
+                    labelText: 'Confirma tu contraseña',
+                    hintText: 'Ingresa tu contraseña actual',
+                    border: const OutlineInputBorder(),
+                    errorText: errorMessage,
+                    prefixIcon: const Icon(Icons.lock),
+                  ),
+                ),
+                if (progressMessage.isNotEmpty) ...[
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          progressMessage,
+                          style:
+                              TextStyle(color: Colors.grey[600], fontSize: 12),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed:
+                  isProcessing ? null : () => Navigator.pop(context, false),
+              child: const Text('Cancelar'),
+            ),
+            FilledButton(
+              style: FilledButton.styleFrom(backgroundColor: Colors.red),
+              onPressed: isProcessing
+                  ? null
+                  : () async {
+                      if (passwordController.text.isEmpty) {
+                        setDialogState(() {
+                          errorMessage = 'Ingresa tu contraseña';
+                        });
+                        return;
+                      }
+
+                      setDialogState(() {
+                        isProcessing = true;
+                        errorMessage = null;
+                        progressMessage = 'Iniciando...';
+                      });
+
+                      try {
+                        await _authService.deleteAccountAndAllData(
+                          password: passwordController.text,
+                          onProgress: (message) {
+                            if (context.mounted) {
+                              setDialogState(() {
+                                progressMessage = message;
+                              });
+                            }
+                          },
+                        );
+
+                        // Eliminar datos locales también
+                        final userId = _authService.currentUser?.uid;
+                        if (userId != null) {
+                          await _databaseService.deleteDiagramsByUser(userId);
+                        }
+
+                        if (context.mounted) {
+                          Navigator.pop(context, true);
+                        }
+                      } catch (e) {
+                        if (context.mounted) {
+                          setDialogState(() {
+                            isProcessing = false;
+                            progressMessage = '';
+                            errorMessage =
+                                e.toString().replaceAll('Exception: ', '');
+                          });
+                        }
+                      }
+                    },
+              child: isProcessing
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
+                  : const Text('Eliminar cuenta'),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    passwordController.dispose();
+
+    if (confirmed == true && mounted) {
+      // Cuenta eliminada exitosamente, redirigir a login
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Tu cuenta ha sido eliminada'),
+          backgroundColor: Colors.green,
+        ),
+      );
+
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (context) => const LoginScreen()),
+        (route) => false,
+      );
+    }
+  }
+
+  /// Elimina datos locales para usuarios invitados
+  Future<void> _deleteGuestData() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Eliminar datos locales'),
+        content: const Text(
+          '¿Estás seguro de que deseas eliminar todos tus diagramas guardados localmente?\n\n'
+          'Esta acción no se puede deshacer.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: Colors.red),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Eliminar'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    setState(() => _isDeleting = true);
+
+    try {
+      final user = _authService.currentUser;
+      if (user != null) {
+        final userId = user.isGuest ? 'guest_${user.uid}' : user.uid;
+        await _databaseService.deleteDiagramsByUser(userId);
+      }
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('✓ Datos locales eliminados'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isDeleting = false);
+      }
     }
   }
 
@@ -258,6 +699,69 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             ),
                           );
                         },
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // Sección de Sincronización y Gestión de Datos
+                  _buildInfoCard(
+                    title: 'Sincronización y datos',
+                    items: [
+                      // Botón de sincronización
+                      ListTile(
+                        leading: _isSyncing
+                            ? const SizedBox(
+                                width: 24,
+                                height: 24,
+                                child:
+                                    CircularProgressIndicator(strokeWidth: 2),
+                              )
+                            : const Icon(Icons.cloud_sync, color: Colors.blue),
+                        title: const Text('Sincronizar con la nube'),
+                        subtitle: Text(
+                          user.isGuest
+                              ? 'No disponible para usuarios invitados'
+                              : 'Sincroniza tus diagramas con Firebase',
+                        ),
+                        trailing: user.isGuest
+                            ? const Icon(Icons.lock_outline, color: Colors.grey)
+                            : const Icon(Icons.chevron_right),
+                        enabled: !user.isGuest && !_isSyncing,
+                        onTap: user.isGuest ? null : _showSyncOptions,
+                      ),
+                      const Divider(),
+                      // Botón de eliminar cuenta
+                      ListTile(
+                        leading: _isDeleting
+                            ? const SizedBox(
+                                width: 24,
+                                height: 24,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.red,
+                                ),
+                              )
+                            : const Icon(Icons.delete_forever,
+                                color: Colors.red),
+                        title: Text(
+                          user.isGuest
+                              ? 'Eliminar datos locales'
+                              : 'Eliminar cuenta',
+                          style: const TextStyle(color: Colors.red),
+                        ),
+                        subtitle: Text(
+                          user.isGuest
+                              ? 'Elimina todos los diagramas guardados localmente'
+                              : 'Elimina tu cuenta y todos los datos asociados',
+                        ),
+                        trailing:
+                            const Icon(Icons.chevron_right, color: Colors.red),
+                        enabled: !_isDeleting,
+                        onTap: user.isGuest
+                            ? _deleteGuestData
+                            : _showDeleteAccountDialog,
                       ),
                     ],
                   ),

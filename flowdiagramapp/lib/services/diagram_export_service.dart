@@ -4,13 +4,30 @@ import 'dart:ui' as ui;
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
-import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:image/image.dart' as img;
 import 'package:intl/intl.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:device_info_plus/device_info_plus.dart';
+import 'package:saver_gallery/saver_gallery.dart';
 
 class DiagramExportService {
+  // Cache para la versión de Android SDK
+  static int? _androidSdkVersion;
+
+  /// Obtiene la versión del SDK de Android
+  static Future<int> _getAndroidSdkVersion() async {
+    if (_androidSdkVersion != null) return _androidSdkVersion!;
+
+    if (Platform.isAndroid) {
+      final DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();
+      final AndroidDeviceInfo androidInfo = await deviceInfo.androidInfo;
+      _androidSdkVersion = androidInfo.version.sdkInt;
+      return _androidSdkVersion!;
+    }
+    return 0;
+  }
+
   /// Exporta el diagrama como imagen PNG usando un GlobalKey
   static Future<String> exportDiagramToPNG({
     required GlobalKey canvasKey,
@@ -20,7 +37,8 @@ class DiagramExportService {
       // Solicitar permisos de almacenamiento
       bool hasPermission = await _requestStoragePermission();
       if (!hasPermission) {
-        throw Exception('Permisos de almacenamiento denegados');
+        throw Exception(
+            'Permisos de almacenamiento denegados. Por favor, habilita los permisos en Configuración de la app.');
       }
 
       // Obtener la imagen del canvas
@@ -38,14 +56,28 @@ class DiagramExportService {
         throw Exception('Error al convertir imagen a bytes');
       }
 
-      // Guardar en la carpeta de Descargas
-      final String filePath = await _saveImageToDownloads(
-        byteData.buffer.asUint8List(),
-        diagramName,
-        'png',
+      final Uint8List pngBytes = byteData.buffer.asUint8List();
+
+      // Crear nombre de archivo único
+      final String timestamp =
+          DateFormat('yyyyMMdd_HHmmss').format(DateTime.now());
+      final String cleanName = _sanitizeFileName(diagramName);
+      final String fileName = '${cleanName}_$timestamp.png';
+
+      // Guardar usando SaverGallery (guarda en Pictures/FlowDiagramApp)
+      final result = await SaverGallery.saveImage(
+        pngBytes,
+        fileName: fileName,
+        androidRelativePath: "Pictures/FlowDiagramApp",
+        skipIfExists: false,
       );
 
-      return filePath;
+      if (result.isSuccess) {
+        return 'Pictures/FlowDiagramApp/$fileName';
+      } else {
+        // Fallback: guardar en directorio de la app
+        return await _saveToAppDirectory(pngBytes, fileName);
+      }
     } catch (e) {
       throw Exception('Error al exportar PNG: $e');
     }
@@ -61,7 +93,8 @@ class DiagramExportService {
       // Solicitar permisos de almacenamiento
       bool hasPermission = await _requestStoragePermission();
       if (!hasPermission) {
-        throw Exception('Permisos de almacenamiento denegados');
+        throw Exception(
+            'Permisos de almacenamiento denegados. Por favor, habilita los permisos en Configuración de la app.');
       }
 
       // Obtener la imagen del canvas
@@ -98,114 +131,132 @@ class DiagramExportService {
       img.compositeImage(jpgImage, pngImage);
 
       // Codificar como JPG
-      final List<int> jpgBytes = img.encodeJpg(jpgImage, quality: quality);
-
-      // Guardar en la carpeta de Descargas
-      final String filePath = await _saveImageToDownloads(
-        Uint8List.fromList(jpgBytes),
-        diagramName,
-        'jpg',
-      );
-
-      return filePath;
-    } catch (e) {
-      throw Exception('Error al exportar JPG: $e');
-    }
-  }
-
-  /// Guarda la imagen en la carpeta de Descargas
-  static Future<String> _saveImageToDownloads(
-    Uint8List imageBytes,
-    String diagramName,
-    String extension,
-  ) async {
-    try {
-      // Obtener el directorio de Descargas
-      Directory? downloadsDir = await _getDownloadsDirectory();
-
-      if (downloadsDir == null) {
-        throw Exception('No se pudo acceder a la carpeta de Descargas');
-      }
+      final Uint8List jpgBytes =
+          Uint8List.fromList(img.encodeJpg(jpgImage, quality: quality));
 
       // Crear nombre de archivo único
       final String timestamp =
           DateFormat('yyyyMMdd_HHmmss').format(DateTime.now());
       final String cleanName = _sanitizeFileName(diagramName);
-      final String fileName = '${cleanName}_$timestamp.$extension';
+      final String fileName = '${cleanName}_$timestamp.jpg';
 
-      // Crear el archivo
-      final File file = File('${downloadsDir.path}/$fileName');
-      await file.writeAsBytes(imageBytes);
+      // Guardar usando SaverGallery (guarda en Pictures/FlowDiagramApp)
+      final result = await SaverGallery.saveImage(
+        jpgBytes,
+        fileName: fileName,
+        androidRelativePath: "Pictures/FlowDiagramApp",
+        skipIfExists: false,
+      );
 
-      return file.path;
-    } catch (e) {
-      throw Exception('Error al guardar archivo: $e');
-    }
-  }
-
-  /// Obtiene el directorio de Descargas
-  static Future<Directory?> _getDownloadsDirectory() async {
-    if (Platform.isAndroid) {
-      // Para Android, intentar obtener el directorio de Descargas
-      try {
-        final Directory? externalDir = await getExternalStorageDirectory();
-        if (externalDir != null) {
-          // Navegar al directorio de Descargas
-          final String downloadsPath = '/storage/emulated/0/Download';
-          final Directory downloadsDir = Directory(downloadsPath);
-
-          if (await downloadsDir.exists()) {
-            return downloadsDir;
-          }
-
-          // Si no existe, usar el directorio de documentos de la app
-          return externalDir;
-        }
-      } catch (e) {
-        print('Error accediendo a almacenamiento externo: $e');
-      }
-
-      // Fallback a directorio de documentos de la aplicación
-      return await getApplicationDocumentsDirectory();
-    } else {
-      // Para otras plataformas, usar directorio de documentos
-      return await getDownloadsDirectory() ??
-          await getApplicationDocumentsDirectory();
-    }
-  }
-
-  /// Solicita permisos de almacenamiento
-  static Future<bool> _requestStoragePermission() async {
-    if (Platform.isAndroid) {
-      // Verificar versión de Android
-      const int androidVersion = 30; // Android 11
-
-      // Para Android 11+ (API 30+)
-      if (androidVersion >= 30) {
-        // En Android 11+, no necesitamos permisos especiales para escribir en Descargas
-        // usando MediaStore API o SAF, pero para simplicidad usaremos el directorio de la app
-        var status = await Permission.storage.status;
-        if (!status.isGranted) {
-          status = await Permission.storage.request();
-        }
-        return status.isGranted;
+      if (result.isSuccess) {
+        return 'Pictures/FlowDiagramApp/$fileName';
       } else {
-        // Para versiones anteriores de Android
-        var status = await Permission.storage.status;
-        if (!status.isGranted) {
-          status = await Permission.storage.request();
-        }
-        return status.isGranted;
+        // Fallback: guardar en directorio de la app
+        return await _saveToAppDirectory(jpgBytes, fileName);
       }
+    } catch (e) {
+      throw Exception('Error al exportar JPG: $e');
+    }
+  }
+
+  /// Guarda el archivo en el directorio de la app (fallback)
+  static Future<String> _saveToAppDirectory(
+      Uint8List bytes, String fileName) async {
+    final Directory? externalDir = await getExternalStorageDirectory();
+    if (externalDir != null) {
+      final Directory exportDir =
+          Directory('${externalDir.path}/FlowDiagramExports');
+      if (!await exportDir.exists()) {
+        await exportDir.create(recursive: true);
+      }
+      final File file = File('${exportDir.path}/$fileName');
+      await file.writeAsBytes(bytes);
+      return file.path;
     }
 
-    // Para otras plataformas (iOS, etc.)
-    return true;
+    final Directory appDocDir = await getApplicationDocumentsDirectory();
+    final File file = File('${appDocDir.path}/$fileName');
+    await file.writeAsBytes(bytes);
+    return file.path;
+  }
+
+  /// Solicita permisos de almacenamiento según la versión de Android
+  static Future<bool> _requestStoragePermission() async {
+    if (!Platform.isAndroid) {
+      return true; // En otras plataformas no necesitamos permisos especiales
+    }
+
+    final int sdkVersion = await _getAndroidSdkVersion();
+
+    // Android 13+ (API 33+): Necesita READ_MEDIA_IMAGES para guardar en galería
+    if (sdkVersion >= 33) {
+      final status = await Permission.photos.status;
+      if (status.isGranted || status.isLimited) {
+        return true;
+      }
+
+      final result = await Permission.photos.request();
+      // Incluso si se deniega, SaverGallery puede funcionar en algunos casos
+      return result.isGranted || result.isLimited || result.isDenied;
+    }
+    // Android 10-12 (API 29-32): No necesita permisos para escribir en MediaStore
+    else if (sdkVersion >= 29) {
+      return true;
+    }
+    // Android 9 y anteriores (API < 29): Permisos legacy
+    else {
+      final status = await Permission.storage.status;
+      if (status.isGranted) {
+        return true;
+      }
+
+      final result = await Permission.storage.request();
+      return result.isGranted;
+    }
+  }
+
+  /// Verifica si los permisos están disponibles (para mostrar UI)
+  static Future<PermissionCheckResult> checkStoragePermission() async {
+    if (!Platform.isAndroid) {
+      return PermissionCheckResult(
+        hasPermission: true,
+        sdkVersion: 0,
+        message: 'Permisos no requeridos en esta plataforma',
+      );
+    }
+
+    final int sdkVersion = await _getAndroidSdkVersion();
+
+    if (sdkVersion >= 33) {
+      final status = await Permission.photos.status;
+      return PermissionCheckResult(
+        hasPermission: true,
+        sdkVersion: sdkVersion,
+        message:
+            'Android 13+: Las imágenes se guardarán en Galería > FlowDiagramApp',
+        photosPermissionGranted: status.isGranted || status.isLimited,
+      );
+    } else if (sdkVersion >= 29) {
+      return PermissionCheckResult(
+        hasPermission: true,
+        sdkVersion: sdkVersion,
+        message:
+            'Android 10+: Las imágenes se guardarán en Galería > FlowDiagramApp',
+      );
+    } else {
+      final status = await Permission.storage.status;
+      return PermissionCheckResult(
+        hasPermission: status.isGranted,
+        sdkVersion: sdkVersion,
+        message: status.isGranted
+            ? 'Permisos de almacenamiento concedidos'
+            : 'Se requieren permisos de almacenamiento',
+      );
+    }
   }
 
   /// Limpia el nombre del archivo de caracteres no válidos
   static String _sanitizeFileName(String fileName) {
-    // Reemplazar caracteres no válidos con guiones bajos
     return fileName
         .replaceAll(RegExp(r'[<>:"/\\|?*]'), '_')
         .replaceAll(RegExp(r'\s+'), '_')
@@ -214,10 +265,29 @@ class DiagramExportService {
 
   /// Obtiene información sobre dónde se guardan los archivos
   static Future<String> getExportLocation() async {
-    final Directory? dir = await _getDownloadsDirectory();
-    if (dir != null) {
-      return dir.path;
-    }
-    return 'Directorio de documentos de la aplicación';
+    return 'Galería > Pictures > FlowDiagramApp';
   }
+
+  /// Obtiene una descripción amigable de la ubicación de exportación
+  static Future<String> getExportLocationDescription() async {
+    if (Platform.isAndroid) {
+      return 'Galería de fotos > FlowDiagramApp\n(También visible en: Archivos > Pictures > FlowDiagramApp)';
+    }
+    return 'Carpeta de documentos de la aplicación';
+  }
+}
+
+/// Resultado de la verificación de permisos
+class PermissionCheckResult {
+  final bool hasPermission;
+  final int sdkVersion;
+  final String message;
+  final bool? photosPermissionGranted;
+
+  PermissionCheckResult({
+    required this.hasPermission,
+    required this.sdkVersion,
+    required this.message,
+    this.photosPermissionGranted,
+  });
 }

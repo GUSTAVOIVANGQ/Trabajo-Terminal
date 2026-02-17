@@ -206,15 +206,15 @@ void main() {
     });
 
     test('Parse modulo', () {
-      // KNOWN LIMITATION: The lexer interprets % followed by space or letters/digits
-      // as a format specifier (e.g., %d, %s, % with flags). This is a Phase 1 lexer issue.
-      // The modulo operator only works when followed by '(' which isn't a format character.
-      // Using (expr)%(expr) without spaces to force lexer to see % as operator
-      final ast = analyzer.parseExpression('x%(y)');
+      // Fixed: The lexer now correctly distinguishes between modulo operator and format specifiers
+      // "a % b" is now correctly parsed as modulo, not as a format specifier
+      final ast = analyzer.parseExpression('x % y');
 
       expect(ast, isA<BinaryExpressionNode>());
       final binExpr = ast as BinaryExpressionNode;
       expect(binExpr.operator, BinaryOperator.modulo);
+      expect((binExpr.left as IdentifierNode).name, 'x');
+      expect((binExpr.right as IdentifierNode).name, 'y');
     });
 
     test('Parse operator precedence (* before +)', () {
@@ -457,6 +457,88 @@ void main() {
       final decl = result.statements.first as DeclarationStatementNode;
       expect(decl.dataType, DataType.integer);
       expect(decl.variableName, 'x');
+    });
+
+    test('Analyze process node with multiple variable declaration', () {
+      // Test: int a, b, c should create 3 declarations
+      final node = DiagramNode(
+        id: 'test-multi-decl',
+        type: NodeType.process,
+        position: const Offset(100, 100),
+        text: 'int a, b, c',
+      );
+
+      final result = analyzer.analyzeNode(node);
+
+      expect(result.isValid, true);
+      expect(result.statements.length, 3);
+
+      // All should be DeclarationStatementNode with type int
+      for (final stmt in result.statements) {
+        expect(stmt, isA<DeclarationStatementNode>());
+        expect((stmt as DeclarationStatementNode).dataType, DataType.integer);
+      }
+
+      // Check variable names
+      expect(
+          (result.statements[0] as DeclarationStatementNode).variableName, 'a');
+      expect(
+          (result.statements[1] as DeclarationStatementNode).variableName, 'b');
+      expect(
+          (result.statements[2] as DeclarationStatementNode).variableName, 'c');
+    });
+
+    test('Analyze process node with multiple float variables', () {
+      final node = DiagramNode(
+        id: 'test-multi-float',
+        type: NodeType.process,
+        position: const Offset(100, 100),
+        text: 'float x, y, z',
+      );
+
+      final result = analyzer.analyzeNode(node);
+
+      expect(result.isValid, true);
+      expect(result.statements.length, 3);
+
+      for (final stmt in result.statements) {
+        expect(stmt, isA<DeclarationStatementNode>());
+        expect((stmt as DeclarationStatementNode).dataType, DataType.float);
+      }
+
+      expect(
+          (result.statements[0] as DeclarationStatementNode).variableName, 'x');
+      expect(
+          (result.statements[1] as DeclarationStatementNode).variableName, 'y');
+      expect(
+          (result.statements[2] as DeclarationStatementNode).variableName, 'z');
+    });
+
+    test('Analyze process node with multiple variables and initializer', () {
+      // Test: int a = 1, b, c = 3 should work
+      final node = DiagramNode(
+        id: 'test-multi-init',
+        type: NodeType.process,
+        position: const Offset(100, 100),
+        text: 'int a = 1, b, c = 3',
+      );
+
+      final result = analyzer.analyzeNode(node);
+
+      expect(result.isValid, true);
+      expect(result.statements.length, 3);
+
+      final declA = result.statements[0] as DeclarationStatementNode;
+      expect(declA.variableName, 'a');
+      expect(declA.initializer, isNotNull);
+
+      final declB = result.statements[1] as DeclarationStatementNode;
+      expect(declB.variableName, 'b');
+      expect(declB.initializer, isNull);
+
+      final declC = result.statements[2] as DeclarationStatementNode;
+      expect(declC.variableName, 'c');
+      expect(declC.initializer, isNotNull);
     });
 
     test('Analyze decision node with condition', () {
@@ -832,6 +914,360 @@ void main() {
 
       expect(pipeline.validateExpression('x + 5'), true);
       expect(pipeline.checkBalancedParentheses('(a + b)'), true);
+    });
+  });
+
+  group('Pointer Operators Tests', () {
+    test('Address-of operator (&) parsing', () {
+      final pipeline = DiagramCompilerPipeline();
+
+      final ast = pipeline.parseExpression('&x');
+
+      expect(ast, isNotNull);
+      expect(ast, isA<UnaryExpressionNode>());
+      final unary = ast as UnaryExpressionNode;
+      expect(unary.operator, UnaryOperator.addressOf);
+    });
+
+    test('Dereference operator (*) parsing', () {
+      final pipeline = DiagramCompilerPipeline();
+
+      final ast = pipeline.parseExpression('*ptr');
+
+      expect(ast, isNotNull);
+      expect(ast, isA<UnaryExpressionNode>());
+      final unary = ast as UnaryExpressionNode;
+      expect(unary.operator, UnaryOperator.dereference);
+    });
+
+    test('Nested pointer operators', () {
+      final pipeline = DiagramCompilerPipeline();
+
+      final ast = pipeline.parseExpression('**ptr');
+
+      expect(ast, isNotNull);
+      expect(ast, isA<UnaryExpressionNode>());
+    });
+
+    test('Function call with address-of arguments', () {
+      final pipeline = DiagramCompilerPipeline();
+
+      final ast = pipeline.parseExpression('Swap(&a, &b)');
+
+      expect(ast, isNotNull);
+      expect(ast, isA<FunctionCallNode>());
+      final call = ast as FunctionCallNode;
+      expect(call.functionName, 'Swap');
+      expect(call.arguments.length, 2);
+      expect(call.arguments[0], isA<UnaryExpressionNode>());
+      expect(call.arguments[1], isA<UnaryExpressionNode>());
+    });
+  });
+
+  group('Return Statement Tests', () {
+    test('Return statement in data node', () {
+      final pipeline = DiagramCompilerPipeline();
+
+      final nodes = [
+        DiagramNode(
+          id: 'start',
+          type: NodeType.terminal,
+          position: const Offset(100, 50),
+          text: 'Inicio TestFunc(x)',
+        ),
+        DiagramNode(
+          id: 'data',
+          type: NodeType.data,
+          position: const Offset(100, 150),
+          text: 'return x',
+          metadata: {'isReturn': true},
+        ),
+        DiagramNode(
+          id: 'end',
+          type: NodeType.terminal,
+          position: const Offset(100, 250),
+          text: 'Fin TestFunc',
+        ),
+      ];
+
+      final result = pipeline.compile(nodes, []);
+
+      expect(result.syntaxResult, isNotNull);
+      // Check that syntax analysis succeeded (return statement was parsed correctly)
+      expect(result.syntaxResult!.isValid, isTrue,
+          reason: 'Syntax analysis should succeed for return statement');
+    });
+  });
+
+  group('Array Initializer Tests', () {
+    test('Simple array initializer parsing', () {
+      final pipeline = DiagramCompilerPipeline();
+
+      final ast = pipeline.parseExpression('{1, 2, 3, 4, 5}');
+
+      expect(ast, isNotNull);
+      expect(ast, isA<ArrayInitializerNode>());
+      final init = ast as ArrayInitializerNode;
+      expect(init.elements.length, 5);
+      expect(init.elements[0], isA<IntegerLiteralNode>());
+      expect((init.elements[0] as IntegerLiteralNode).value, 1);
+      expect((init.elements[4] as IntegerLiteralNode).value, 5);
+    });
+
+    test('Array initializer toCString', () {
+      final init = ArrayInitializerNode(
+        elements: [
+          IntegerLiteralNode(
+              value: 10, position: const SourcePosition(line: 1, column: 2)),
+          IntegerLiteralNode(
+              value: 25, position: const SourcePosition(line: 1, column: 5)),
+          IntegerLiteralNode(
+              value: 8, position: const SourcePosition(line: 1, column: 8)),
+        ],
+        position: const SourcePosition(line: 1, column: 1),
+      );
+
+      expect(init.toCString(), '{10, 25, 8}');
+    });
+
+    test('Array declaration with initializer in process node', () {
+      final pipeline = DiagramCompilerPipeline();
+
+      final nodes = [
+        DiagramNode(
+          id: 'start',
+          type: NodeType.terminal,
+          position: const Offset(100, 50),
+          text: 'Inicio',
+        ),
+        DiagramNode(
+          id: 'decl',
+          type: NodeType.process,
+          position: const Offset(100, 150),
+          text: 'int arr[5] = {10, 25, 8, 42, 17}',
+          metadata: {'processType': 'array_init'},
+        ),
+        DiagramNode(
+          id: 'end',
+          type: NodeType.terminal,
+          position: const Offset(100, 250),
+          text: 'Fin',
+        ),
+      ];
+
+      final result = pipeline.compile(nodes, []);
+
+      expect(result.success, isTrue);
+      expect(result.syntaxResult, isNotNull);
+      expect(result.syntaxResult!.errors, isEmpty);
+    });
+
+    test('Empty array initializer', () {
+      final pipeline = DiagramCompilerPipeline();
+
+      final ast = pipeline.parseExpression('{}');
+
+      expect(ast, isNotNull);
+      expect(ast, isA<ArrayInitializerNode>());
+      final init = ast as ArrayInitializerNode;
+      expect(init.elements.length, 0);
+    });
+
+    test('Nested array initializer (2D array)', () {
+      final pipeline = DiagramCompilerPipeline();
+
+      final ast = pipeline.parseExpression('{{1, 2}, {3, 4}}');
+
+      expect(ast, isNotNull);
+      expect(ast, isA<ArrayInitializerNode>());
+      final init = ast as ArrayInitializerNode;
+      expect(init.elements.length, 2);
+      expect(init.elements[0], isA<ArrayInitializerNode>());
+      expect(init.elements[1], isA<ArrayInitializerNode>());
+    });
+  });
+
+  group('Pointer Declaration Tests', () {
+    test('Pointer declaration: int *ptr', () {
+      final analyzer = DiagramSyntaxAnalyzer();
+
+      final nodes = [
+        DiagramNode(
+          id: 'start',
+          type: NodeType.terminal,
+          position: const Offset(100, 50),
+          text: 'Inicio',
+        ),
+        DiagramNode(
+          id: 'process',
+          type: NodeType.process,
+          position: const Offset(100, 150),
+          text: 'int *ptr',
+        ),
+        DiagramNode(
+          id: 'end',
+          type: NodeType.terminal,
+          position: const Offset(100, 250),
+          text: 'Fin',
+        ),
+      ];
+
+      final result = analyzer.analyzeDiagram(nodes, []);
+
+      expect(result.isValid, isTrue, reason: 'Should parse int *ptr');
+      expect(result.errors, isEmpty);
+
+      // Check AST
+      expect(result.ast, isNotNull);
+      final processNode = result.ast!.diagramNodes
+          .firstWhere((n) => n.diagramNodeId == 'process');
+      expect(processNode.statements, isNotEmpty);
+      expect(processNode.statements.first, isA<DeclarationStatementNode>());
+
+      final decl = processNode.statements.first as DeclarationStatementNode;
+      expect(decl.variableName, 'ptr');
+      expect(decl.dataType, DataType.integer);
+      expect(decl.isPointer, isTrue);
+    });
+
+    test('Pointer declaration with initialization: int *ptr = arr', () {
+      final analyzer = DiagramSyntaxAnalyzer();
+
+      final nodes = [
+        DiagramNode(
+          id: 'start',
+          type: NodeType.terminal,
+          position: const Offset(100, 50),
+          text: 'Inicio',
+        ),
+        DiagramNode(
+          id: 'process_arr',
+          type: NodeType.process,
+          position: const Offset(100, 120),
+          text: 'int arr[5]',
+        ),
+        DiagramNode(
+          id: 'process_ptr',
+          type: NodeType.process,
+          position: const Offset(100, 190),
+          text: 'int *ptr = arr',
+        ),
+        DiagramNode(
+          id: 'end',
+          type: NodeType.terminal,
+          position: const Offset(100, 260),
+          text: 'Fin',
+        ),
+      ];
+
+      final result = analyzer.analyzeDiagram(nodes, []);
+
+      expect(result.isValid, isTrue, reason: 'Should parse int *ptr = arr');
+      expect(result.errors, isEmpty);
+
+      // Check AST for pointer declaration
+      expect(result.ast, isNotNull);
+      final ptrNode = result.ast!.diagramNodes
+          .firstWhere((n) => n.diagramNodeId == 'process_ptr');
+      expect(ptrNode.statements, isNotEmpty);
+
+      final decl = ptrNode.statements.first as DeclarationStatementNode;
+      expect(decl.variableName, 'ptr');
+      expect(decl.isPointer, isTrue);
+      expect(decl.initializer, isNotNull);
+    });
+
+    test('Template P20 - Pointers and Arrays declaration', () {
+      final pipeline = DiagramCompilerPipeline();
+
+      final nodes = [
+        DiagramNode(
+          id: 'start',
+          type: NodeType.terminal,
+          position: const Offset(280, 50),
+          text: 'Inicio',
+        ),
+        DiagramNode(
+          id: 'process_arr',
+          type: NodeType.process,
+          position: const Offset(280, 140),
+          text: 'int arr[5] = {10, 20, 30, 40, 50}',
+        ),
+        DiagramNode(
+          id: 'process_ptr',
+          type: NodeType.process,
+          position: const Offset(280, 230),
+          text: 'int *ptr = arr',
+        ),
+        DiagramNode(
+          id: 'process_i',
+          type: NodeType.process,
+          position: const Offset(280, 320),
+          text: 'int i',
+        ),
+        DiagramNode(
+          id: 'end',
+          type: NodeType.terminal,
+          position: const Offset(280, 730),
+          text: 'Fin',
+        ),
+      ];
+
+      final result = pipeline.compile(nodes, []);
+
+      // Should compile without syntax errors
+      final syntaxErrors = result.errors.all
+          .where((e) =>
+              e.code == CompilerErrorCode.unexpectedToken ||
+              e.code == CompilerErrorCode.invalidDeclaration)
+          .toList();
+      expect(syntaxErrors, isEmpty,
+          reason: 'Should not have syntax errors for pointer declaration');
+    });
+
+    test('Multiple pointer declarations: int *a, *b', () {
+      final analyzer = DiagramSyntaxAnalyzer();
+
+      final nodes = [
+        DiagramNode(
+          id: 'start',
+          type: NodeType.terminal,
+          position: const Offset(100, 50),
+          text: 'Inicio',
+        ),
+        DiagramNode(
+          id: 'process',
+          type: NodeType.process,
+          position: const Offset(100, 150),
+          text: 'int *a, *b',
+        ),
+        DiagramNode(
+          id: 'end',
+          type: NodeType.terminal,
+          position: const Offset(100, 250),
+          text: 'Fin',
+        ),
+      ];
+
+      final result = analyzer.analyzeDiagram(nodes, []);
+
+      expect(result.isValid, isTrue);
+
+      // Check AST
+      expect(result.ast, isNotNull);
+      final processNode = result.ast!.diagramNodes
+          .firstWhere((n) => n.diagramNodeId == 'process');
+
+      // Should have two declarations
+      expect(processNode.statements.length, greaterThanOrEqualTo(2));
+
+      final declA = processNode.statements[0] as DeclarationStatementNode;
+      expect(declA.variableName, 'a');
+      expect(declA.isPointer, isTrue);
+
+      final declB = processNode.statements[1] as DeclarationStatementNode;
+      expect(declB.variableName, 'b');
+      expect(declB.isPointer, isTrue);
     });
   });
 }

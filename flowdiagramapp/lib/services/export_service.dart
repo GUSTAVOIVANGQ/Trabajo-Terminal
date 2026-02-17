@@ -11,6 +11,7 @@ import 'package:image/image.dart' as img;
 import 'package:intl/intl.dart';
 import '../models/metric_model.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:device_info_plus/device_info_plus.dart';
 
 class ExportService {
   /// Genera un PDF con las métricas del administrador
@@ -114,55 +115,103 @@ class ExportService {
 
   /// Solicita permisos de almacenamiento si es necesario
   static Future<bool> requestStoragePermission() async {
-    if (Platform.isAndroid) {
-      // Para Android 10+ necesitamos permisos específicos
-      if (await Permission.storage.isDenied) {
-        await Permission.storage.request();
-      }
-      if (await Permission.manageExternalStorage.isDenied) {
-        await Permission.manageExternalStorage.request();
+    if (!Platform.isAndroid) {
+      return true; // En otras plataformas no necesitamos permisos especiales
+    }
+
+    final int sdkVersion = await _getAndroidSdkVersion();
+
+    // Android 13+ (API 33+): Usa permisos granulares para medios
+    if (sdkVersion >= 33) {
+      // Para Android 13+, podemos usar el directorio privado de la app sin permisos
+      final status = await Permission.photos.status;
+      if (status.isGranted || status.isLimited) {
+        return true;
       }
 
-      return await Permission.storage.isGranted ||
-          await Permission.manageExternalStorage.isGranted;
+      // Intentar solicitar permiso
+      final result = await Permission.photos.request();
+      if (result.isGranted || result.isLimited) {
+        return true;
+      }
+
+      // El directorio privado de la app no requiere permisos
+      return true;
     }
-    return true; // En iOS los permisos se manejan automáticamente
+    // Android 10-12 (API 29-32): Scoped Storage
+    else if (sdkVersion >= 29) {
+      // En Android 10+, el directorio privado de la app no requiere permisos
+      return true;
+    }
+    // Android 9 y anteriores (API < 29): Permisos legacy
+    else {
+      final status = await Permission.storage.status;
+      if (status.isGranted) {
+        return true;
+      }
+
+      final result = await Permission.storage.request();
+      return result.isGranted;
+    }
+  }
+
+  // Cache para la versión de Android SDK
+  static int? _androidSdkVersion;
+
+  /// Obtiene la versión del SDK de Android
+  static Future<int> _getAndroidSdkVersion() async {
+    if (_androidSdkVersion != null) return _androidSdkVersion!;
+
+    if (Platform.isAndroid) {
+      final DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();
+      final AndroidDeviceInfo androidInfo = await deviceInfo.androidInfo;
+      _androidSdkVersion = androidInfo.version.sdkInt;
+      return _androidSdkVersion!;
+    }
+    return 0;
   }
 
   /// Obtiene el directorio de salida para los archivos
   static Future<Directory> _getOutputDirectory() async {
     if (Platform.isAndroid) {
-      // Para Android, usar la carpeta de Descargas
-      try {
-        // Intentar acceder a la carpeta de Descargas externa
-        final downloadsPath = '/storage/emulated/0/Download';
-        final downloadsDir = Directory(downloadsPath);
+      final int sdkVersion = await _getAndroidSdkVersion();
 
-        if (await downloadsDir.exists()) {
-          // Crear subcarpeta para FlowDiagram App
-          final appDownloadsDir = Directory('${downloadsPath}/FlowDiagramApp');
-          if (!await appDownloadsDir.exists()) {
-            await appDownloadsDir.create(recursive: true);
+      // Para Android 10+ (API 29+), usar el directorio privado de la app
+      if (sdkVersion >= 29) {
+        final Directory? externalDir = await getExternalStorageDirectory();
+        if (externalDir != null) {
+          // Crear subcarpeta FlowDiagramApp
+          final Directory appExportDir =
+              Directory('${externalDir.path}/FlowDiagramExports');
+          if (!await appExportDir.exists()) {
+            await appExportDir.create(recursive: true);
           }
-          return appDownloadsDir;
-        } else {
-          // Fallback al directorio de documentos de la app
-          final appDir = await getApplicationDocumentsDirectory();
-          final exportDir = Directory('${appDir.path}/exports');
-          if (!await exportDir.exists()) {
-            await exportDir.create(recursive: true);
+          return appExportDir;
+        }
+      } else {
+        // Para versiones anteriores, intentar usar la carpeta de Descargas
+        try {
+          final String downloadsPath =
+              '/storage/emulated/0/Download/FlowDiagramApp';
+          final Directory downloadsDir = Directory(downloadsPath);
+
+          if (!await downloadsDir.exists()) {
+            await downloadsDir.create(recursive: true);
           }
-          return exportDir;
+          return downloadsDir;
+        } catch (e) {
+          print('Error accediendo a Descargas: $e');
         }
-      } catch (e) {
-        // Si hay error, usar directorio de documentos como fallback
-        final appDir = await getApplicationDocumentsDirectory();
-        final exportDir = Directory('${appDir.path}/exports');
-        if (!await exportDir.exists()) {
-          await exportDir.create(recursive: true);
-        }
-        return exportDir;
       }
+
+      // Fallback al directorio de documentos de la aplicación
+      final Directory appDocDir = await getApplicationDocumentsDirectory();
+      final Directory exportDir =
+          Directory('${appDocDir.path}/FlowDiagramExports');
+      if (!await exportDir.exists()) {
+        await exportDir.create(recursive: true);
+      }
+      return exportDir;
     } else {
       // Para iOS, usar el directorio de documentos
       return await getApplicationDocumentsDirectory();

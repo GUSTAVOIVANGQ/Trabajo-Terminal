@@ -79,123 +79,21 @@ while (contador < 100) {
 
 ## 📖 **Descripción General**
 
-El producto principal es implementar un compilador fuente a fuente (Diagramas de flujo a codigo en c). Esta aplicacion debe conviertir los diagramas de flujo a codigo en lenguaje c funcional mediante las fases de un compilador. Hasta ahora tenemos la primera fase implementada (analisis estrucutral y generacion de codigo directo).:
+El producto principal es implementar un compilador fuente a fuente (Diagramas de flujo a codigo en c). Esta aplicacion debe conviertir los diagramas de flujo a codigo en lenguaje c funcional mediante las fases de un compilador. El compilador esta terminado y listo para pruebas. 
 
-**Análisis Básico:**
-- **Validación sintáctica básica** (estructura del diagrama)
-- **Detección de errores estructurales** (nodos desconectados, múltiples inicios, etc.)
-- **Generación de código directo** (traducción 1:1 de nodos a C)
+**Análisis estructural del diagrama de flujo:**
+- **Validación sintáctica básica** (estructura del diagrama).
+- **Generación de código directo** (traducción 1:1 de nodos a C).
 
-### Lo que FALTA para un compilador completo:
+### 🏗️ Arquitectura del Compilador
+| Fase | Actividad | Módulo Responsable |
+| :--- | :--- | :--- |
+| **FASE 1** | Análisis de Diagrama | ✅ `CompilerPipeline` |
+| **FASE 2** | Construcción de AST | ✅ `ASTBuilder` |
+| **FASE 3** | Análisis Semántico | ✅ `SemanticAnalyzer` |
+| **FASE 4** | Optimización AST | ✅ `ASTOptimizer` |
+| **FASE 5** | Generación de Código | ✅ `AdvancedCodeGenerator` |
 
-1. Análisis Léxico
-2. Análisis Sintáctico
-3. Análisis Semántico
-4. Optimización
-
-**🎯 Plan de Desarrollo propuesto:**
-
-## **FASE 1: Análisis Léxico Visual**
-**Objetivo:** Tokenizar y analizar el contenido de cada nodo
-
-### **Implementación del Lexer**
-```dart
-// Crear: lib/compiler/lexical_analyzer.dart
-class DiagramLexicalAnalyzer {
-  List<Token> tokenize(DiagramNode node)
-  Map<String, SymbolInfo> symbolTable
-  bool validateIdentifiers(String text)
-  TokenType getTokenType(String text)
-}
-```
-
-**Entregables:**
-- ✅ Tokenizador para expresiones en nodos
-- ✅ Tabla de símbolos básica
-- ✅ Reconocimiento de identificadores, operadores, literales
-- ✅ Validación de nombres de variables
-
----
-
-## **FASE 2: Análisis Sintáctico Visual**
-**Objetivo:** Validar sintaxis y construir AST
-
-### **Parser de Expresiones**
-```dart
-// Crear: lib/compiler/syntax_analyzer.dart
-class DiagramSyntaxAnalyzer {
-  ParseTree parseExpression(List<Token> tokens)
-  bool validateAssignment(DiagramNode node)
-  AST buildAbstractSyntaxTree(List<DiagramNode> nodes)
-  bool validateControlFlow(List<Connection> connections)
-}
-```
-
-**Entregables:**
-- ✅ Parser para expresiones matemáticas y asignaciones
-- ✅ Validación de sintaxis en cada nodo
-- ✅ AST básico del diagrama completo
-- ✅ Validación avanzada de flujo de control
-
----
-
-## **FASE 3: Análisis Semántico Visual**
-**Objetivo:** Verificar coherencia lógica y tipos
-
-### **Análisis Semántico**
-```dart
-// Crear: lib/compiler/semantic_analyzer.dart
-class DiagramSemanticAnalyzer {
-  bool checkTypes(ParseTree tree)
-  bool analyzeScope(List<DiagramNode> nodes)
-  List<SemanticError> findUndeclaredVariables()
-  bool validateOperationCompatibility()
-}
-```
-
-**Entregables:**
-- ✅ Verificación de tipos de datos
-- ✅ Detección de variables no declaradas
-- ✅ Análisis de alcance (scope)
-- ✅ Verificación de compatibilidad de operaciones
-
----
-
-## **FASE 4: Optimización Básica**
-**Objetivo:** Mejorar el código generado
-
-### **Optimizador**
-```dart
-// Crear: lib/compiler/code_optimizer.dart
-class DiagramCodeOptimizer {
-  String eliminateDeadCode(String code)
-  String simplifyExpressions(String code)
-  String optimizeControlFlow(ParseTree tree)
-}
-```
-
-**Entregables:**
-- ✅ Eliminación de código redundante
-- ✅ Simplificación de expresiones constantes
-- ✅ Optimización de estructuras de control
-
----
-
-## **FASE 5: Integración y Documentación**
-**Objetivo:** Integrar todo y documentar
-
-### **Integración Final**
-```dart
-// No modificar: lib/models/code_generator.dart
-// Crear nuevo archivo
-class EnhancedCodeGenerator {
-  String generateOptimizedCode(
-    List<DiagramNode> nodes,
-    List<Connection> connections,
-    CompilerOptions options
-  )
-}
-```
 
 **Entregables:**
 - ✅ Sistema completo integrado
@@ -430,40 +328,7 @@ FlowDiagram App es un editor visual intuitivo que permite crear diagramas de flu
 
 ---
 
-### 2. Métricas Educativas
-
-- **Usabilidad educativa:**  
-  Tiempo promedio de comprensión por usuarios novatos.  
-  _Meta: menor a 30 minutos._  
-  Se realizarán encuestas simples tras pruebas con usuarios.
-
-- **Mejora en pre/post-test:**  
-  % de mejora en test de conceptos antes/después de usar la app (por ejemplo, preguntas sobre estructuras de control y traducción de diagramas a código).  
-  _Meta: ≥20% de mejora._
-
-- **Tasa de éxito en ejercicios:**  
-  % de usuarios que completan ejercicios prácticos (como crear un diagrama funcional o traducir un algoritmo) sin ayuda.  
-  _Meta: ≥80%._
-
-- **Tiempo promedio de resolución de ejercicios:**  
-  Tiempo promedio en minutos para resolver ejercicios prácticos en la app.  
-  _Meta: ≤15 minutos por ejercicio._
-
-- **Tasa de identificación de errores:**  
-  % de errores identificados y corregidos por los usuarios en ejercicios con fallos intencionales.  
-  _Meta: ≥70%._
-
-- **Autoevaluación de confianza:**  
-  Calificación promedio (escala 1-5) post-uso sobre confianza en comprensión de algoritmos y conversión diagrama-código.  
-  _Meta: ≥4._
-
-- **Tasa de uso de recursos de ayuda:**  
-  Número de consultas al tutorial o ayuda por sesión.  
-  _Indicador: se espera que disminuya con el uso y la familiaridad con la app._
-
----
-
-Estas métricas permitirán evaluar tanto la calidad técnica del sistema como su impacto en el aprendizaje y comprensión de los conceptos de programación por parte de los usuarios.  
+Estas métricas permitirán evaluar la calidad técnica del compilador fuente a fuente. La aplicacion no se compromete a evaluar la calidad educativa o la comprensión de los conceptos de programación por parte de los usuarios.  
 
 ## 🚀 Funcionalidad sin conexión
 
@@ -584,21 +449,34 @@ lib/
 - [X] Programacion de las estructuras generadas por cada boton del panel "C concepts"
 - [x] 20 plantillas implementadas usando de referencia el temario de Fundamentos de Programación (ESCOM ISC 2020)
 - [X] Generación de código C y validacion estructural mejorada
+- [x] Implementar las fases de un transpilador: análisis léxico, sintáctico, semántico, representación intermedia, tabla de símbolos y generación de código C funcional ✅
+- [X] Tutorial integrado para cada tipo de nodo
+- [X] La exportación de diagramas a JPG/PNG no se exporta correctamente en algunos dispositivos Android (problema de permisos).
+- [X] Separación de diagramas por usuario - Cada usuario ahora ve solo sus propios diagramas
+- [X] **Sincronización con Firebase y gestión de cuenta**
+  - Sincronización inteligente de diagramas (los cambios más recientes ganan)
+  - Opción para subir todos los diagramas a la nube
+  - Opción para descargar todos los diagramas desde la nube
+  - Eliminación de cuenta y todos los datos asociados
+  - Eliminación de datos locales para usuarios invitados
+  - Interfaz integrada en la pantalla "Mi Perfil"
+- [X] **Zoom con punto focal preservado**
+  - Al hacer zoom (pinch), la vista ahora se centra en el punto focal del gesto
+  - Se mantiene la posición del diagrama visible durante el zoom
+  - Experiencia de zoom más natural e intuitiva
 
-### 🔄 En Desarrollo
+## 🔄 En Desarrollo
 
-- [ ] Implementar las fases de un transpilador: análisis léxico, sintáctico, semántico representacion intermedia, tabla de simbolos y generacion de código c funcional
-- [ ] Tutorial integrado para cada tipo de nodo
+- [ ] Agregar la opcion de exportación de código a archivos .c ademas de exportacion a imagen.
 
 ### 🎯 Próximas Funcionalidades
 
-- [ ] Compartir diagramas
-- [ ] Exportación de diagramas a JPG/PNG
-- [ ] Exportación de código a archivos .c
+- [ ] Aceptación de Aviso de Privacidad
+- [ ] Revisar la sincronización de diagramas de flujo con Firebase Storage. Firebase console debe habilitar el almacenamiento en la nube.
 
 ## 📄 Licencia
 
-Este proyecto es parte de un proyecto final académico para el desarrollo de aplicaciones móviles nativas.
+Este proyecto es parte de un proyecto final para el Trabajo Terminal 2026-A038.
 
 ## 🤝 Contribuciones
 

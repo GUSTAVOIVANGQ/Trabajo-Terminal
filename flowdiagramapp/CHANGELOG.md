@@ -7,6 +7,49 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+## [2.1.0] - 2026-01-22
+
+### 🎉 Compilador Completo - FASE 5: Generación de Código Avanzada
+
+Esta versión completa la implementación del **compilador fuente a fuente** con las 5 fases completas.
+
+### ✨ Agregado
+
+#### FASE 5: Generación de Código Avanzada
+- **Nuevo archivo**: `lib/compiler/code_generator_advanced.dart`
+- **Clase `AdvancedCodeGenerator`**: Generador que usa tabla de símbolos para tipos correctos
+- **Soporte para múltiples variables**: `printf("%d %f %c\n", x, y, z);`
+- **Tipos correctos por tabla de símbolos**: `%d` (int), `%f` (float), `%c` (char), `%s` (string)
+- **Fallback inteligente**: Infiere tipos por convención de nombres si no están en tabla
+
+#### Integración en Pipeline
+- **CompilerPipeline**: FASE 5 ahora genera código C funcional (antes retornaba `null`)
+- **Métricas de generación**: Líneas de código, variables usadas, tiempo de generación
+- **Tests**: 3 nuevos tests para verificar generación correcta
+
+#### Corrección del Generador Simple
+- **Método `_formatCOutputStatement`**: Ahora maneja múltiples variables separadas por comas
+- **Método `_getFormatSpecifierForVar`**: Determina especificador de formato por convención
+
+### 🐛 Corregido
+
+- ❌→✅ **Plantilla 02 con Compilador Avanzado**: Ahora genera `printf("%d %f %c\n", x, y, z);`
+- ❌→✅ **Plantilla 02 con Generador Simple**: Mismo fix aplicado
+- ❌→✅ **FASE 5 pendiente**: Ahora está completamente implementada
+
+### 📊 Métricas
+
+- **Tests del compilador**: 201 tests pasados (100% éxito)
+- **Archivos nuevos**: 2 (code_generator_advanced.dart, code_generator_advanced_test.dart)
+- **Archivos modificados**: 4 (compiler_pipeline.dart, compiler.dart, code_generator.dart, COMPILER_DOCUMENTATION.md)
+
+### 📝 Documentación
+
+- **COMPILER_DOCUMENTATION.md**: Actualizado con FASE 5 completa
+- **README.md**: Marcada como completada la implementación del transpilador
+
+---
+
 ## [2.0.0] - 2026-01-19
 
 ### 🎉 Versión Mayor - Sistema de Metadata Inteligente

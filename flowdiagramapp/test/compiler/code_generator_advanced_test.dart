@@ -244,5 +244,203 @@ void main() {
       expect(result.generatedCode!.contains('int main()'), isTrue);
       expect(result.generatedCode!.contains('return 0;'), isTrue);
     });
+
+    test('Declaración múltiple de variables en nodo proceso', () {
+      // Test para declaraciones múltiples: int a, b, c
+      final startNode = DiagramNode(
+        id: "start_multi",
+        type: NodeType.terminal,
+        position: const Offset(100, 50),
+        text: "Inicio",
+      );
+
+      // Declaración múltiple sin inicialización
+      final multiDeclNode = DiagramNode(
+        id: "multi_decl",
+        type: NodeType.process,
+        position: const Offset(100, 150),
+        text: "int a, b, c",
+      );
+
+      // Declaración múltiple con inicialización parcial
+      final multiDeclInitNode = DiagramNode(
+        id: "multi_decl_init",
+        type: NodeType.process,
+        position: const Offset(100, 250),
+        text: "float x = 0.0, y = 1.5, z",
+      );
+
+      // Declaración simple (para verificar que no se rompe)
+      final simpleDeclNode = DiagramNode(
+        id: "simple_decl",
+        type: NodeType.process,
+        position: const Offset(100, 350),
+        text: "double resultado = 0",
+      );
+
+      final endNode = DiagramNode(
+        id: "end_multi",
+        type: NodeType.terminal,
+        position: const Offset(100, 450),
+        text: "Fin",
+      );
+
+      final nodes = [
+        startNode,
+        multiDeclNode,
+        multiDeclInitNode,
+        simpleDeclNode,
+        endNode
+      ];
+      final connections = [
+        Connection(source: startNode, target: multiDeclNode, label: ""),
+        Connection(source: multiDeclNode, target: multiDeclInitNode, label: ""),
+        Connection(
+            source: multiDeclInitNode, target: simpleDeclNode, label: ""),
+        Connection(source: simpleDeclNode, target: endNode, label: ""),
+      ];
+
+      final compiler = DiagramCompilerPipeline();
+      final result = compiler.compile(nodes, connections);
+
+      expect(result.success, isTrue, reason: 'La compilación debe ser exitosa');
+      expect(result.generatedCode, isNotNull,
+          reason: 'Debe generarse código C');
+
+      final code = result.generatedCode!;
+      print('Código generado (declaraciones múltiples):');
+      print(code);
+
+      // Verificar que las declaraciones múltiples se generan correctamente
+      expect(code.contains('int a, b, c;'), isTrue,
+          reason: 'Debe generar "int a, b, c;"');
+      expect(code.contains('float x = 0.0, y = 1.5, z;'), isTrue,
+          reason: 'Debe generar "float x = 0.0, y = 1.5, z;"');
+      expect(code.contains('double resultado = 0;'), isTrue,
+          reason: 'Debe generar "double resultado = 0;"');
+    });
+
+    test('Plantilla P15 - Bubble Sort con bucles anidados y isLoopBack', () {
+      // Test para verificar que no hay Stack Overflow con conexiones isLoopBack
+      final now = DateTime.now();
+      final baseId = now.millisecondsSinceEpoch;
+
+      final startNode = DiagramNode(
+        id: "start_${baseId}_1",
+        type: NodeType.terminal,
+        position: const Offset(280, 50),
+        text: "Inicio",
+      );
+
+      final declareArrNode = DiagramNode(
+        id: "process_${baseId}_2",
+        type: NodeType.process,
+        position: const Offset(280, 130),
+        text: "int arr[5]",
+      );
+
+      final declareTempNode = DiagramNode(
+        id: "process_${baseId}_3",
+        type: NodeType.process,
+        position: const Offset(280, 210),
+        text: "int temp, i, j",
+      );
+
+      final forINode = DiagramNode(
+        id: "loop_${baseId}_6",
+        type: NodeType.preparation,
+        position: const Offset(280, 410),
+        text: "for (i = 0; i < 4; i++)",
+        metadata: {'loopType': 'for'},
+      );
+
+      final forJNode = DiagramNode(
+        id: "loop_${baseId}_7",
+        type: NodeType.preparation,
+        position: const Offset(500, 410),
+        text: "for (j = 0; j < 4-i; j++)",
+        metadata: {'loopType': 'for'},
+      );
+
+      final decisionNode = DiagramNode(
+        id: "decision_${baseId}_8",
+        type: NodeType.decision,
+        position: const Offset(700, 410),
+        text: "arr[j] > arr[j+1]",
+      );
+
+      final swapNode = DiagramNode(
+        id: "process_${baseId}_9",
+        type: NodeType.process,
+        position: const Offset(700, 550),
+        text: "temp = arr[j]",
+      );
+
+      final endNode = DiagramNode(
+        id: "end_${baseId}_13",
+        type: NodeType.terminal,
+        position: const Offset(280, 870),
+        text: "Fin",
+      );
+
+      final nodes = [
+        startNode,
+        declareArrNode,
+        declareTempNode,
+        forINode,
+        forJNode,
+        decisionNode,
+        swapNode,
+        endNode
+      ];
+
+      final connections = [
+        Connection(source: startNode, target: declareArrNode, label: ""),
+        Connection(source: declareArrNode, target: declareTempNode, label: ""),
+        Connection(source: declareTempNode, target: forINode, label: ""),
+        Connection(source: forINode, target: forJNode, label: "Verdadero"),
+        Connection(source: forJNode, target: decisionNode, label: "Verdadero"),
+        Connection(source: decisionNode, target: swapNode, label: "Sí"),
+        // Conexiones de retorno de bucle (isLoopBack: true)
+        Connection(
+            source: decisionNode,
+            target: forJNode,
+            label: "No",
+            isLoopBack: true),
+        Connection(
+            source: swapNode, target: forJNode, label: "", isLoopBack: true),
+        Connection(
+            source: forJNode,
+            target: forINode,
+            label: "Falso",
+            isLoopBack: true),
+        Connection(source: forINode, target: endNode, label: "Falso"),
+      ];
+
+      final compiler = DiagramCompilerPipeline();
+
+      // Este test verifica que NO hay Stack Overflow
+      final result = compiler.compile(nodes, connections);
+
+      // Mostrar errores si los hay
+      if (!result.success) {
+        print('Errores de compilación:');
+        print('  ${result.errors}');
+      }
+
+      // Incluso si hay errores semánticos, verificar que se generó código (no hubo Stack Overflow)
+      print('Código generado (Bubble Sort simplificado):');
+      print(result.generatedCode ?? 'No se generó código');
+
+      // El test principal es que NO hubo Stack Overflow - si llegamos aquí, pasó
+      expect(result.generatedCode, isNotNull,
+          reason: 'Debe generarse código C sin Stack Overflow');
+
+      final code = result.generatedCode!;
+
+      // Verificar estructura básica
+      expect(code.contains('int arr[5]'), isTrue);
+      expect(code.contains('int temp, i, j'), isTrue);
+    });
   });
 }

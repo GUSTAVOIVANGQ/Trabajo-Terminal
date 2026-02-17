@@ -4,8 +4,12 @@
 /// This is the main entry point for the source-to-source compiler
 /// that transforms flowchart diagrams into C code.
 ///
-/// Current implementation: Phase 1 (Lexical), Phase 2 (Syntactic), Phase 3 (Semantic), Phase 4 (Optimization)
-/// Future phases: Code Generation
+/// Implemented phases:
+/// - Phase 1: Lexical Analysis
+/// - Phase 2: Syntactic Analysis
+/// - Phase 3: Semantic Analysis
+/// - Phase 4: Optimization
+/// - Phase 5: Code Generation
 
 import '../models/diagram_node.dart';
 import 'token.dart';
@@ -234,16 +238,16 @@ class CompilationMetrics {
   /// Lexical analysis time
   final int lexicalTimeMs;
 
-  /// Syntactic analysis time (future)
+  /// Syntactic analysis time
   final int syntacticTimeMs;
 
-  /// Semantic analysis time (future)
+  /// Semantic analysis time
   final int semanticTimeMs;
 
-  /// Optimization time (future)
+  /// Optimization time
   final int optimizationTimeMs;
 
-  /// Code generation time (future)
+  /// Code generation time
   final int codeGenTimeMs;
 
   const CompilationMetrics({
@@ -330,8 +334,7 @@ class DiagramCompilerPipeline {
   }
 
   /// Run the complete compilation pipeline
-  /// Implements Phase 1 (Lexical), Phase 2 (Syntactic), Phase 3 (Semantic), Phase 4 (Optimization)
-  /// Future phases: Code Generation
+  /// Implements all 5 phases: Lexical, Syntactic, Semantic, Optimization, Code Generation
   CompilationResult compile(
     List<DiagramNode> nodes,
     List<Connection> connections,

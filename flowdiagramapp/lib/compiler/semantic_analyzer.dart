@@ -357,9 +357,169 @@ class DiagramSemanticAnalyzer {
   /// Gather all variable declarations from nodes
   void _gatherDeclarationsFromNodes(List<DiagramNode> nodes) {
     for (final node in nodes) {
-      if (node.type == NodeType.preparation) {
+      // Check for function definitions in terminal nodes (e.g., "Inicio Suma(x, y)")
+      if (node.type == NodeType.terminal) {
+        _extractFunctionParameters(node.text, node.id);
+      }
+      // Check for declarations in preparation nodes
+      else if (node.type == NodeType.preparation) {
         _extractDeclaration(node.text, node.id);
       }
+      // Check for declarations in process nodes (e.g., "int retorno")
+      else if (node.type == NodeType.process) {
+        _extractDeclarationFromProcess(node.text, node.id);
+      }
+    }
+  }
+
+  /// Extract function parameters from terminal node text
+  /// Handles patterns like "Inicio Suma(x, y)" or "Inicio Factorial(n)"
+  void _extractFunctionParameters(String text, String nodeId) {
+    // Look for function definition pattern: "Inicio FuncName(param1, param2, ...)"
+    final funcMatch =
+        RegExp(r'Inicio\s+(\w+)\s*\(([^)]*)\)', caseSensitive: false)
+            .firstMatch(text);
+    if (funcMatch != null) {
+      final funcName = funcMatch.group(1)!;
+      final paramsStr = funcMatch.group(2)!;
+
+      // Register the function in the function return types (default to int)
+      _functionReturnTypes[funcName] = DataType.integer;
+
+      // Parse parameters
+      if (paramsStr.trim().isNotEmpty) {
+        final params = paramsStr
+            .split(',')
+            .map((p) => p.trim())
+            .where((p) => p.isNotEmpty);
+        for (final param in params) {
+          // Handle pointer parameters like "int *x", "int* x", "int * x"
+          // First, normalize: remove asterisks from type and name separately
+          String normalizedParam = param;
+
+          // Check if it's a pointer parameter
+          bool isPointer = param.contains('*');
+
+          // Remove asterisks for parsing, but remember it's a pointer
+          normalizedParam = param.replaceAll('*', ' ').trim();
+          normalizedParam = normalizedParam.replaceAll(
+              RegExp(r'\s+'), ' '); // Normalize spaces
+
+          // Parameters can be "type name" or just "name"
+          final parts = normalizedParam
+              .split(RegExp(r'\s+'))
+              .where((p) => p.isNotEmpty)
+              .toList();
+
+          String paramName;
+          DataType paramType = DataType.integer; // Default type
+
+          if (parts.length >= 2) {
+            // Has type: "int x" (after removing asterisks)
+            paramType = _stringToDataType(parts[0]) ?? DataType.integer;
+            paramName = parts.last;
+          } else if (parts.length == 1) {
+            // Just name: "x"
+            paramName = parts[0];
+          } else {
+            continue;
+          }
+
+          // Clean any remaining asterisks from parameter name (shouldn't happen after normalization)
+          paramName = paramName.replaceAll('*', '').trim();
+
+          // Skip empty names
+          if (paramName.isEmpty) continue;
+
+          // Register parameter as a variable (for pointers, register the dereferenced name)
+          if (!_symbolTable.symbolExists(paramName)) {
+            _registerDeclaration(paramName, paramType, true, nodeId);
+          }
+
+          // If it's a pointer, also note this for type checking purposes
+          if (isPointer) {
+            // Store pointer type information
+            _variableTypes[paramName] = paramType;
+          }
+        }
+      }
+    }
+  }
+
+  /// Extract declarations from process nodes
+  /// Handles patterns like "int x", "int retorno", "float resultado"
+  void _extractDeclarationFromProcess(String text, String nodeId) {
+    final tokens = _lexer.tokenize(text, nodeId: nodeId);
+
+    if (tokens.isEmpty) return;
+
+    // Check if starts with a type keyword
+    final firstToken = tokens.first;
+    final dataType = _tokenToDataType(firstToken.type);
+
+    if (dataType == null) return;
+
+    // It's a declaration, extract variable names
+    for (int i = 1; i < tokens.length; i++) {
+      final token = tokens[i];
+      if (token.type == TokenType.identifier) {
+        final varName = token.lexeme;
+
+        // Skip array size specifiers
+        if (i > 1 && tokens[i - 1].type == TokenType.leftBracket) {
+          continue;
+        }
+
+        // Check if it's not already declared
+        if (!_symbolTable.symbolExists(varName)) {
+          // Check if initialized
+          bool isInitialized = false;
+          for (int j = i + 1; j < tokens.length; j++) {
+            if (tokens[j].type == TokenType.opAssign) {
+              isInitialized = true;
+              break;
+            }
+            if (tokens[j].type == TokenType.comma ||
+                tokens[j].type == TokenType.semicolon) {
+              break;
+            }
+          }
+
+          _registerDeclaration(varName, dataType, isInitialized, nodeId);
+        }
+
+        // Move to next variable (after comma)
+        while (i < tokens.length && tokens[i].type != TokenType.comma) {
+          i++;
+        }
+      }
+    }
+  }
+
+  /// Convert string type name to DataType
+  DataType? _stringToDataType(String typeName) {
+    switch (typeName.toLowerCase()) {
+      case 'int':
+      case 'entero':
+        return DataType.integer;
+      case 'float':
+      case 'real':
+        return DataType.float;
+      case 'double':
+        return DataType.double_;
+      case 'char':
+      case 'caracter':
+        return DataType.char;
+      case 'bool':
+      case 'booleano':
+        return DataType.boolean;
+      case 'string':
+      case 'cadena':
+        return DataType.string;
+      case 'void':
+        return DataType.void_;
+      default:
+        return null;
     }
   }
 
@@ -375,8 +535,21 @@ class DiagramSemanticAnalyzer {
       );
     }
 
-    // Process node-level declarations
+    // Process node-level declarations and function parameters
     for (final diagNode in ast.diagramNodes) {
+      // Check for function parameters in terminal nodes
+      // e.g., "Inicio Suma(x, y)" or "Inicio Factorial(n)"
+      if (diagNode.nodeType == 'terminal' && diagNode.label != null) {
+        _extractFunctionParameters(diagNode.label!, diagNode.diagramNodeId);
+      }
+
+      // Check for declarations in process nodes
+      // e.g., "int retorno" or "int a, b, c"
+      if (diagNode.nodeType == 'process' && diagNode.label != null) {
+        _extractDeclarationFromProcess(diagNode.label!, diagNode.diagramNodeId);
+      }
+
+      // Process statement-level declarations
       for (final stmt in diagNode.statements) {
         if (stmt is DeclarationStatementNode) {
           _registerDeclaration(
@@ -568,6 +741,11 @@ class DiagramSemanticAnalyzer {
       for (final expr in stmt.expressions) {
         _analyzeExpression(expr, nodeId);
       }
+    } else if (stmt is ReturnStatementNode) {
+      // Analyze return statement - check the return value
+      if (stmt.value != null) {
+        _analyzeExpression(stmt.value!, nodeId);
+      }
     } else if (stmt is IfStatementNode) {
       _analyzeExpression(stmt.condition, nodeId);
       _analyzeStatement(stmt.thenBranch, nodeId);
@@ -684,7 +862,10 @@ class DiagramSemanticAnalyzer {
     List<CompilerError> warnings,
     Set<String> usedVars,
   ) {
-    final text = node.text.trim();
+    // Normalizar el texto del nodo de decisión (quitar signos de interrogación)
+    String text = node.text.trim();
+    text = text.replaceAll('¿', '').replaceAll('?', '').trim();
+
     if (text.isEmpty) return;
 
     final tokens = _lexer.tokenize(text, nodeId: node.id);
@@ -763,7 +944,7 @@ class DiagramSemanticAnalyzer {
     }
   }
 
-  /// Analyze data node (input/output)
+  /// Analyze data node (input/output/return)
   void _analyzeDataNode(
     DiagramNode node,
     List<CompilerError> errors,
@@ -774,11 +955,49 @@ class DiagramSemanticAnalyzer {
     final text = node.text.trim();
     if (text.isEmpty) return;
 
-    final isInput = text.toLowerCase().startsWith('leer') ||
-        text.toLowerCase().startsWith('ingresar') ||
-        text.toLowerCase().startsWith('scanf');
+    final lowerText = text.toLowerCase();
+
+    // Check if it's a return statement
+    final isReturn = lowerText.startsWith('return') ||
+        lowerText.startsWith('retornar') ||
+        node.metadata['isReturn'] == true;
+
+    final isInput = lowerText.startsWith('leer') ||
+        lowerText.startsWith('ingresar') ||
+        lowerText.startsWith('scanf');
 
     final tokens = _lexer.tokenize(text, nodeId: node.id);
+
+    if (isReturn) {
+      // For return statements, analyze all identifiers after 'return' keyword
+      bool afterReturn = false;
+      for (final token in tokens) {
+        if (token.type == TokenType.kwReturn ||
+            token.type == TokenType.kwRetornar) {
+          afterReturn = true;
+          continue;
+        }
+
+        if (afterReturn && token.type == TokenType.identifier) {
+          final varName = token.lexeme;
+          if (!_symbolTable.symbolExists(varName)) {
+            errors.add(
+                SemanticError.undeclaredVariable(varName, nodeId: node.id));
+          } else {
+            usedVars.add(varName);
+            _symbolTable.markAsUsed(varName);
+
+            // Check if variable is initialized for return
+            final symbol = _symbolTable.lookup(varName);
+            if (symbol != null && !symbol.isInitialized) {
+              warnings.add(SemanticError.uninitializedVariable(varName,
+                  nodeId: node.id));
+            }
+          }
+        }
+      }
+      return;
+    }
 
     // Extract variables from function arguments
     bool inParens = false;

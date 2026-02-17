@@ -11,6 +11,7 @@ class SavedDiagram {
   final List<DiagramNode> nodes;
   final List<Connection> connections;
   final bool isTemplate;
+  final String? userId; // ID del usuario propietario del diagrama
 
   SavedDiagram({
     this.id,
@@ -21,6 +22,7 @@ class SavedDiagram {
     required this.nodes,
     required this.connections,
     this.isTemplate = false,
+    this.userId,
   });
 
   // Crear una copia del diagrama con un nuevo ID u otros campos modificados
@@ -33,6 +35,7 @@ class SavedDiagram {
     List<DiagramNode>? nodes,
     List<Connection>? connections,
     bool? isTemplate,
+    String? userId,
   }) {
     return SavedDiagram(
       id: id ?? this.id,
@@ -43,6 +46,7 @@ class SavedDiagram {
       nodes: nodes ?? this.nodes,
       connections: connections ?? this.connections,
       isTemplate: isTemplate ?? this.isTemplate,
+      userId: userId ?? this.userId,
     );
   }
 
@@ -57,6 +61,7 @@ class SavedDiagram {
       'nodes_data': jsonEncode(_serializeNodes()),
       'connections_data': jsonEncode(_serializeConnections()),
       'is_template': isTemplate ? 1 : 0,
+      'user_id': userId,
     };
   }
 
@@ -104,6 +109,7 @@ class SavedDiagram {
       nodes: nodes,
       connections: connections,
       isTemplate: map['is_template'] == 1,
+      userId: map['user_id'],
     );
   }
 

@@ -563,4 +563,109 @@ class AuthService {
       return false;
     }
   }
+
+  /// Elimina la cuenta del usuario actual y todos sus datos asociados.
+  /// Incluye: datos de Firebase Auth, documento de Firestore, diagramas sincronizados,
+  /// y datos locales.
+  ///
+  /// Requiere que el usuario esté autenticado y haya iniciado sesión recientemente.
+  /// Para cuentas antiguas, puede ser necesario re-autenticarse.
+  Future<void> deleteAccountAndAllData({
+    required String password,
+    Function(String)? onProgress,
+  }) async {
+    final hasInternet = await _hasInternetConnection();
+    if (!hasInternet) {
+      throw Exception(
+          'Se requiere conexión a internet para eliminar la cuenta');
+    }
+
+    final authUser = _auth.currentUser;
+    if (authUser == null) {
+      throw Exception('No hay usuario autenticado');
+    }
+
+    if (_currentUser?.isGuest == true) {
+      throw Exception(
+          'Los usuarios invitados no pueden eliminar cuenta. Cierra sesión para salir.');
+    }
+
+    final uid = authUser.uid;
+    final email = authUser.email;
+
+    if (email == null) {
+      throw Exception('No se puede verificar el email del usuario');
+    }
+
+    try {
+      // PASO 1: Re-autenticar para operaciones sensibles
+      onProgress?.call('Verificando credenciales...');
+      final credential = EmailAuthProvider.credential(
+        email: email,
+        password: password,
+      );
+      await authUser.reauthenticateWithCredential(credential);
+
+      // PASO 2: Eliminar diagramas sincronizados en Firebase
+      onProgress?.call('Eliminando diagramas sincronizados...');
+      try {
+        final diagramsCollection =
+            _firestore.collection('users').doc(uid).collection('diagrams');
+        final diagramsSnapshot = await diagramsCollection.get();
+        for (final doc in diagramsSnapshot.docs) {
+          await doc.reference.delete();
+        }
+      } catch (e) {
+        print('Error eliminando diagramas de Firebase: $e');
+        // Continuar con la eliminación aunque falle esto
+      }
+
+      // PASO 3: Eliminar documento de usuario en Firestore
+      onProgress?.call('Eliminando datos de usuario...');
+      try {
+        await _firestore.collection('users').doc(uid).delete();
+      } catch (e) {
+        print('Error eliminando documento de usuario: $e');
+        // Continuar con la eliminación aunque falle esto
+      }
+
+      // PASO 4: Eliminar métricas del usuario (si existen en colección separada)
+      onProgress?.call('Eliminando métricas...');
+      try {
+        await _firestore.collection('user_metrics').doc(uid).delete();
+      } catch (e) {
+        print('Info: No se encontraron métricas para eliminar o error: $e');
+      }
+
+      // PASO 5: Eliminar cuenta de Firebase Authentication
+      onProgress?.call('Eliminando cuenta de autenticación...');
+      await authUser.delete();
+
+      // PASO 6: Limpiar datos locales
+      onProgress?.call('Limpiando datos locales...');
+      _currentUser = null;
+      await _clearUserCache();
+
+      onProgress?.call('Cuenta eliminada exitosamente');
+    } on FirebaseAuthException catch (e) {
+      switch (e.code) {
+        case 'wrong-password':
+          throw Exception(
+              'Contraseña incorrecta. Verifica e intenta de nuevo.');
+        case 'requires-recent-login':
+          throw Exception(
+              'Por seguridad, debes cerrar sesión e iniciar sesión nuevamente antes de eliminar tu cuenta.');
+        case 'too-many-requests':
+          throw Exception(
+              'Demasiados intentos. Espera un momento e intenta de nuevo.');
+        default:
+          throw Exception('Error de autenticación: ${e.message}');
+      }
+    } catch (e) {
+      if (e.toString().contains('Exception:')) {
+        rethrow;
+      }
+      throw Exception('Error al eliminar cuenta: ${e.toString()}');
+    }
+  }
 }

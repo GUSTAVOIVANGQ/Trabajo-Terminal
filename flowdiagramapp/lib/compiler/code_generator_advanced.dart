@@ -182,13 +182,30 @@ class AdvancedCodeGenerator {
 
       ordered.add(node);
 
-      // Find next nodes
-      final outgoing =
-          connections.where((c) => c.source.id == node.id).toList();
+      // Find next nodes - IGNORE loop back connections to prevent infinite recursion
+      final outgoing = connections
+          .where((c) => c.source.id == node.id && !c.isLoopBack)
+          .toList();
 
       // For non-decision nodes, follow the single path
-      if (node.type != NodeType.decision) {
+      if (node.type != NodeType.decision && node.type != NodeType.preparation) {
         for (final conn in outgoing) {
+          visit(conn.target);
+        }
+      } else if (node.type == NodeType.preparation) {
+        // For loop nodes (preparation), process body first then exit
+        final bodyBranch = outgoing.where((c) =>
+            c.label.toLowerCase() == 'verdadero' ||
+            c.label.toLowerCase() == 'true' ||
+            c.label.isEmpty);
+        final exitBranch = outgoing.where((c) =>
+            c.label.toLowerCase() == 'falso' ||
+            c.label.toLowerCase() == 'false');
+
+        for (final conn in bodyBranch) {
+          visit(conn.target);
+        }
+        for (final conn in exitBranch) {
           visit(conn.target);
         }
       } else {
@@ -229,12 +246,23 @@ class AdvancedCodeGenerator {
         _generateTerminalCode(node, buffer, indent);
         break;
       case NodeType.process:
-        _generateProcessCode(node, symbolTable, buffer, indent);
+        // Detectar si es el inicio de un do-while
+        if (_isDoWhileBodyNode(node)) {
+          _generateDoWhileFromBody(
+              node, allNodes, connections, symbolTable, buffer, indent);
+        } else {
+          _generateProcessCode(node, symbolTable, buffer, indent);
+        }
         break;
       case NodeType.data:
         _generateDataCode(node, symbolTable, buffer, indent);
         break;
       case NodeType.decision:
+        // Detectar si es la condición de un do-while (ya procesada)
+        if (_isDoWhileConditionNode(node)) {
+          // La condición ya fue procesada desde el nodo body, omitir
+          break;
+        }
         _generateDecisionCode(
             node, allNodes, connections, symbolTable, buffer, indent);
         break;
@@ -292,7 +320,7 @@ class AdvancedCodeGenerator {
     }
   }
 
-  /// Generate code for process nodes
+  /// Generate code for process nodes - SUPPORTS MULTIPLE VARIABLE DECLARATIONS
   void _generateProcessCode(
     DiagramNode node,
     SymbolTable symbolTable,
@@ -306,26 +334,39 @@ class AdvancedCodeGenerator {
       buffer.writeln('$indent// Proceso: $text');
     }
 
-    // Check if it's a declaration with type
-    final declarationMatch =
-        RegExp(r'^(int|float|double|char|bool)\s+(\w+)\s*=\s*(.+)$')
-            .firstMatch(text);
-    if (declarationMatch != null) {
-      final type = declarationMatch.group(1)!;
-      final varName = declarationMatch.group(2)!;
-      final value = declarationMatch.group(3)!;
-      buffer.writeln('$indent$type $varName = $value;');
-      return;
-    }
+    // Check if it's a multiple variable declaration (e.g., "int a, b, c" or "float x = 0.0, y = 1.5, z")
+    final multiDeclMatch =
+        RegExp(r'^(int|float|double|char|bool)\s+(.+)$').firstMatch(text);
+    if (multiDeclMatch != null) {
+      final type = multiDeclMatch.group(1)!;
+      final varsSection = multiDeclMatch.group(2)!.trim();
 
-    // Check for simple declaration
-    final simpleDeclaration =
-        RegExp(r'^(int|float|double|char|bool)\s+(\w+);?$').firstMatch(text);
-    if (simpleDeclaration != null) {
-      final type = simpleDeclaration.group(1)!;
-      final varName = simpleDeclaration.group(2)!;
-      buffer.writeln('$indent$type $varName;');
-      return;
+      // Check if it contains a comma (multiple variables)
+      if (varsSection.contains(',')) {
+        // It's a multiple declaration - output as-is with proper formatting
+        final cleanVars = varsSection.endsWith(';')
+            ? varsSection.substring(0, varsSection.length - 1)
+            : varsSection;
+        buffer.writeln('$indent$type $cleanVars;');
+        return;
+      }
+
+      // Single variable with possible initialization
+      final singleWithInit =
+          RegExp(r'^(\w+)\s*=\s*(.+)$').firstMatch(varsSection);
+      if (singleWithInit != null) {
+        final varName = singleWithInit.group(1)!;
+        final value = singleWithInit.group(2)!.replaceAll(';', '').trim();
+        buffer.writeln('$indent$type $varName = $value;');
+        return;
+      }
+
+      // Simple single variable declaration
+      final cleanVar = varsSection.replaceAll(';', '').trim();
+      if (RegExp(r'^\w+$').hasMatch(cleanVar)) {
+        buffer.writeln('$indent$type $cleanVar;');
+        return;
+      }
     }
 
     // Check for assignment
@@ -584,7 +625,8 @@ class AdvancedCodeGenerator {
     StringBuffer buffer,
     String indent,
   ) {
-    final condition = node.text.trim();
+    // Normalizar la condición (quitar signos de interrogación y formatear)
+    final condition = _formatCondition(node.text);
 
     if (options.includeComments) {
       buffer.writeln('$indent// Decisión: $condition');
@@ -693,7 +735,7 @@ class AdvancedCodeGenerator {
     buffer.writeln('$indent}');
   }
 
-  /// Generate code for loop nodes
+  /// Generate code for loop nodes - HANDLES isLoopBack to prevent infinite recursion
   void _generateLoopCode(
     DiagramNode node,
     List<DiagramNode> allNodes,
@@ -729,16 +771,144 @@ class AdvancedCodeGenerator {
       }
     }
 
-    // Generate loop body
-    final loopBody = connections.where((c) => c.source.id == node.id);
-    for (final conn in loopBody) {
-      _generateBranchCode(conn.target, allNodes, connections, symbolTable,
-          buffer, indent + options.indentation);
+    // Generate loop body - ONLY follow body connections, NOT isLoopBack
+    // Body connections are typically labeled "Verdadero" or "true" or empty (first connection)
+    final bodyConnections = connections.where((c) =>
+        c.source.id == node.id &&
+        !c.isLoopBack &&
+        (c.label.isEmpty ||
+            c.label.toLowerCase() == 'verdadero' ||
+            c.label.toLowerCase() == 'true'));
+
+    // Track visited nodes within the loop body to prevent cycles
+    final visitedInBody = <String>{};
+
+    for (final conn in bodyConnections) {
+      _generateLoopBodyCode(conn.target, allNodes, connections, symbolTable,
+          buffer, indent + options.indentation, visitedInBody, node.id);
     }
 
     if (loopType == 'do-while') {
       buffer.writeln('$indent} while ($loopText);');
     } else {
+      buffer.writeln('$indent}');
+    }
+  }
+
+  /// Generate code for loop body - tracks visited nodes to prevent infinite recursion
+  void _generateLoopBodyCode(
+    DiagramNode node,
+    List<DiagramNode> allNodes,
+    List<Connection> connections,
+    SymbolTable symbolTable,
+    StringBuffer buffer,
+    String indent,
+    Set<String> visitedInBody,
+    String loopNodeId,
+  ) {
+    // Skip if already visited in this loop body
+    if (visitedInBody.contains(node.id)) return;
+    visitedInBody.add(node.id);
+
+    // Skip terminal end nodes
+    if (node.type == NodeType.terminal &&
+        (node.text.toLowerCase().contains('fin') ||
+            node.text.toLowerCase().contains('end'))) {
+      return;
+    }
+
+    // Skip if this is the loop node itself (loopback)
+    if (node.id == loopNodeId) return;
+
+    // Generate code for this node based on its type
+    switch (node.type) {
+      case NodeType.process:
+        _generateProcessCode(node, symbolTable, buffer, indent);
+        break;
+      case NodeType.data:
+        _generateDataCode(node, symbolTable, buffer, indent);
+        break;
+      case NodeType.decision:
+        _generateDecisionCodeInLoop(node, allNodes, connections, symbolTable,
+            buffer, indent, visitedInBody, loopNodeId);
+        break;
+      case NodeType.preparation:
+        // Nested loop
+        _generateLoopCode(
+            node, allNodes, connections, symbolTable, buffer, indent);
+        break;
+      case NodeType.comment:
+        _generateCommentCode(node, buffer, indent);
+        break;
+      default:
+        break;
+    }
+
+    // Follow non-loopback connections within the body
+    final nextConnections =
+        connections.where((c) => c.source.id == node.id && !c.isLoopBack);
+
+    for (final conn in nextConnections) {
+      // Don't follow back to the original loop node
+      if (conn.target.id != loopNodeId) {
+        _generateLoopBodyCode(conn.target, allNodes, connections, symbolTable,
+            buffer, indent, visitedInBody, loopNodeId);
+      }
+    }
+  }
+
+  /// Generate decision code within a loop body context
+  void _generateDecisionCodeInLoop(
+    DiagramNode node,
+    List<DiagramNode> allNodes,
+    List<Connection> connections,
+    SymbolTable symbolTable,
+    StringBuffer buffer,
+    String indent,
+    Set<String> visitedInBody,
+    String loopNodeId,
+  ) {
+    // Normalizar la condición (quitar signos de interrogación y formatear)
+    final condition = _formatCondition(node.text);
+
+    if (options.includeComments) {
+      buffer.writeln('$indent// Decisión: $condition');
+    }
+
+    buffer.writeln('${indent}if ($condition) {');
+
+    // Find and generate 'yes' branch
+    final yesBranch = connections.where((c) =>
+        c.source.id == node.id &&
+        !c.isLoopBack &&
+        (c.label.toLowerCase() == 'sí' ||
+            c.label.toLowerCase() == 'si' ||
+            c.label.toLowerCase() == 'yes' ||
+            c.label.toLowerCase() == 'true'));
+
+    for (final conn in yesBranch) {
+      if (conn.target.id != loopNodeId) {
+        _generateLoopBodyCode(conn.target, allNodes, connections, symbolTable,
+            buffer, indent + options.indentation, visitedInBody, loopNodeId);
+      }
+    }
+
+    buffer.writeln('$indent}');
+
+    // Find and generate 'no' branch (if not a loopback)
+    final noBranch = connections.where((c) =>
+        c.source.id == node.id &&
+        !c.isLoopBack &&
+        (c.label.toLowerCase() == 'no' || c.label.toLowerCase() == 'false'));
+
+    if (noBranch.isNotEmpty) {
+      buffer.writeln('${indent}else {');
+      for (final conn in noBranch) {
+        if (conn.target.id != loopNodeId) {
+          _generateLoopBodyCode(conn.target, allNodes, connections, symbolTable,
+              buffer, indent + options.indentation, visitedInBody, loopNodeId);
+        }
+      }
       buffer.writeln('$indent}');
     }
   }
@@ -799,5 +969,91 @@ class AdvancedCodeGenerator {
 
     // Preparation nodes typically contain variable declarations
     buffer.writeln('$indent$text;');
+  }
+
+  /// Verifica si un nodo proceso es el inicio de un bucle do-while
+  bool _isDoWhileBodyNode(DiagramNode node) {
+    return node.metadata['structureType'] == 'loop' &&
+        node.metadata['loopType'] == 'do-while' &&
+        node.metadata['role'] == 'loop-body';
+  }
+
+  /// Verifica si un nodo decisión es la condición de un bucle do-while
+  bool _isDoWhileConditionNode(DiagramNode node) {
+    return node.metadata['structureType'] == 'loop' &&
+        node.metadata['loopType'] == 'do-while' &&
+        node.metadata['role'] == 'loop-condition';
+  }
+
+  /// Genera código do-while desde el nodo body
+  void _generateDoWhileFromBody(
+    DiagramNode bodyNode,
+    List<DiagramNode> allNodes,
+    List<Connection> connections,
+    SymbolTable symbolTable,
+    StringBuffer buffer,
+    String indent,
+  ) {
+    if (options.includeComments) {
+      buffer.writeln('$indent// Bucle do-while');
+    }
+
+    buffer.writeln('${indent}do {');
+
+    // Generar código del cuerpo
+    final bodyText = bodyNode.text.trim();
+    if (bodyText.isNotEmpty && !bodyText.startsWith('//')) {
+      _generateProcessCode(
+          bodyNode, symbolTable, buffer, indent + options.indentation);
+    } else {
+      buffer.writeln('$indent${options.indentation}// Cuerpo del do-while');
+    }
+
+    // Encontrar el nodo de condición
+    final bodyConnections = connections
+        .where((c) => c.source.id == bodyNode.id && !c.isLoopBack)
+        .toList();
+
+    DiagramNode? conditionNode;
+    for (final conn in bodyConnections) {
+      if (_isDoWhileConditionNode(conn.target) ||
+          conn.target.type == NodeType.decision) {
+        conditionNode = conn.target;
+        break;
+      }
+    }
+
+    if (conditionNode != null) {
+      // Extraer la condición
+      String condition = conditionNode.metadata['condition']?.toString() ??
+          _formatCondition(conditionNode.text);
+      buffer.writeln('$indent} while ($condition);');
+    } else {
+      buffer.writeln('$indent} while (1); // TODO: Agregar condición');
+    }
+  }
+
+  /// Formatea una condición para código C
+  String _formatCondition(String text) {
+    String condition = text.trim();
+
+    // Remover signos de interrogación
+    condition = condition.replaceAll('¿', '').replaceAll('?', '');
+
+    // Formatear operadores
+    condition = condition
+        .replaceAll(' Y ', ' && ')
+        .replaceAll(' y ', ' && ')
+        .replaceAll(' AND ', ' && ')
+        .replaceAll(' O ', ' || ')
+        .replaceAll(' o ', ' || ')
+        .replaceAll(' OR ', ' || ')
+        .replaceAll(' = ', ' == ')
+        .replaceAll('<>', '!=')
+        .replaceAll('≤', '<=')
+        .replaceAll('≥', '>=')
+        .replaceAll('≠', '!=');
+
+    return condition;
   }
 }

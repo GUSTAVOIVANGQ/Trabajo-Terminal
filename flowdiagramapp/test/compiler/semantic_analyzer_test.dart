@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:flowdiagramapp/compiler/compiler.dart';
 import 'package:flowdiagramapp/compiler/compiler_pipeline.dart';
 import 'package:flowdiagramapp/compiler/semantic_analyzer.dart';
+import 'package:flowdiagramapp/compiler/syntax_analyzer.dart';
 import 'package:flowdiagramapp/models/diagram_node.dart';
 
 void main() {
@@ -331,8 +332,7 @@ void main() {
           id: 'proc',
           type: NodeType.process,
           position: const Offset(100, 150),
-          text:
-              'x = x%(0)', // Modulo by zero (without space to avoid lexer issue)
+          text: 'x = x % 0', // Modulo by zero - now works with spaces
         ),
         DiagramNode(
           id: 'end',
@@ -1009,6 +1009,500 @@ void main() {
       // Should recognize 'entero' as integer type
       expect(
           result.typeEnvironment.variableTypes['contador'], DataType.integer);
+    });
+  });
+
+  group('Function Parameters Tests', () {
+    late DiagramSemanticAnalyzer analyzer;
+
+    setUp(() {
+      analyzer = DiagramSemanticAnalyzer();
+    });
+
+    test('Recognize function parameters from terminal node', () {
+      final nodes = [
+        DiagramNode(
+          id: 'sub_start',
+          type: NodeType.terminal,
+          position: const Offset(600, 130),
+          text: 'Inicio Suma(x, y)',
+        ),
+        DiagramNode(
+          id: 'sub_process',
+          type: NodeType.process,
+          position: const Offset(600, 210),
+          text: 'retorno = x + y',
+        ),
+        DiagramNode(
+          id: 'sub_end',
+          type: NodeType.terminal,
+          position: const Offset(600, 290),
+          text: 'Fin Suma',
+        ),
+      ];
+
+      final result = analyzer.analyzeDiagram(nodes, []);
+
+      // Parameters x and y should be recognized as declared variables
+      expect(result.symbolTable.symbolExists('x'), isTrue,
+          reason: 'Parameter x should be declared');
+      expect(result.symbolTable.symbolExists('y'), isTrue,
+          reason: 'Parameter y should be declared');
+
+      // No undeclared variable errors for x and y
+      final undeclaredErrors = result.errors.where((e) =>
+          e.code == CompilerErrorCode.undeclaredVariable &&
+          (e.message.contains('x') || e.message.contains('y')));
+      expect(undeclaredErrors, isEmpty,
+          reason: 'Should not have undeclared errors for function parameters');
+    });
+
+    test('Recognize function parameters with types', () {
+      final nodes = [
+        DiagramNode(
+          id: 'sub_start',
+          type: NodeType.terminal,
+          position: const Offset(600, 130),
+          text: 'Inicio Factorial(int n)',
+        ),
+        DiagramNode(
+          id: 'sub_process',
+          type: NodeType.process,
+          position: const Offset(600, 210),
+          text: 'resultado = n * factorial',
+        ),
+        DiagramNode(
+          id: 'sub_end',
+          type: NodeType.terminal,
+          position: const Offset(600, 290),
+          text: 'Fin Factorial',
+        ),
+      ];
+
+      final result = analyzer.analyzeDiagram(nodes, []);
+
+      // Parameter n should be recognized
+      expect(result.symbolTable.symbolExists('n'), isTrue,
+          reason: 'Parameter n should be declared');
+      expect(result.typeEnvironment.variableTypes['n'], DataType.integer,
+          reason: 'Parameter n should have int type');
+    });
+
+    test('Process node declarations are recognized', () {
+      final nodes = [
+        DiagramNode(
+          id: 'start',
+          type: NodeType.terminal,
+          position: const Offset(100, 50),
+          text: 'Inicio',
+        ),
+        DiagramNode(
+          id: 'proc_decl',
+          type: NodeType.process,
+          position: const Offset(100, 150),
+          text: 'int retorno',
+        ),
+        DiagramNode(
+          id: 'proc_assign',
+          type: NodeType.process,
+          position: const Offset(100, 250),
+          text: 'retorno = 42',
+        ),
+        DiagramNode(
+          id: 'end',
+          type: NodeType.terminal,
+          position: const Offset(100, 350),
+          text: 'Fin',
+        ),
+      ];
+
+      final result = analyzer.analyzeDiagram(nodes, []);
+
+      // Variable 'retorno' declared in process node should be recognized
+      expect(result.symbolTable.symbolExists('retorno'), isTrue,
+          reason: 'Variable retorno should be declared from process node');
+
+      // No undeclared variable error for 'retorno'
+      final undeclaredErrors = result.errors.where((e) =>
+          e.code == CompilerErrorCode.undeclaredVariable &&
+          e.message.contains('retorno'));
+      expect(undeclaredErrors, isEmpty,
+          reason: 'Should not have undeclared error for retorno');
+    });
+
+    test('Template P17 - Función Suma - No undeclared errors for parameters',
+        () {
+      final nodes = [
+        // Main program
+        DiagramNode(
+          id: 'start',
+          type: NodeType.terminal,
+          position: const Offset(280, 50),
+          text: 'Inicio',
+        ),
+        DiagramNode(
+          id: 'process_decl',
+          type: NodeType.process,
+          position: const Offset(280, 130),
+          text: 'int a, b, resultado',
+        ),
+        DiagramNode(
+          id: 'end',
+          type: NodeType.terminal,
+          position: const Offset(280, 560),
+          text: 'Fin',
+        ),
+        // Subprocess Suma
+        DiagramNode(
+          id: 'sub_start',
+          type: NodeType.terminal,
+          position: const Offset(600, 130),
+          text: 'Inicio Suma(x, y)',
+        ),
+        DiagramNode(
+          id: 'sub_process_decl',
+          type: NodeType.process,
+          position: const Offset(600, 210),
+          text: 'int retorno',
+        ),
+        DiagramNode(
+          id: 'sub_process_calc',
+          type: NodeType.process,
+          position: const Offset(600, 290),
+          text: 'retorno = x + y',
+        ),
+        DiagramNode(
+          id: 'sub_return',
+          type: NodeType.data,
+          position: const Offset(600, 370),
+          text: 'return retorno',
+          metadata: {'isOutput': true, 'isReturn': true},
+        ),
+        DiagramNode(
+          id: 'sub_end',
+          type: NodeType.terminal,
+          position: const Offset(600, 450),
+          text: 'Fin Suma',
+        ),
+      ];
+
+      final result = analyzer.analyzeDiagram(nodes, []);
+
+      // Check that x, y, and retorno are all recognized
+      expect(result.symbolTable.symbolExists('x'), isTrue,
+          reason: 'Parameter x should be declared');
+      expect(result.symbolTable.symbolExists('y'), isTrue,
+          reason: 'Parameter y should be declared');
+      expect(result.symbolTable.symbolExists('retorno'), isTrue,
+          reason: 'Variable retorno should be declared');
+
+      // No undeclared variable errors for x, y, or retorno
+      final undeclaredErrors = result.errors
+          .where((e) => e.code == CompilerErrorCode.undeclaredVariable);
+
+      for (final error in undeclaredErrors) {
+        expect(error.message.contains('x'), isFalse,
+            reason: 'Should not have undeclared error for x: ${error.message}');
+        expect(error.message.contains('y'), isFalse,
+            reason: 'Should not have undeclared error for y: ${error.message}');
+        expect(error.message.contains('retorno'), isFalse,
+            reason:
+                'Should not have undeclared error for retorno: ${error.message}');
+      }
+    });
+
+    test('Return statement variables are checked', () {
+      final nodes = [
+        DiagramNode(
+          id: 'sub_start',
+          type: NodeType.terminal,
+          position: const Offset(600, 130),
+          text: 'Inicio TestFunc(n)',
+        ),
+        DiagramNode(
+          id: 'sub_process_decl',
+          type: NodeType.process,
+          position: const Offset(600, 210),
+          text: 'int resultado',
+        ),
+        DiagramNode(
+          id: 'sub_process_calc',
+          type: NodeType.process,
+          position: const Offset(600, 290),
+          text: 'resultado = n * 2',
+        ),
+        DiagramNode(
+          id: 'sub_return',
+          type: NodeType.data,
+          position: const Offset(600, 370),
+          text: 'return resultado',
+          metadata: {'isReturn': true},
+        ),
+        DiagramNode(
+          id: 'sub_end',
+          type: NodeType.terminal,
+          position: const Offset(600, 450),
+          text: 'Fin TestFunc',
+        ),
+      ];
+
+      final result = analyzer.analyzeDiagram(nodes, []);
+
+      // n and resultado should be recognized
+      expect(result.symbolTable.symbolExists('n'), isTrue,
+          reason: 'Parameter n should be declared');
+      expect(result.symbolTable.symbolExists('resultado'), isTrue,
+          reason: 'Variable resultado should be declared');
+
+      // No undeclared variable errors
+      final undeclaredErrors = result.errors
+          .where((e) => e.code == CompilerErrorCode.undeclaredVariable);
+      expect(undeclaredErrors, isEmpty,
+          reason: 'Should not have any undeclared variable errors');
+    });
+
+    test(
+        'Template P17 with AST - Function parameters recognized via _gatherDeclarationsFromAST',
+        () {
+      // This test verifies that when analyzing via AST (as happens in the real compiler pipeline),
+      // function parameters are still correctly extracted from terminal nodes
+
+      // First, create the syntax analyzer to generate the AST
+      final syntaxAnalyzer = DiagramSyntaxAnalyzer();
+
+      final nodes = [
+        // Main program
+        DiagramNode(
+          id: 'start',
+          type: NodeType.terminal,
+          position: const Offset(280, 50),
+          text: 'Inicio',
+        ),
+        DiagramNode(
+          id: 'process_decl',
+          type: NodeType.process,
+          position: const Offset(280, 130),
+          text: 'int a, b, resultado',
+        ),
+        DiagramNode(
+          id: 'end',
+          type: NodeType.terminal,
+          position: const Offset(280, 560),
+          text: 'Fin',
+        ),
+        // Subprocess Suma
+        DiagramNode(
+          id: 'sub_start',
+          type: NodeType.terminal,
+          position: const Offset(600, 130),
+          text: 'Inicio Suma(x, y)',
+        ),
+        DiagramNode(
+          id: 'sub_process_decl',
+          type: NodeType.process,
+          position: const Offset(600, 210),
+          text: 'int retorno',
+        ),
+        DiagramNode(
+          id: 'sub_process_calc',
+          type: NodeType.process,
+          position: const Offset(600, 290),
+          text: 'retorno = x + y',
+        ),
+        DiagramNode(
+          id: 'sub_return',
+          type: NodeType.data,
+          position: const Offset(600, 370),
+          text: 'return retorno',
+          metadata: {'isOutput': true, 'isReturn': true},
+        ),
+        DiagramNode(
+          id: 'sub_end',
+          type: NodeType.terminal,
+          position: const Offset(600, 450),
+          text: 'Fin Suma',
+        ),
+      ];
+
+      // Generate AST using syntax analyzer
+      final syntaxResult = syntaxAnalyzer.analyzeDiagram(nodes, []);
+      expect(syntaxResult.ast, isNotNull, reason: 'AST should be generated');
+
+      // Now analyze using the AST path (as happens in the real pipeline)
+      final result = analyzer.analyzeDiagram(nodes, [], ast: syntaxResult.ast);
+
+      // Verify all variables are declared
+      expect(result.symbolTable.symbolExists('x'), isTrue,
+          reason: 'Parameter x should be declared via AST path');
+      expect(result.symbolTable.symbolExists('y'), isTrue,
+          reason: 'Parameter y should be declared via AST path');
+      expect(result.symbolTable.symbolExists('retorno'), isTrue,
+          reason: 'Variable retorno should be declared via AST path');
+      expect(result.symbolTable.symbolExists('a'), isTrue,
+          reason: 'Variable a should be declared via AST path');
+      expect(result.symbolTable.symbolExists('b'), isTrue,
+          reason: 'Variable b should be declared via AST path');
+      expect(result.symbolTable.symbolExists('resultado'), isTrue,
+          reason: 'Variable resultado should be declared via AST path');
+
+      // No undeclared variable errors for any of these variables
+      final undeclaredErrors = result.errors
+          .where((e) => e.code == CompilerErrorCode.undeclaredVariable)
+          .toList();
+
+      for (final error in undeclaredErrors) {
+        expect(error.message.contains('x'), isFalse,
+            reason:
+                'Should not have undeclared error for x via AST: ${error.message}');
+        expect(error.message.contains('y'), isFalse,
+            reason:
+                'Should not have undeclared error for y via AST: ${error.message}');
+        expect(error.message.contains('retorno'), isFalse,
+            reason:
+                'Should not have undeclared error for retorno via AST: ${error.message}');
+      }
+
+      // The important test: should have no undeclared variable errors
+      expect(undeclaredErrors, isEmpty,
+          reason:
+              'Should have no undeclared variable errors when using AST path');
+    });
+
+    test('Template P19 - Swap with pointer parameters (int *x, int *y)', () {
+      // This test verifies that pointer parameters like "int *x" are correctly parsed
+      // and the variable name "x" (without asterisk) is registered
+
+      final nodes = [
+        // Main program
+        DiagramNode(
+          id: 'start',
+          type: NodeType.terminal,
+          position: const Offset(280, 50),
+          text: 'Inicio',
+        ),
+        DiagramNode(
+          id: 'process_init_a',
+          type: NodeType.process,
+          position: const Offset(280, 140),
+          text: 'int a = 5',
+        ),
+        DiagramNode(
+          id: 'process_init_b',
+          type: NodeType.process,
+          position: const Offset(280, 230),
+          text: 'int b = 10',
+        ),
+        DiagramNode(
+          id: 'end',
+          type: NodeType.terminal,
+          position: const Offset(280, 620),
+          text: 'Fin',
+        ),
+        // Subprocess Swap with pointer parameters
+        DiagramNode(
+          id: 'sub_start',
+          type: NodeType.terminal,
+          position: const Offset(600, 140),
+          text: 'Inicio Swap(int *x, int *y)',
+        ),
+        DiagramNode(
+          id: 'sub_process_decl',
+          type: NodeType.process,
+          position: const Offset(600, 230),
+          text: 'int temp',
+        ),
+        DiagramNode(
+          id: 'sub_process_temp',
+          type: NodeType.process,
+          position: const Offset(600, 320),
+          text: 'temp = *x',
+        ),
+        DiagramNode(
+          id: 'sub_process_assign1',
+          type: NodeType.process,
+          position: const Offset(600, 410),
+          text: '*x = *y',
+        ),
+        DiagramNode(
+          id: 'sub_process_assign2',
+          type: NodeType.process,
+          position: const Offset(600, 500),
+          text: '*y = temp',
+        ),
+        DiagramNode(
+          id: 'sub_end',
+          type: NodeType.terminal,
+          position: const Offset(600, 590),
+          text: 'Fin Swap',
+        ),
+      ];
+
+      final result = analyzer.analyzeDiagram(nodes, []);
+
+      // Verify pointer parameters are registered correctly (without asterisks)
+      expect(result.symbolTable.symbolExists('x'), isTrue,
+          reason: 'Pointer parameter x should be declared (without asterisk)');
+      expect(result.symbolTable.symbolExists('y'), isTrue,
+          reason: 'Pointer parameter y should be declared (without asterisk)');
+      expect(result.symbolTable.symbolExists('temp'), isTrue,
+          reason: 'Variable temp should be declared');
+      expect(result.symbolTable.symbolExists('a'), isTrue,
+          reason: 'Variable a should be declared');
+      expect(result.symbolTable.symbolExists('b'), isTrue,
+          reason: 'Variable b should be declared');
+
+      // Should NOT register "*x" or "*y" as variable names
+      expect(result.symbolTable.symbolExists('*x'), isFalse,
+          reason: 'Should not register *x as a variable name');
+      expect(result.symbolTable.symbolExists('*y'), isFalse,
+          reason: 'Should not register *y as a variable name');
+
+      // No undeclared variable errors for x, y, or temp
+      final undeclaredErrors = result.errors
+          .where((e) => e.code == CompilerErrorCode.undeclaredVariable)
+          .toList();
+
+      for (final error in undeclaredErrors) {
+        expect(error.message.contains(': x'), isFalse,
+            reason: 'Should not have undeclared error for x: ${error.message}');
+        expect(error.message.contains(': y'), isFalse,
+            reason: 'Should not have undeclared error for y: ${error.message}');
+        expect(error.message.contains('temp'), isFalse,
+            reason:
+                'Should not have undeclared error for temp: ${error.message}');
+      }
+    });
+
+    test('Pointer parameters with different formats', () {
+      // Test various pointer parameter formats:
+      // "int *x", "int* x", "int * x", "*x" (no type)
+
+      final testCases = [
+        ('Inicio Func1(int *x)', 'x'), // asterisk with name
+        ('Inicio Func2(int* x)', 'x'), // asterisk with type
+        ('Inicio Func3(int * x)', 'x'), // asterisk separate
+        ('Inicio Func4(*ptr)', 'ptr'), // just asterisk and name, no type
+      ];
+
+      for (final (text, expectedName) in testCases) {
+        final nodes = [
+          DiagramNode(
+            id: 'sub_start',
+            type: NodeType.terminal,
+            position: const Offset(600, 140),
+            text: text,
+          ),
+        ];
+
+        final result = analyzer.analyzeDiagram(nodes, []);
+
+        expect(result.symbolTable.symbolExists(expectedName), isTrue,
+            reason:
+                'Parameter "$expectedName" should be declared from: "$text"');
+        expect(result.symbolTable.symbolExists('*$expectedName'), isFalse,
+            reason:
+                'Should not register "*$expectedName" as variable from: "$text"');
+      }
     });
   });
 }

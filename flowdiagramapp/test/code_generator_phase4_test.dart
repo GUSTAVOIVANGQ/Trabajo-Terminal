@@ -493,5 +493,64 @@ void main() {
       print('Código generado:');
       print(code);
     });
+
+    // ========================================
+    // TEST 8: Declaración Múltiple de Variables
+    // ========================================
+    test(
+        'Declaración múltiple de variables en nodo proceso genera código correcto',
+        () {
+      final startNode = DiagramNode(
+        id: 'start',
+        type: NodeType.terminal,
+        text: 'Inicio',
+        position: const Offset(100, 50),
+      );
+
+      // Nodo proceso con declaración múltiple
+      final multiDeclNode = DiagramNode(
+        id: 'multi_decl',
+        type: NodeType.process,
+        text: 'int a, b, c',
+        position: const Offset(100, 150),
+      );
+
+      // Nodo proceso con declaración múltiple con inicialización
+      final multiDeclInit = DiagramNode(
+        id: 'multi_decl_init',
+        type: NodeType.process,
+        text: 'float x = 0.0, y = 1.5, z',
+        position: const Offset(100, 250),
+      );
+
+      final endNode = DiagramNode(
+        id: 'end',
+        type: NodeType.terminal,
+        text: 'Fin',
+        position: const Offset(100, 350),
+      );
+
+      final nodes = [startNode, multiDeclNode, multiDeclInit, endNode];
+      final connections = [
+        Connection(source: startNode, target: multiDeclNode, label: ''),
+        Connection(source: multiDeclNode, target: multiDeclInit, label: ''),
+        Connection(source: multiDeclInit, target: endNode, label: ''),
+      ];
+
+      final code = CodeGenerator.generateCode(
+        nodes,
+        connections,
+        ProgrammingLanguage.c,
+      );
+
+      // Verificaciones: las declaraciones múltiples deben aparecer en el código
+      expect(code, contains('int a, b, c'));
+      expect(code, contains('float x = 0.0, y = 1.5, z'));
+
+      print(
+          '\n✅ TEST 8 PASADO: Declaraciones múltiples generan código correcto');
+      print('Código generado:');
+      print(code);
+    });
   });
 }

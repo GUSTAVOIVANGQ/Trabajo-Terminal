@@ -142,8 +142,8 @@ class DiagramSyntaxAnalyzer {
       );
     }
 
-    // Tokenize the node content
-    final tokens = _lexicalAnalyzer.tokenize(node.text, nodeId: node.id);
+    // Tokenize the node content (with automatic normalization for decision nodes)
+    final tokens = _lexicalAnalyzer.tokenizeNode(node);
     final significantTokens = tokens.where((t) => t.isSignificant).toList();
 
     if (significantTokens.isEmpty) {
@@ -196,15 +196,22 @@ class DiagramSyntaxAnalyzer {
     }
   }
 
-  /// Parse a process node (assignments, expressions)
+  /// Parse a process node (assignments, expressions, declarations)
+  /// Supports multiple variable declarations: int a, b, c
   List<StatementNode> _parseProcessNode() {
     final statements = <StatementNode>[];
 
     while (!_isAtEnd()) {
       try {
-        final stmt = _parseStatement();
-        if (stmt != null) {
-          statements.add(stmt);
+        // Check if it's a declaration (may contain multiple variables)
+        if (_isDeclaration()) {
+          final declarations = _parseDeclarations();
+          statements.addAll(declarations);
+        } else {
+          final stmt = _parseStatement();
+          if (stmt != null) {
+            statements.add(stmt);
+          }
         }
       } catch (e) {
         // Synchronize on error
@@ -215,8 +222,14 @@ class DiagramSyntaxAnalyzer {
     return statements;
   }
 
-  /// Parse a data node (input/output operations)
+  /// Parse a data node (input/output operations or return statements)
   List<StatementNode> _parseDataNode(DiagramNode node) {
+    // Check for return statement first (metadata or keyword)
+    if (node.metadata['isReturn'] == true || _hasReturnKeyword()) {
+      final stmt = _parseReturnStatement();
+      return stmt != null ? [stmt] : [];
+    }
+
     // Check metadata for input/output direction
     final isInput =
         node.metadata['dataDirection'] == 'input' || _hasInputKeyword();
@@ -226,6 +239,20 @@ class DiagramSyntaxAnalyzer {
     } else {
       return _parseOutputStatement();
     }
+  }
+
+  /// Check if current tokens contain a return keyword
+  bool _hasReturnKeyword() {
+    final savedPosition = _current;
+    while (!_isAtEnd()) {
+      if (_check(TokenType.kwReturn) || _check(TokenType.kwRetornar)) {
+        _current = savedPosition;
+        return true;
+      }
+      _advance();
+    }
+    _current = savedPosition;
+    return false;
   }
 
   /// Parse a decision node (condition)
@@ -258,12 +285,10 @@ class DiagramSyntaxAnalyzer {
 
     while (!_isAtEnd()) {
       try {
-        // Try to parse as declaration first
+        // Try to parse as declaration first (supports multiple vars: int a, b, c)
         if (_isDeclaration()) {
-          final decl = _parseDeclaration();
-          if (decl != null) {
-            statements.add(decl);
-          }
+          final declarations = _parseDeclarations();
+          statements.addAll(declarations);
         } else {
           // Otherwise parse as regular statement
           final stmt = _parseStatement();
@@ -279,13 +304,20 @@ class DiagramSyntaxAnalyzer {
     return statements;
   }
 
-  /// Parse a predefined process node (function calls)
+  /// Parse a predefined process node (function calls, including with pointer operators)
   List<StatementNode> _parsePredefinedProcessNode() {
     final statements = <StatementNode>[];
 
     while (!_isAtEnd()) {
       try {
-        if (_check(TokenType.identifier) && _checkNext(TokenType.leftParen)) {
+        // Check for assignment: result = FunctionCall(...)
+        if (_check(TokenType.identifier) && _checkNext(TokenType.opAssign)) {
+          final stmt = _parseStatement();
+          if (stmt != null) {
+            statements.add(stmt);
+          }
+        } else if (_check(TokenType.identifier) &&
+            _checkNext(TokenType.leftParen)) {
           final call = _parseFunctionCall();
           if (call != null) {
             statements.add(ExpressionStatementNode(
@@ -408,9 +440,21 @@ class DiagramSyntaxAnalyzer {
         _check(TokenType.kwBooleano);
   }
 
-  /// Parse a declaration statement
+  /// Parse a declaration statement (supports multiple variables: int a, b, c)
+  /// Returns a single DeclarationStatementNode for single variable
+  /// or wraps multiple declarations - caller should use _parseDeclarations() for multi-var support
   DeclarationStatementNode? _parseDeclaration() {
+    final declarations = _parseDeclarations();
+    return declarations.isNotEmpty ? declarations.first : null;
+  }
+
+  /// Parse declarations that may contain multiple variables of the same type
+  /// Example: "int a, b, c" returns [DeclarationStatementNode(a), DeclarationStatementNode(b), DeclarationStatementNode(c)]
+  /// Example: "int x = 5" returns [DeclarationStatementNode(x, initializer: 5)]
+  /// Example: "int *ptr = arr" returns [DeclarationStatementNode(ptr, isPointer: true)]
+  List<DeclarationStatementNode> _parseDeclarations() {
     final position = _getPosition();
+    final declarations = <DeclarationStatementNode>[];
 
     // Parse type
     final dataType = _parseDataType();
@@ -420,58 +464,92 @@ class DiagramSyntaxAnalyzer {
         'Se esperaba un tipo de dato',
         position,
       );
-      return null;
+      return declarations;
     }
 
-    // Parse variable name
+    // Check for pointer declaration immediately after type (asterisk after type)
+    // Handles: "int *ptr", "int* ptr", "int * ptr"
+    bool isPointerType = _match([TokenType.opMultiply]);
+
+    // Parse first variable (required) - check after possibly consuming pointer asterisk
     if (!_check(TokenType.identifier)) {
       _addError(
         CompilerErrorCode.invalidDeclaration,
         'Se esperaba un identificador',
         _getPosition(),
       );
-      return null;
+      return declarations;
     }
 
-    final nameToken = _advance();
-    final variableName = nameToken.lexeme;
+    // Track if we're in the first iteration (where isPointerType applies)
+    bool firstVariable = true;
 
-    // Check for array declaration
-    bool isArray = false;
-    int? arraySize;
+    // Parse all variable names (comma-separated)
+    do {
+      final varPosition = _getPosition();
 
-    if (_match([TokenType.leftBracket])) {
-      isArray = true;
-      if (_check(TokenType.integerLiteral)) {
-        arraySize = int.parse(_advance().lexeme);
+      // For first variable, use isPointerType. For subsequent variables, check for individual asterisk.
+      bool isPointer;
+      if (firstVariable) {
+        isPointer = isPointerType;
+        firstVariable = false;
+      } else {
+        // Check for pointer on this specific variable (e.g., "int a, *b, c")
+        isPointer = _match([TokenType.opMultiply]);
       }
-      if (!_match([TokenType.rightBracket])) {
+
+      if (!_check(TokenType.identifier)) {
         _addError(
-          CompilerErrorCode.unbalancedBrackets,
-          'Se esperaba \']\'',
+          CompilerErrorCode.invalidDeclaration,
+          'Se esperaba un identificador después de la coma',
           _getPosition(),
         );
+        break;
       }
-    }
 
-    // Check for initializer
-    ASTNode? initializer;
-    if (_match([TokenType.opAssign])) {
-      initializer = _parseExpression();
-    }
+      final nameToken = _advance();
+      final variableName = nameToken.lexeme;
+
+      // Check for array declaration
+      bool isArray = false;
+      int? arraySize;
+
+      if (_match([TokenType.leftBracket])) {
+        isArray = true;
+        if (_check(TokenType.integerLiteral)) {
+          arraySize = int.parse(_advance().lexeme);
+        }
+        if (!_match([TokenType.rightBracket])) {
+          _addError(
+            CompilerErrorCode.unbalancedBrackets,
+            'Se esperaba \']\'',
+            _getPosition(),
+          );
+        }
+      }
+
+      // Check for initializer (only for last variable or single variable)
+      ASTNode? initializer;
+      if (_match([TokenType.opAssign])) {
+        initializer = _parseExpression();
+      }
+
+      declarations.add(DeclarationStatementNode(
+        dataType: dataType,
+        variableName: variableName,
+        initializer: initializer,
+        isArray: isArray,
+        arraySize: arraySize,
+        isPointer: isPointer,
+        position: varPosition,
+        nodeId: _currentNodeId,
+      ));
+    } while (_match([TokenType.comma]));
 
     // Consume optional semicolon
     _match([TokenType.semicolon]);
 
-    return DeclarationStatementNode(
-      dataType: dataType,
-      variableName: variableName,
-      initializer: initializer,
-      isArray: isArray,
-      arraySize: arraySize,
-      position: position,
-      nodeId: _currentNodeId,
-    );
+    return declarations;
   }
 
   /// Parse a data type keyword
@@ -670,6 +748,9 @@ class DiagramSyntaxAnalyzer {
   /// Parse return statement
   ReturnStatementNode _parseReturnStatement() {
     final position = _getPosition();
+
+    // Consume return keyword if present
+    _match([TokenType.kwReturn, TokenType.kwRetornar]);
 
     ASTNode? value;
     if (!_check(TokenType.semicolon) && !_isAtEnd()) {
@@ -1201,13 +1282,15 @@ class DiagramSyntaxAnalyzer {
 
   /// Parse unary expression
   ASTNode? _parseUnary() {
-    // Prefix operators
+    // Prefix operators (including pointer operators & and *)
     if (_match([
       TokenType.opNot,
       TokenType.opBitNot,
       TokenType.opMinus,
       TokenType.opIncrement,
       TokenType.opDecrement,
+      TokenType.opBitAnd, // & (address-of operator)
+      TokenType.opMultiply, // * (dereference operator)
     ])) {
       final opType = _previous().type;
       final operand = _parseUnary();
@@ -1229,6 +1312,12 @@ class DiagramSyntaxAnalyzer {
             break;
           case TokenType.opDecrement:
             op = UnaryOperator.preDecrement;
+            break;
+          case TokenType.opBitAnd:
+            op = UnaryOperator.addressOf;
+            break;
+          case TokenType.opMultiply:
+            op = UnaryOperator.dereference;
             break;
           default:
             op = UnaryOperator.negate;
@@ -1400,6 +1489,11 @@ class DiagramSyntaxAnalyzer {
       return expr;
     }
 
+    // Array initializer: {1, 2, 3, 4, 5}
+    if (_match([TokenType.leftBrace])) {
+      return _parseArrayInitializer(position);
+    }
+
     // Unknown token
     if (!_isAtEnd()) {
       _addError(
@@ -1410,6 +1504,35 @@ class DiagramSyntaxAnalyzer {
     }
 
     return null;
+  }
+
+  /// Parse array initializer: {expr, expr, ...}
+  ArrayInitializerNode _parseArrayInitializer(SourcePosition position) {
+    final elements = <ASTNode>[];
+
+    // Parse elements until we hit '}'
+    if (!_check(TokenType.rightBrace)) {
+      do {
+        final element = _parseExpression();
+        if (element != null) {
+          elements.add(element);
+        }
+      } while (_match([TokenType.comma]));
+    }
+
+    if (!_match([TokenType.rightBrace])) {
+      _addError(
+        CompilerErrorCode.missingToken,
+        'Se esperaba \'}\'',
+        _getPosition(),
+      );
+    }
+
+    return ArrayInitializerNode(
+      elements: elements,
+      position: position,
+      nodeId: _currentNodeId,
+    );
   }
 
   /// Parse function call (when identifier is already consumed)

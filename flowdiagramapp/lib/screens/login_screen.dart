@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
 import 'register_screen.dart';
 import 'load_diagram_screen.dart';
-import 'debug_screen.dart';
-import 'tutorial_list_screen.dart';
+// import 'debug_screen.dart'; // Comentado: botón Debug oculto
+// import 'tutorial_list_screen.dart'; // Comentado: botón Tutoriales oculto
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -172,7 +172,10 @@ class _LoginScreenState extends State<LoginScreen> {
                     Text(
                       'Diseña algoritmos con diagramas de flujo',
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: Colors.grey[600],
+                            color:
+                                Theme.of(context).brightness == Brightness.dark
+                                    ? Colors.grey[400]
+                                    : Colors.grey[700],
                           ),
                       textAlign: TextAlign.center,
                     ),
@@ -331,47 +334,47 @@ class _LoginScreenState extends State<LoginScreen> {
                       child: const Text('¿No tienes cuenta? Regístrate aquí'),
                     ),
 
-                    // Botón de tutoriales
-                    const SizedBox(height: 8),
-                    OutlinedButton.icon(
-                      onPressed: _isLoading
-                          ? null
-                          : () {
-                              Navigator.of(context).push(
-                                MaterialPageRoute(
-                                  builder: (context) =>
-                                      const TutorialListScreen(),
-                                ),
-                              );
-                            },
-                      icon: const Icon(Icons.school),
-                      label: const Text('Ver Tutoriales'),
-                      style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 24,
-                          vertical: 12,
-                        ),
-                      ),
-                    ),
+                    // Botón de tutoriales (oculto)
+                    // const SizedBox(height: 8),
+                    // OutlinedButton.icon(
+                    //   onPressed: _isLoading
+                    //       ? null
+                    //       : () {
+                    //           Navigator.of(context).push(
+                    //             MaterialPageRoute(
+                    //               builder: (context) =>
+                    //                   const TutorialListScreen(),
+                    //             ),
+                    //           );
+                    //         },
+                    //   icon: const Icon(Icons.school),
+                    //   label: const Text('Ver Tutoriales'),
+                    //   style: OutlinedButton.styleFrom(
+                    //     padding: const EdgeInsets.symmetric(
+                    //       horizontal: 24,
+                    //       vertical: 12,
+                    //     ),
+                    //   ),
+                    // ),
 
-                    // Botón de debug (solo para desarrollo)
-                    const SizedBox(height: 20),
-                    TextButton.icon(
-                      onPressed: _isLoading
-                          ? null
-                          : () {
-                              Navigator.of(context).push(
-                                MaterialPageRoute(
-                                  builder: (context) => const DebugScreen(),
-                                ),
-                              );
-                            },
-                      icon: const Icon(Icons.bug_report, color: Colors.orange),
-                      label: const Text(
-                        'Debug Firebase',
-                        style: TextStyle(color: Colors.orange),
-                      ),
-                    ),
+                    // Botón de debug (oculto)
+                    // const SizedBox(height: 20),
+                    // TextButton.icon(
+                    //   onPressed: _isLoading
+                    //       ? null
+                    //       : () {
+                    //           Navigator.of(context).push(
+                    //             MaterialPageRoute(
+                    //               builder: (context) => const DebugScreen(),
+                    //             ),
+                    //           );
+                    //         },
+                    //   icon: const Icon(Icons.bug_report, color: Colors.orange),
+                    //   label: const Text(
+                    //     'Debug Firebase',
+                    //     style: TextStyle(color: Colors.orange),
+                    //   ),
+                    // ),
 
                     const SizedBox(height: 20),
                   ],

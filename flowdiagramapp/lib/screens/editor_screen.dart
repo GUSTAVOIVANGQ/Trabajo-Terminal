@@ -17,6 +17,7 @@ import '../models/node_dialog_result.dart';
 import '../services/database_service.dart';
 import '../services/metrics_service.dart'; // Nueva importación
 import '../services/diagram_export_service.dart'; // Importación para exportación
+import '../services/auth_service.dart'; // Importación para autenticación
 import '../compiler/compiler.dart'; // Compilador completo
 
 class EditorScreen extends StatefulWidget {
@@ -38,14 +39,27 @@ class _EditorScreenState extends State<EditorScreen> {
   double currentScale = 1.0;
   bool isConnecting = false;
 
+  // Variables para manejar zoom con punto focal
+  double _scaleStart = 1.0;
+  Offset _focalPointStart = Offset.zero;
+  Offset _panOffsetStart = Offset.zero;
+
   // Para control de guardado
   SavedDiagram? currentDiagram;
   final DatabaseService _databaseService = DatabaseService();
   final MetricsService _metricsService = MetricsService(); // Nuevo servicio
+  final AuthService _authService = AuthService(); // Servicio de autenticación
   bool _hasUnsavedChanges = false;
 
   // GlobalKey para capturar el canvas y exportar
   final GlobalKey _canvasKey = GlobalKey();
+
+  /// Obtiene el ID del usuario actual (o 'guest' para invitados)
+  String? _getCurrentUserId() {
+    final user = _authService.currentUser;
+    if (user == null) return null;
+    return user.isGuest ? 'guest_${user.uid}' : user.uid;
+  }
 
   @override
   void initState() {
@@ -254,10 +268,32 @@ class _EditorScreenState extends State<EditorScreen> {
                       });
                     }
                   },
-                  onScaleUpdate: (scale) {
+                  onScaleStart: (details) {
+                    // Guardar estado inicial del zoom para cálculo correcto
+                    _scaleStart = currentScale;
+                    _focalPointStart = details.localFocalPoint;
+                    _panOffsetStart = panOffset;
+                  },
+                  onScaleUpdate: (details) {
                     if (!isConnecting) {
                       setState(() {
-                        currentScale = scale.scale.clamp(0.5, 2.0);
+                        // Calcular la nueva escala basada en la escala inicial
+                        final newScale =
+                            (_scaleStart * details.scale).clamp(0.5, 2.0);
+
+                        // Calcular el punto focal en coordenadas del canvas (antes de la transformación)
+                        // focalPoint = panOffset + focalPointLocal / scale
+                        final focalPointCanvas =
+                            (_focalPointStart - _panOffsetStart) / _scaleStart;
+
+                        // Calcular el nuevo panOffset para mantener el punto focal en la misma posición
+                        // Queremos que: focalPointLocal = panOffset + focalPointCanvas * scale
+                        // Por lo tanto: panOffset = focalPointLocal - focalPointCanvas * scale
+                        final newPanOffset = details.localFocalPoint -
+                            focalPointCanvas * newScale;
+
+                        currentScale = newScale;
+                        panOffset = newPanOffset;
                       });
                     }
                   },
@@ -532,6 +568,9 @@ class _EditorScreenState extends State<EditorScreen> {
       case ProgrammingConceptType.loopWhile:
         _addWhileLoopConcept(centerPosition);
         break;
+      case ProgrammingConceptType.loopDoWhile:
+        _addDoWhileLoopConcept(centerPosition);
+        break;
       case ProgrammingConceptType.ifElse:
         _addIfElseConcept(centerPosition);
         break;
@@ -719,32 +758,37 @@ class _EditorScreenState extends State<EditorScreen> {
   // ==========================================
 
   /// Agrega estructura For Loop (2 nodos + conexiones)
-  /// Basado en diagrama ISO 5807:
-  /// - 1 nodo decisión (condición del for)
+  /// Basado en diagrama ISO 5807 y plantilla 11 (Tabla de Multiplicar):
+  /// - 1 nodo preparación/hexágono (for con init, condición, incremento)
   /// - 1 nodo proceso (cuerpo del for)
-  /// - Conexión de retorno del proceso al nodo de decisión
+  /// - Conexión "Verdadero" del for al cuerpo
+  /// - Conexión de retorno del cuerpo al for (isLoopBack)
+  /// - Salida "Falso" para conectar al siguiente nodo
   void _addForLoopConcept(Offset position) {
     final timestamp = DateTime.now().millisecondsSinceEpoch;
 
-    // Nodo 1: Decisión (condición del bucle)
-    final decisionNode = DiagramNode(
-      id: '${timestamp}_for_decision',
-      type: NodeType.decision,
+    // Nodo 1: Preparación/Hexágono (estructura for completa)
+    final forNode = DiagramNode(
+      id: '${timestamp}_for_loop',
+      type: NodeType.preparation,
       position: position,
-      text: 'i < 10',
+      text: 'for (i = 0; i < 10; i++)',
       metadata: {
         'structureType': 'loop',
         'loopType': 'for',
-        'role': 'loop-condition',
+        'forInit': 'int i = 0',
+        'forCondition': 'i < 10',
+        'forIncrement': 'i++',
+        'role': 'loop-header',
       },
     );
 
-    // Nodo 2: Proceso (cuerpo del for)
+    // Nodo 2: Proceso (cuerpo del for) - posicionado a la derecha
     final bodyNode = DiagramNode(
       id: '${timestamp}_for_body',
       type: NodeType.process,
-      position: Offset(position.dx, position.dy + 150),
-      text: '// Cuerpo del for\ni++',
+      position: Offset(position.dx + 220, position.dy),
+      text: '// Cuerpo del for',
       metadata: {
         'structureType': 'loop',
         'loopType': 'for',
@@ -752,25 +796,25 @@ class _EditorScreenState extends State<EditorScreen> {
       },
     );
 
-    // Crear conexiones
+    // Conexión "Verdadero" del for al cuerpo
     final trueConnection = Connection(
-      source: decisionNode,
+      source: forNode,
       target: bodyNode,
-      label: 'Sí',
+      label: 'Verdadero',
     );
 
-    // Conexión de retorno (loop back)
+    // Conexión de retorno (loop back) del cuerpo al for
     final loopBackConnection = Connection(
       source: bodyNode,
-      target: decisionNode,
+      target: forNode,
       label: '',
       isLoopBack: true,
     );
 
     setState(() {
-      nodes.addAll([decisionNode, bodyNode]);
+      nodes.addAll([forNode, bodyNode]);
       connections.addAll([trueConnection, loopBackConnection]);
-      selectedNode = decisionNode;
+      selectedNode = forNode;
       _hasUnsavedChanges = true;
     });
 
@@ -783,7 +827,7 @@ class _EditorScreenState extends State<EditorScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text(
-            'Estructura For creada. Conecta la salida "No" para continuar el flujo.'),
+            'Estructura For creada. Conecta la salida "Falso" para continuar el flujo después del bucle.'),
         duration: Duration(seconds: 2),
       ),
     );
@@ -856,6 +900,78 @@ class _EditorScreenState extends State<EditorScreen> {
         content: Text(
             'Estructura While creada. Conecta la salida "Falso" para continuar el flujo.'),
         duration: Duration(seconds: 2),
+      ),
+    );
+  }
+
+  /// Agrega estructura Do-While Loop (2 nodos + conexiones)
+  /// Basado en diagrama de flujo estándar para do-while:
+  /// - 1 nodo proceso (cuerpo del do-while, se ejecuta primero)
+  /// - 1 nodo decisión (condición al final)
+  /// - Conexión "Verdadero/True" de la condición regresa al cuerpo
+  /// - Conexión "Falso/False" sale del bucle
+  void _addDoWhileLoopConcept(Offset position) {
+    final timestamp = DateTime.now().millisecondsSinceEpoch;
+
+    // Nodo 1: Proceso (cuerpo del do-while, se ejecuta primero)
+    final bodyNode = DiagramNode(
+      id: '${timestamp}_dowhile_body',
+      type: NodeType.process,
+      position: position,
+      text: '// Cuerpo del do-while',
+      metadata: {
+        'structureType': 'loop',
+        'loopType': 'do-while',
+        'role': 'loop-body',
+      },
+    );
+
+    // Nodo 2: Decisión (condición evaluada después del cuerpo)
+    final conditionNode = DiagramNode(
+      id: '${timestamp}_dowhile_condition',
+      type: NodeType.decision,
+      position: Offset(position.dx, position.dy + 150),
+      text: 'condicion',
+      metadata: {
+        'structureType': 'loop',
+        'loopType': 'do-while',
+        'role': 'loop-condition',
+      },
+    );
+
+    // Conexión del cuerpo a la condición
+    final bodyToConditionConnection = Connection(
+      source: bodyNode,
+      target: conditionNode,
+      label: '',
+    );
+
+    // Conexión de retorno (loop back): True/Verdadero regresa al cuerpo
+    final loopBackConnection = Connection(
+      source: conditionNode,
+      target: bodyNode,
+      label: 'Verdadero',
+      isLoopBack: true,
+    );
+
+    setState(() {
+      nodes.addAll([bodyNode, conditionNode]);
+      connections.addAll([bodyToConditionConnection, loopBackConnection]);
+      selectedNode = bodyNode;
+      _hasUnsavedChanges = true;
+    });
+
+    _metricsService.trackUserAction(
+      action: 'concepto_agregado',
+      category: 'editor',
+      metadata: {'concept_type': 'doWhileLoop', 'nodes_created': 2},
+    );
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text(
+            'Estructura Do-While creada. Conecta un nodo de entrada al cuerpo y la salida "Falso" para salir del bucle.'),
+        duration: Duration(seconds: 3),
       ),
     );
   }
@@ -1322,20 +1438,44 @@ class _EditorScreenState extends State<EditorScreen> {
               'Tipo: ${connection.isLoopBack ? "Flecha Cuadrada" : "Flecha Recta"}',
               style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
             ),
+            const SizedBox(height: 4),
+            Text(
+              'Salida: ${_getAnchorName(connection.sourceAnchor)}',
+              style: const TextStyle(fontSize: 14),
+            ),
+            Text(
+              'Entrada: ${_getAnchorName(connection.targetAnchor)}',
+              style: const TextStyle(fontSize: 14),
+            ),
           ],
         ),
         actions: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              IconButton(
+                onPressed: () => Navigator.of(context).pop('rotate_source'),
+                icon: const Icon(Icons.rotate_left),
+                tooltip: 'Rotar punto de salida',
+              ),
+              IconButton(
+                onPressed: () => Navigator.of(context).pop('rotate_target'),
+                icon: const Icon(Icons.rotate_right),
+                tooltip: 'Rotar punto de entrada',
+              ),
+            ],
+          ),
           TextButton.icon(
             onPressed: () => Navigator.of(context).pop('edit_label'),
             icon: const Icon(Icons.label),
-            label: const Text('Editar Etiqueta'),
+            label: const Text('Etiqueta'),
           ),
           TextButton.icon(
             onPressed: () => Navigator.of(context).pop('toggle_type'),
             icon:
                 Icon(connection.isLoopBack ? Icons.timeline : Icons.turn_left),
             label: Text(
-              connection.isLoopBack ? 'Cambiar a Recta' : 'Cambiar a Cuadrada',
+              connection.isLoopBack ? 'Recta' : 'Cuadrada',
             ),
           ),
           TextButton.icon(
@@ -1359,6 +1499,20 @@ class _EditorScreenState extends State<EditorScreen> {
         case 'toggle_type':
           _toggleConnectionType(connection);
           break;
+        case 'rotate_source':
+          setState(() {
+            connection.sourceAnchor = _getNextAnchor(connection.sourceAnchor);
+            // Reabrir el diálogo para ver el cambio
+            _showConnectionOptionsDialog(connection);
+          });
+          break;
+        case 'rotate_target':
+          setState(() {
+            connection.targetAnchor = _getNextAnchor(connection.targetAnchor);
+            // Reabrir el diálogo para ver el cambio
+            _showConnectionOptionsDialog(connection);
+          });
+          break;
         case 'delete':
           _deleteConnection(connection);
           break;
@@ -1366,6 +1520,36 @@ class _EditorScreenState extends State<EditorScreen> {
           // No hacer nada
           break;
       }
+    }
+  }
+
+  ConnectionAnchor _getNextAnchor(ConnectionAnchor current) {
+    switch (current) {
+      case ConnectionAnchor.auto:
+        return ConnectionAnchor.top;
+      case ConnectionAnchor.top:
+        return ConnectionAnchor.right;
+      case ConnectionAnchor.right:
+        return ConnectionAnchor.bottom;
+      case ConnectionAnchor.bottom:
+        return ConnectionAnchor.left;
+      case ConnectionAnchor.left:
+        return ConnectionAnchor.auto;
+    }
+  }
+
+  String _getAnchorName(ConnectionAnchor anchor) {
+    switch (anchor) {
+      case ConnectionAnchor.auto:
+        return 'Auto';
+      case ConnectionAnchor.top:
+        return 'Arriba';
+      case ConnectionAnchor.bottom:
+        return 'Abajo';
+      case ConnectionAnchor.left:
+        return 'Izquierda';
+      case ConnectionAnchor.right:
+        return 'Derecha';
     }
   }
 
@@ -1907,10 +2091,11 @@ class _EditorScreenState extends State<EditorScreen> {
 
     if (result != null && mounted) {
       final now = DateTime.now();
+      final userId = _getCurrentUserId(); // Obtener userId actual
 
       try {
         if (currentDiagram == null) {
-          // Crear un nuevo diagrama
+          // Crear un nuevo diagrama con el userId del usuario actual
           final newDiagram = SavedDiagram(
             name: result['name'],
             description: result['description'],
@@ -1918,6 +2103,7 @@ class _EditorScreenState extends State<EditorScreen> {
             updatedAt: now,
             nodes: nodes,
             connections: connections,
+            userId: userId, // Asignar el userId
           );
 
           final id = await _databaseService.saveDiagram(newDiagram);
@@ -1927,13 +2113,15 @@ class _EditorScreenState extends State<EditorScreen> {
           });
           // _showSnackBar('Diagrama guardado correctamente');
         } else {
-          // Actualizar diagrama existente
+          // Actualizar diagrama existente (mantener userId original o asignar si no tiene)
           final updatedDiagram = currentDiagram!.copyWith(
             name: result['name'],
             description: result['description'],
             updatedAt: now,
             nodes: nodes,
             connections: connections,
+            userId:
+                currentDiagram!.userId ?? userId, // Mantener userId o asignar
           );
 
           await _databaseService.updateDiagram(updatedDiagram);
@@ -2124,7 +2312,38 @@ class _EditorScreenState extends State<EditorScreen> {
         icon: const Icon(Icons.check_circle, color: Colors.green, size: 48),
         title: Text(title),
         content: SingleChildScrollView(
-          child: Text(message),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(message),
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.blue.shade50,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.blue.shade200),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.photo_library,
+                        color: Colors.blue.shade700, size: 20),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Puedes encontrar la imagen en:\n📁 Galería > FlowDiagramApp\n📁 Archivos > Pictures > FlowDiagramApp',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.blue.shade700,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
         actions: [
           TextButton(

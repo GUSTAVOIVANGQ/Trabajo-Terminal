@@ -1,9 +1,14 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <!-- Permisos para el almacenamiento de archivos -->
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" 
+        android:maxSdkVersion="28" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" 
+        android:maxSdkVersion="32" />
     
-    <!-- Permiso para Android 11+ para acceder a almacenamiento externo -->
+    <!-- Permisos para Android 13+ (API 33+) - Permisos granulares para medios -->
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+    
+    <!-- Permiso para Android 11+ para acceder a almacenamiento externo (opcional) -->
     <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" 
         android:minSdkVersion="30" />
     

@@ -91,6 +91,20 @@ class CodeGenerator {
     return node.metadata['structureType'] == 'loop';
   }
 
+  /// Verifica si un nodo proceso es el inicio de un bucle do-while
+  static bool _isDoWhileBodyNode(DiagramNode node) {
+    return node.metadata['structureType'] == 'loop' &&
+        node.metadata['loopType'] == 'do-while' &&
+        node.metadata['role'] == 'loop-body';
+  }
+
+  /// Verifica si un nodo decisión es la condición de un bucle do-while
+  static bool _isDoWhileConditionNode(DiagramNode node) {
+    return node.metadata['structureType'] == 'loop' &&
+        node.metadata['loopType'] == 'do-while' &&
+        node.metadata['role'] == 'loop-condition';
+  }
+
   /// Genera código switch completo basado en metadata
   static void _generateSwitchCode(
     DiagramNode switchNode,
@@ -305,6 +319,97 @@ class CodeGenerator {
     // Procesar nodos después del bucle
     _processLoopExit(
         loopNode, allNodes, connections, code, indent, processedNodes);
+  }
+
+  /// Genera código do-while desde el nodo body (nueva estructura)
+  /// Estructura: body (proceso) -> condition (decisión) -> true: loop back, false: salir
+  static void _generateDoWhileFromBodyNode(
+    DiagramNode bodyNode,
+    List<DiagramNode> allNodes,
+    List<Connection> connections,
+    StringBuffer code,
+    String indent,
+    Map<String, bool> processedNodes,
+  ) {
+    // Marcar el body como procesado
+    processedNodes[bodyNode.id] = true;
+
+    code.writeln("${indent}do {");
+
+    // Generar el código del cuerpo
+    code.writeln("${indent}    // Cuerpo del do-while");
+    code.writeln("${indent}    ${_formatCProcessStatement(bodyNode.text)};");
+
+    // Encontrar el nodo de condición (siguiente al body)
+    final bodyConnections = connections
+        .where((conn) => conn.source == bodyNode && !conn.isLoopBack)
+        .toList();
+
+    DiagramNode? conditionNode;
+    for (final conn in bodyConnections) {
+      if (_isDoWhileConditionNode(conn.target)) {
+        conditionNode = conn.target;
+        break;
+      } else if (conn.target.type == NodeType.decision) {
+        conditionNode = conn.target;
+        break;
+      }
+    }
+
+    if (conditionNode != null) {
+      // Marcar la condición como procesada
+      processedNodes[conditionNode.id] = true;
+
+      // Extraer la condición
+      String condition = conditionNode.metadata['condition'] ??
+          _extractLoopCondition(conditionNode.text);
+
+      code.writeln("${indent}} while ($condition);");
+
+      // Procesar nodos después del bucle (salida Falso de la condición)
+      final exitConnections = connections.where((conn) =>
+          conn.source == conditionNode &&
+          !conn.isLoopBack &&
+          (conn.label.toLowerCase().contains('no') ||
+              conn.label.toLowerCase().contains('falso') ||
+              conn.label.toLowerCase().contains('false')));
+
+      for (final conn in exitConnections) {
+        _generateCNodeCode(
+            conn.target, allNodes, connections, code, indent, processedNodes);
+      }
+    } else {
+      // Si no se encuentra condición, cerrar con condición por defecto
+      code.writeln("${indent}} while (1); // TODO: Agregar condición");
+    }
+  }
+
+  /// Procesa la salida de un nodo condición do-while
+  static void _processDoWhileExit(
+    DiagramNode conditionNode,
+    List<DiagramNode> allNodes,
+    List<Connection> connections,
+    StringBuffer code,
+    String indent,
+    Map<String, bool> processedNodes,
+  ) {
+    // Solo procesar si no ha sido procesado desde el body
+    if (processedNodes[conditionNode.id] == true) {
+      return;
+    }
+
+    // Procesar nodos después del bucle (salida Falso)
+    final exitConnections = connections.where((conn) =>
+        conn.source == conditionNode &&
+        !conn.isLoopBack &&
+        (conn.label.toLowerCase().contains('no') ||
+            conn.label.toLowerCase().contains('falso') ||
+            conn.label.toLowerCase().contains('false')));
+
+    for (final conn in exitConnections) {
+      _generateCNodeCode(
+          conn.target, allNodes, connections, code, indent, processedNodes);
+    }
   }
 
   // Genera código C
@@ -690,6 +795,13 @@ class CodeGenerator {
         break;
 
       case NodeType.process:
+        // Detectar si este nodo proceso es el inicio de un bucle do-while
+        if (_isDoWhileBodyNode(node)) {
+          _generateDoWhileFromBodyNode(
+              node, allNodes, connections, code, indent, processedNodes);
+          break;
+        }
+
         code.writeln("${indent}// Proceso: ${node.text}");
         code.writeln("${indent}${_formatCProcessStatement(node.text)};");
         _processNextNodes(
@@ -703,6 +815,16 @@ class CodeGenerator {
         break;
 
       case NodeType.decision:
+        // Detectar si este nodo decisión es la condición de un do-while
+        // (la generación se maneja desde el nodo body)
+        if (_isDoWhileConditionNode(node)) {
+          // La condición ya fue procesada desde el nodo body
+          // Solo procesar la salida falsa del bucle
+          _processDoWhileExit(
+              node, allNodes, connections, code, indent, processedNodes);
+          break;
+        }
+
         code.writeln("${indent}// Decisión: ${node.text}");
 
         // FASE 3: Detectar si es un switch statement

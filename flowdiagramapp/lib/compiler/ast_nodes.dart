@@ -81,6 +81,7 @@ abstract class ASTVisitor<T> {
   T visitConditionalExpression(ConditionalExpressionNode node);
   T visitFunctionCall(FunctionCallNode node);
   T visitArrayAccess(ArrayAccessNode node);
+  T visitArrayInitializer(ArrayInitializerNode node);
 
   // Statements
   T visitExpressionStatement(ExpressionStatementNode node);
@@ -395,6 +396,8 @@ enum UnaryOperator {
   preDecrement, // --x
   postIncrement, // x++
   postDecrement, // x--
+  addressOf, // &x (address-of operator)
+  dereference, // *x (pointer dereference)
 }
 
 /// Extension for UnaryOperator
@@ -413,6 +416,10 @@ extension UnaryOperatorExtension on UnaryOperator {
       case UnaryOperator.preDecrement:
       case UnaryOperator.postDecrement:
         return '--';
+      case UnaryOperator.addressOf:
+        return '&';
+      case UnaryOperator.dereference:
+        return '*';
     }
   }
 
@@ -423,6 +430,8 @@ extension UnaryOperatorExtension on UnaryOperator {
       case UnaryOperator.bitNot:
       case UnaryOperator.preIncrement:
       case UnaryOperator.preDecrement:
+      case UnaryOperator.addressOf:
+      case UnaryOperator.dereference:
         return true;
       case UnaryOperator.postIncrement:
       case UnaryOperator.postDecrement:
@@ -447,6 +456,10 @@ extension UnaryOperatorExtension on UnaryOperator {
         return isPrefix
             ? UnaryOperator.preDecrement
             : UnaryOperator.postDecrement;
+      case TokenType.opBitAnd:
+        return UnaryOperator.addressOf;
+      case TokenType.opMultiply:
+        return UnaryOperator.dereference;
       default:
         return null;
     }
@@ -652,6 +665,57 @@ class ArrayAccessNode extends ASTNode {
   }
 }
 
+/// Array initializer: {1, 2, 3, 4, 5}
+class ArrayInitializerNode extends ASTNode {
+  final List<ASTNode> elements;
+
+  const ArrayInitializerNode({
+    required this.elements,
+    required super.position,
+    super.nodeId,
+  });
+
+  @override
+  T accept<T>(ASTVisitor<T> visitor) => visitor.visitArrayInitializer(this);
+
+  @override
+  List<ASTNode> get children => elements;
+
+  @override
+  String toTreeString([int indent = 0]) {
+    final buffer = StringBuffer();
+    buffer.writeln('${_indent(indent)}ArrayInitializer');
+    for (var element in elements) {
+      buffer.writeln(element.toTreeString(indent + 1));
+    }
+    return buffer.toString().trimRight();
+  }
+
+  /// Generate the C representation of this initializer
+  String toCString() {
+    return '{${elements.map((e) => _elementToCString(e)).join(', ')}}';
+  }
+
+  String _elementToCString(ASTNode element) {
+    if (element is IntegerLiteralNode) {
+      return element.value.toString();
+    } else if (element is FloatLiteralNode) {
+      return element.value.toString();
+    } else if (element is StringLiteralNode) {
+      return '"${element.value}"';
+    } else if (element is CharLiteralNode) {
+      return "'${element.value}'";
+    } else if (element is BooleanLiteralNode) {
+      return element.value ? '1' : '0';
+    } else if (element is IdentifierNode) {
+      return element.name;
+    } else if (element is ArrayInitializerNode) {
+      return element.toCString();
+    }
+    return element.toString();
+  }
+}
+
 // ============================================
 // STATEMENT NODES
 // ============================================
@@ -689,13 +753,14 @@ class ExpressionStatementNode extends StatementNode {
   }
 }
 
-/// Declaration statement: int x = 5;
+/// Declaration statement: int x = 5; or int *ptr = arr;
 class DeclarationStatementNode extends StatementNode {
   final DataType dataType;
   final String variableName;
   final ASTNode? initializer;
   final bool isArray;
   final int? arraySize;
+  final bool isPointer;
 
   const DeclarationStatementNode({
     required this.dataType,
@@ -703,6 +768,7 @@ class DeclarationStatementNode extends StatementNode {
     this.initializer,
     this.isArray = false,
     this.arraySize,
+    this.isPointer = false,
     required super.position,
     super.nodeId,
   });
@@ -716,8 +782,9 @@ class DeclarationStatementNode extends StatementNode {
   @override
   String toTreeString([int indent = 0]) {
     final buffer = StringBuffer();
+    final pointerStr = isPointer ? '*' : '';
     buffer.writeln(
-        '${_indent(indent)}Declaration(${dataType.cRepresentation} $variableName)');
+        '${_indent(indent)}Declaration(${dataType.cRepresentation} $pointerStr$variableName)');
     if (initializer != null) {
       buffer.write(initializer!.toTreeString(indent + 1));
     }
@@ -1121,6 +1188,8 @@ class DefaultASTVisitor<T> implements ASTVisitor<T?> {
   @override
   T? visitArrayAccess(ArrayAccessNode node) => null;
   @override
+  T? visitArrayInitializer(ArrayInitializerNode node) => null;
+  @override
   T? visitExpressionStatement(ExpressionStatementNode node) => null;
   @override
   T? visitDeclarationStatement(DeclarationStatementNode node) => null;
@@ -1200,6 +1269,8 @@ class NodeCollector<T extends ASTNode> extends TraversingASTVisitor {
   void visitFunctionCall(FunctionCallNode node) => _checkAndAdd(node);
   @override
   void visitArrayAccess(ArrayAccessNode node) => _checkAndAdd(node);
+  @override
+  void visitArrayInitializer(ArrayInitializerNode node) => _checkAndAdd(node);
   @override
   void visitExpressionStatement(ExpressionStatementNode node) =>
       _checkAndAdd(node);

@@ -28,7 +28,7 @@ class DatabaseService {
 
     final db = await openDatabase(
       path,
-      version: 2, // Incrementar versión para forzar actualización de plantillas
+      version: 3, // Incrementar versión para agregar columna user_id
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
       onOpen: (db) async {
@@ -50,7 +50,8 @@ class DatabaseService {
         updated_at TEXT NOT NULL,
         nodes_data TEXT NOT NULL,
         connections_data TEXT NOT NULL,
-        is_template INTEGER NOT NULL DEFAULT 0
+        is_template INTEGER NOT NULL DEFAULT 0,
+        user_id TEXT
       )
     ''');
 
@@ -62,6 +63,12 @@ class DatabaseService {
     if (oldVersion < 2) {
       // Eliminar plantillas antiguas y cargar las nuevas
       await _migrateToNewTemplates(db);
+    }
+    if (oldVersion < 3) {
+      // Agregar columna user_id para separar diagramas por usuario
+      await db.execute('ALTER TABLE diagrams ADD COLUMN user_id TEXT');
+      print(
+          'Migración v3: Columna user_id agregada para separar diagramas por usuario');
     }
   }
 
@@ -199,23 +206,50 @@ class DatabaseService {
     return SavedDiagram.fromMap(maps.first);
   }
 
-  // Obtener todos los diagramas (excluyendo plantillas por defecto)
+  // Obtener todos los diagramas del usuario actual (excluyendo plantillas por defecto)
   Future<List<SavedDiagram>> getAllDiagrams({
     bool includeTemplates = false,
+    String? userId,
   }) async {
     final Database db = await database;
 
     List<Map<String, dynamic>> maps;
     if (!includeTemplates) {
-      maps = await db.query(
-        'diagrams',
-        where: 'is_template = ?',
-        whereArgs: [0],
-        orderBy: 'updated_at DESC',
-      );
+      if (userId != null) {
+        // Filtrar por usuario: diagramas del usuario actual
+        maps = await db.query(
+          'diagrams',
+          where: 'is_template = ? AND (user_id = ? OR user_id IS NULL)',
+          whereArgs: [0, userId],
+          orderBy: 'updated_at DESC',
+        );
+      } else {
+        // Sin filtro de usuario (compatibilidad hacia atrás)
+        maps = await db.query(
+          'diagrams',
+          where: 'is_template = ?',
+          whereArgs: [0],
+          orderBy: 'updated_at DESC',
+        );
+      }
     } else {
       maps = await db.query('diagrams', orderBy: 'updated_at DESC');
     }
+
+    return List.generate(maps.length, (i) {
+      return SavedDiagram.fromMap(maps[i]);
+    });
+  }
+
+  // Obtener diagramas de un usuario específico
+  Future<List<SavedDiagram>> getDiagramsByUser(String userId) async {
+    final Database db = await database;
+    final List<Map<String, dynamic>> maps = await db.query(
+      'diagrams',
+      where: 'is_template = ? AND user_id = ?',
+      whereArgs: [0, userId],
+      orderBy: 'updated_at DESC',
+    );
 
     return List.generate(maps.length, (i) {
       return SavedDiagram.fromMap(maps[i]);
@@ -240,6 +274,16 @@ class DatabaseService {
   Future<int> deleteDiagram(int id) async {
     final Database db = await database;
     return await db.delete('diagrams', where: 'id = ?', whereArgs: [id]);
+  }
+
+  // Eliminar todos los diagramas de un usuario específico
+  Future<int> deleteDiagramsByUser(String userId) async {
+    final Database db = await database;
+    return await db.delete(
+      'diagrams',
+      where: 'user_id = ? AND is_template = ?',
+      whereArgs: [userId, 0],
+    );
   }
 
   /// Fuerza la recarga de todas las plantillas (útil para desarrollo)

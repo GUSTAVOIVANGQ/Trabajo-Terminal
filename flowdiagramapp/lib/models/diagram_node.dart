@@ -693,18 +693,24 @@ class DiagramNode {
   }
 }
 
+enum ConnectionAnchor { auto, top, bottom, left, right }
+
 class Connection {
   final DiagramNode source;
   final DiagramNode target;
   String label;
   bool
       isLoopBack; // Indica si esta conexión es un retorno de bucle (puede cambiar)
+  ConnectionAnchor sourceAnchor;
+  ConnectionAnchor targetAnchor;
 
   Connection({
     required this.source,
     required this.target,
     this.label = '',
     this.isLoopBack = false,
+    this.sourceAnchor = ConnectionAnchor.auto,
+    this.targetAnchor = ConnectionAnchor.auto,
   });
 
   // Calcular los puntos de conexión entre nodos
@@ -714,9 +720,25 @@ class Connection {
     final targetCenter =
         target.position + Offset(target.size.width / 2, target.size.height / 2);
 
-    final sourcePoint = source.getNearestConnectionPoint(targetCenter);
-    final targetPoint = target.getNearestConnectionPoint(sourceCenter);
+    final sourcePoint = _getAnchorPoint(source, sourceAnchor, targetCenter);
+    final targetPoint = _getAnchorPoint(target, targetAnchor, sourceCenter);
 
     return [sourcePoint, targetPoint];
+  }
+
+  Offset _getAnchorPoint(
+      DiagramNode node, ConnectionAnchor anchor, Offset otherCenter) {
+    switch (anchor) {
+      case ConnectionAnchor.top:
+        return node.getInputPoint();
+      case ConnectionAnchor.bottom:
+        return node.getOutputPoint();
+      case ConnectionAnchor.left:
+        return node.getLeftPoint();
+      case ConnectionAnchor.right:
+        return node.getRightPoint();
+      case ConnectionAnchor.auto:
+        return node.getNearestConnectionPoint(otherCenter);
+    }
   }
 }

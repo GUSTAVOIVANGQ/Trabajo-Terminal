@@ -165,18 +165,20 @@ Algoritmos principales:
 ```
 lib/
 ├── compiler/
-│   ├── lexical_analyzer.dart         # Fase 2: Análisis Léxico
-│   ├── syntax_analyzer.dart          # Fase 3: Análisis Sintáctico
-│   ├── semantic_analyzer.dart        # Fase 4: Análisis Semántico
-│   ├── code_optimizer.dart           # Fase 5: Optimización
-│   ├── intermediate_representation.dart # Representación intermedia
-│   ├── symbol_table.dart             # Tabla de símbolos
-│   ├── ast_nodes.dart                # Nodos del AST
-│   ├── compiler_metrics.dart         # Métricas del compilador
-│   └── compiler_pipeline.dart        # Orquestador principal
+│   ├── compiler.dart                   # Barrel export para API pública
+│   ├── compiler_pipeline.dart          # Orquestador principal del pipeline
+│   ├── compiler_errors.dart            # Sistema de errores y severidades
+│   ├── token.dart                       # Definición de tokens
+│   ├── lexical_analyzer.dart           # Fase 1: Análisis Léxico
+│   ├── syntax_analyzer.dart            # Fase 2: Análisis Sintáctico
+│   ├── ast_nodes.dart                   # Nodos del AST
+│   ├── semantic_analyzer.dart          # Fase 3: Análisis Semántico
+│   ├── symbol_table.dart               # Tabla de símbolos
+│   ├── code_optimizer.dart             # Fase 4: Optimización
+│   └── code_generator_advanced.dart    # Fase 5: Generación de Código
 ├── models/
-│   ├── code_generator.dart           # Fase 6: Generación (MEJORADO)
-│   ├── diagram_validator.dart        # Fase 1: Validación (EXISTENTE)
+│   ├── code_generator.dart             # Generador de código simple (legacy)
+│   ├── diagram_validator.dart          # Validación estructural del diagrama
 │   └── ... (archivos existentes)
 └── ... (estructura existente)
 ```
@@ -185,70 +187,92 @@ lib/
 
 ## 🔍 Especificación Detallada de Componentes
 
-### 1. Validador Estructural (Existente - Mejorar)
+### 1. Validador Estructural (lib/models/diagram_validator.dart)
 ```dart
-class EnhancedDiagramValidator {
-  // Algoritmos de grafos
-  bool validateGraphTopology(List<DiagramNode> nodes, List<Connection> connections)
-  List<List<DiagramNode>> detectStronglyConnectedComponents() // Tarjan
-  bool detectInfiniteLoops() // Cycle detection
-  List<DiagramNode> findUnreachableNodes() // DFS/BFS
-}
-```
-
-### 2. Analizador Léxico (Nuevo)
-```dart
-class DiagramLexicalAnalyzer {
-  List<Token> tokenizeNode(DiagramNode node) // FSM + Regex
-  SymbolTable buildSymbolTable(List<DiagramNode> nodes)
-  bool validateIdentifier(String identifier) // Pattern matching
-  TokenType classifyToken(String text) // Hash table lookup
-}
-```
-
-### 3. Analizador Sintáctico (Nuevo)
-```dart
-class DiagramSyntaxAnalyzer {
-  AST parseExpression(List<Token> tokens) // Recursive descent
-  bool validateAssignment(DiagramNode node) // Grammar checking
-  ExpressionTree buildExpressionTree(String expression) // Shunting yard
-  bool checkSyntaxValidity(AST tree) // Tree traversal
-}
-```
-
-### 4. Analizador Semántico (Nuevo)
-```dart
-class DiagramSemanticAnalyzer {
-  bool performTypeChecking(AST ast) // Type inference
-  DataFlowGraph analyzeDataFlow(List<DiagramNode> nodes) // DFA
-  bool validateVariableScope(SymbolTable symbolTable) // Scope analysis
-  List<SemanticError> findSemanticErrors() // Error collection
-}
-```
-
-### 5. Optimizador de Código (Nuevo)
-```dart
-class DiagramCodeOptimizer {
-  AST foldConstants(AST ast) // Constant folding
-  List<DiagramNode> eliminateDeadCode(List<DiagramNode> nodes) // DCE
-  ControlFlowGraph optimizeControlFlow(ControlFlowGraph cfg) // CFG optimization
-  String optimizeGeneratedCode(String code) // Peephole optimization
-}
-```
-
-### 6. Generador de Código Mejorado (creado nuevo archivo)
-```dart
-class EnhancedCodeGenerator {
-  String generateOptimizedCode(
+class DiagramValidator {
+  static ValidationResult validateDiagram(
     List<DiagramNode> nodes,
     List<Connection> connections,
-    CompilerOptions options
   )
-  
-  // Nuevos métodos
-  String generateFromIR(IntermediateRepresentation ir)
-  String applyCodeTemplates(Map<String, dynamic> context)
-  String injectOptimizations(String baseCode)
+  static ValidationResult _validateStartNode(List<DiagramNode> nodes)
+  static ValidationResult _validateEndNode(List<DiagramNode> nodes)
+  static ValidationResult _validateConnections(nodes, connections)
+  static ValidationResult _validateNoDisconnectedNodes(nodes, connections)
+  static ValidationResult _validateISO5807Symbols(nodes, connections)
+}
+```
+
+### 2. Analizador Léxico (lib/compiler/lexical_analyzer.dart)
+```dart
+class DiagramLexicalAnalyzer {
+  List<Token> tokenize(String text)              // Tokenización de texto
+  List<Token> tokenizeNode(DiagramNode node)     // Tokenización por nodo
+  DiagramLexicalResult analyzeDiagram(           // Análisis completo
+    List<DiagramNode> nodes,
+    List<Connection> connections,
+  )
+}
+```
+
+### 3. Analizador Sintáctico (lib/compiler/syntax_analyzer.dart)
+```dart
+class DiagramSyntaxAnalyzer {
+  SyntaxAnalysisResult analyzeDiagram(           // Análisis sintáctico completo
+    List<DiagramNode> nodes,
+    List<Connection> connections,
+  )
+  NodeSyntaxResult analyzeNode(DiagramNode node) // Análisis por nodo
+  ASTNode? parseExpression(String expression)    // Parser de expresiones
+  bool validateExpression(String expression)     // Validación de expresión
+}
+```
+
+### 4. Analizador Semántico (lib/compiler/semantic_analyzer.dart)
+```dart
+class DiagramSemanticAnalyzer {
+  SemanticAnalysisResult analyzeDiagram(
+    List<DiagramNode> nodes,
+    List<Connection> connections, {
+    SymbolTable? existingSymbolTable,
+    ProgramNode? ast,
+  })
+  // Incluye verificación de tipos, análisis de scope, detección de errores
+}
+```
+
+### 5. Optimizador de Código (lib/compiler/code_optimizer.dart)
+```dart
+class DiagramCodeOptimizer {
+  OptimizationResult optimize(
+    ProgramNode ast, {
+    SymbolTable? symbolTable,
+  })
+  // Implementa: Constant Folding, Dead Code Elimination,
+  // Expression Simplification, Control Flow Optimization
+}
+```
+
+### 6. Generador de Código Avanzado (lib/compiler/code_generator_advanced.dart)
+```dart
+class AdvancedCodeGenerator {
+  CodeGenerationResult generate({
+    required List<DiagramNode> nodes,
+    required List<Connection> connections,
+    required SymbolTable symbolTable,
+    ProgramNode? ast,
+  })
+  // Genera código C usando información semántica de la tabla de símbolos
+}
+```
+
+### 7. Pipeline Principal (lib/compiler/compiler_pipeline.dart)
+```dart
+class DiagramCompilerPipeline {
+  CompilationResult compile(
+    List<DiagramNode> nodes,
+    List<Connection> connections,
+  )
+  // Orquesta las 5 fases: Léxico → Sintáctico → Semántico → Optimización → Generación
 }
 ```
 
@@ -256,19 +280,32 @@ class EnhancedCodeGenerator {
 
 ## 📊 Métricas y Validación
 
-### Métricas de Calidad del Compilador
+### Métricas de Compilación (Implementadas)
 ```dart
-class CompilerQualityMetrics {
-  // Métricas por fase
-  double lexicalAccuracy;      // % tokens correctamente identificados
-  double syntaxValidation;     // % expresiones sintácticamente válidas  
-  double semanticPrecision;    // % errores semánticos detectados
-  double optimizationGain;     // % mejora en líneas/performance código
+class CompilationMetrics {
+  int compilationTimeMs;     // Tiempo total de compilación
+  int nodesProcessed;        // Nodos del diagrama procesados
+  int tokensGenerated;       // Tokens extraídos
+  int symbolsInTable;        // Símbolos en tabla
+  int errorCount;            // Errores encontrados
+  int warningCount;          // Advertencias generadas
   
-  // Métricas generales
-  double compilationSuccess;   // % diagramas que compilan exitosamente
-  double codeQuality;         // % código generado que compila en GCC
-  double performanceGain;     // Mejora vs generación directa actual
+  // Tiempos por fase
+  int lexicalTimeMs;         // Tiempo análisis léxico
+  int syntacticTimeMs;       // Tiempo análisis sintáctico
+  int semanticTimeMs;        // Tiempo análisis semántico
+  int optimizationTimeMs;    // Tiempo optimización
+  int codeGenTimeMs;         // Tiempo generación de código
+}
+
+class OptimizationMetrics {
+  int originalNodeCount;         // Nodos AST originales
+  int optimizedNodeCount;        // Nodos AST optimizados
+  int constantsFolded;           // Constantes plegadas
+  int deadCodeRemoved;           // Código muerto eliminado
+  int expressionsSimplified;     // Expresiones simplificadas
+  int controlFlowOptimized;      // Optimizaciones de flujo
+  double sizeReductionPercent;   // Porcentaje de reducción
 }
 ```
 
@@ -280,135 +317,112 @@ class CompilerQualityMetrics {
 ```
 Input:  [Inicio] → [x = 5] → [y = x + 2] → [Mostrar y] → [Fin]
 
-Fase 1: ✅ Estructura válida
-Fase 2: x, =, 5, y, =, x, +, 2, Mostrar, y
-Fase 3: AST { Assignment(x, 5), Assignment(y, BinaryOp(x, +, 2)), Print(y) }
-Fase 4: ✅ Tipos consistentes, variables definidas antes de uso
-Fase 5: Optimización: y = x + 2 → y = 7 (si x es constante)
-Fase 6: Código C optimizado
+Validación Estructural: ✅ Estructura válida (DiagramValidator)
+Fase 1 (Léxico): x, =, 5, y, =, x, +, 2, Mostrar, y
+Fase 2 (Sintáctico): AST { Assignment(x, 5), Assignment(y, BinaryOp(x, +, 2)), Print(y) }
+Fase 3 (Semántico): ✅ Tipos consistentes, variables definidas antes de uso
+Fase 4 (Optimización): y = x + 2 → y = 7 (si x es constante)
+Fase 5 (Generación): Código C optimizado
 ```
 
 ### Caso de Uso 2: Diagrama con Decisión
 ```
 Input:  [Inicio] → [n = 10] → [¿n > 0?] → [Sí: n--] → [No: Fin]
 
-Fase 1: ✅ Flujo de control válido
-Fase 2: n, =, 10, n, >, 0, n, --, ...
-Fase 3: AST { Assignment(n, 10), IfStatement(BinaryOp(n, >, 0), Decrement(n)) }
-Fase 4: ✅ Operadores compatibles con tipos
-Fase 5: Optimización de bucle
-Fase 6: Código C con while/for optimizado
+Validación Estructural: ✅ Flujo de control válido
+Fase 1 (Léxico): n, =, 10, n, >, 0, n, --, ...
+Fase 2 (Sintáctico): AST { Assignment(n, 10), IfStatement(BinaryOp(n, >, 0), Decrement(n)) }
+Fase 3 (Semántico): ✅ Operadores compatibles con tipos
+Fase 4 (Optimización): Optimización de bucle
+Fase 5 (Generación): Código C con while/for optimizado
 ```
 
 ---
 
 ## ⚙️ Configuración y Opciones del Compilador
 
-### Opciones de Compilación
+### Opciones de Compilación (Implementadas)
 ```dart
 class CompilerOptions {
-  OptimizationLevel optimizationLevel; // -O0, -O1, -O2, -O3
-  bool enableWarnings;
-  bool strictTypeChecking;
-  bool generateComments;
-  TargetVersion targetCStandard; // C99, C11, C17
-  bool enableDebugInfo;
+  int optimizationLevel;       // 0-3 (none, basic, standard, aggressive)
+  bool generateComments;       // Comentarios en código generado
+  bool strictTypeChecking;     // Verificación estricta de tipos
+  bool showWarnings;           // Mostrar advertencias
+  String targetCStandard;      // c99, c11, c17
+  bool includeDebugInfo;       // Información de debug
+  String language;             // es, en (para mensajes)
 }
 
 enum OptimizationLevel { none, basic, standard, aggressive }
-enum TargetVersion { c99, c11, c17 }
+```
+
+### Opciones de Generación de Código
+```dart
+class CodeGenOptions {
+  bool includeComments;     // Incluir comentarios descriptivos
+  bool includeTimestamp;    // Incluir fecha de generación
+  String indentation;       // Indentación (default: 4 espacios)
+  String targetCStandard;   // c99, c11, c17
+  bool debugMode;           // Modo debug con printf adicionales
+}
 ```
 
 ---
 
-## 🔧 Integración con la Aplicación Existente
+## 🔧 Integración con la Aplicación
 
-### Modificaciones Necesarias
+### Uso del Compilador desde la UI
 
-#### 1. Editor Screen (Modificar)
+#### 1. Compilación Básica
 ```dart
-// Agregar nuevas opciones de compilación
-void _generateOptimizedCode() {
-  final options = CompilerOptions(
-    optimizationLevel: OptimizationLevel.standard,
-    enableWarnings: true,
-    strictTypeChecking: true,
+import 'package:flowdiagramapp/compiler/compiler.dart';
+
+void _compileAndShowResults() {
+  final compiler = DiagramCompilerPipeline(
+    options: const CompilerOptions(
+      optimizationLevel: 2,
+      generateComments: true,
+    ),
   );
   
-  final compiler = DiagramCompilerPipeline();
-  final result = compiler.compile(nodes, connections, options);
+  final result = compiler.compile(nodes, connections);
   
-  _showCompilerResults(result);
+  if (result.success) {
+    // Mostrar código generado
+    _showGeneratedCode(result.generatedCode);
+  } else {
+    // Mostrar errores
+    _showCompilerErrors(result.errors);
+  }
 }
 ```
 
-#### 2. Validación Mejorada (Modificar)
-```dart
-// Usar el nuevo sistema de validación multinivel
-ValidationResult _validateDiagramEnhanced() {
-  final pipeline = DiagramCompilerPipeline();
-  return pipeline.validateOnly(nodes, connections);
-}
+#### 2. Diálogo de Resultados del Compilador
+La aplicación incluye `CompilerResultsDialog` con pestañas para:
+- **General**: Métricas y tiempos de compilación
+- **Léxico**: Tokens generados por nodo
+- **Sintáctico**: AST visualizado en árbol
+- **Semántico**: Tabla de símbolos
+- **Optimización**: Métricas y cambios aplicados
+- **Código**: Código C generado con resaltado de sintaxis
+
+---
+
+## 📝 Tests del Compilador
+
+### Ubicación de Tests
+```
+test/compiler/
+├── lexical_analyzer_test.dart        # Tests del analizador léxico
+├── syntax_analyzer_test.dart         # Tests del parser
+├── semantic_analyzer_test.dart       # Tests del analizador semántico
+├── code_optimizer_test.dart          # Tests del optimizador
+└── code_generator_advanced_test.dart # Tests del generador de código
 ```
 
----
-
-## 🎯 Plan de Implementación
-
-### Cronograma Detallado (14 semanas)
-
-**Semanas 1-2: Análisis Léxico**
-- Implementar `DiagramLexicalAnalyzer`
-- Crear sistema de tokens
-- Desarrollar tabla de símbolos
-
-**Semanas 3-5: Análisis Sintáctico**
-- Implementar `DiagramSyntaxAnalyzer`
-- Crear parser de expresiones
-- Construir sistema AST
-
-**Semanas 6-9: Análisis Semántico**
-- Implementar `DiagramSemanticAnalyzer`
-- Desarrollar verificación de tipos
-- Crear análisis de flujo de datos
-
-**Semanas 10-12: Optimización**
-- Implementar `DiagramCodeOptimizer`
-- Desarrollar algoritmos de optimización
-- Integrar con generador existente
-
-**Semanas 13-14: Integración**
-- Integrar todas las fases
-- Pruebas completas del sistema
-- Documentación final y métricas
-
----
-
-## 📈 Validación y Pruebas
-
-### Casos de Prueba por Fase
-```dart
-class CompilerTestSuite {
-  // Pruebas de análisis léxico
-  void testTokenization();
-  void testSymbolTableConstruction();
-  
-  // Pruebas de análisis sintáctico
-  void testExpressionParsing();
-  void testASTConstruction();
-  
-  // Pruebas de análisis semántico
-  void testTypeChecking();
-  void testDataFlowAnalysis();
-  
-  // Pruebas de optimización
-  void testConstantFolding();
-  void testDeadCodeElimination();
-  
-  // Pruebas de integración
-  void testEndToEndCompilation();
-  void testPerformanceMetrics();
-}
+### Ejecutar Tests
+```bash
+flutter test test/compiler/
 ```
 
 ---
