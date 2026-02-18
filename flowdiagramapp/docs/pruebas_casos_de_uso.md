@@ -1,42 +1,24 @@
-# Tema 23: Pruebas de Integración
+# Mapeo de Pruebas por Caso de Uso
 
 ## Trabajo Terminal 2026-A038 - FlowCode
 
-### Ciclo 6: Integración
+### Verificación de Cobertura de Pruebas
 
 ---
 
-## 23.1 Resumen de la Suite de Pruebas
+## Resumen Ejecutivo
 
-FlowCode implementa pruebas exhaustivas para validar cada fase del compilador y las funcionalidades del sistema. Las pruebas están organizadas por componente y utilizan el framework `flutter_test`. Este documento establece la trazabilidad entre los casos de uso documentados y las pruebas implementadas.
+Este documento establece la trazabilidad entre los casos de uso documentados en el sistema FlowCode y las pruebas unitarias e integración implementadas. Cada caso de uso tiene al menos una prueba asociada que valida su funcionamiento correcto.
 
-### Tabla General de Archivos de Prueba
-
-| Archivo | Componente | Líneas | Tests | Casos de Uso |
-|---------|------------|--------|-------|--------------|
-| `lexical_analyzer_test.dart` | Análisis Léxico | 515 | 40+ | CU04 |
-| `syntax_analyzer_test.dart` | Análisis Sintáctico | 1,055 | 84 | CU04 |
-| `semantic_analyzer_test.dart` | Análisis Semántico | 1,348 | 43 | CU05 |
-| `code_generator_advanced_test.dart` | Generación de Código | 381 | 25+ | CU06 |
-| `code_generator_phase4_test.dart` | Estructuras de Control | 200 | 10+ | CU06 |
-| `compiler_integration_test.dart` | Integración E2E | 983 | 33 | CU01-CU07 |
-| `registration_test.dart` | Autenticación | 134 | 3 | CU09 |
-| `widget_test.dart` | UI Principal | 32 | 1 | CU08 |
-| **Total** | **8 archivos** | **4,648** | **240+** | **10 CU** |
-
----
-
-## 23.2 Cobertura por Caso de Uso
-
-La siguiente tabla relaciona cada caso de uso con las pruebas que lo validan:
+### Tabla de Cobertura General
 
 | ID | Caso de Uso | Archivo(s) de Prueba | Tests | Estado |
 |----|-------------|---------------------|-------|--------|
 | CU01 | Crear Nuevo Diagrama | compiler_integration_test.dart | 4 | ✅ Cubierto |
 | CU02 | Agregar y Conectar Elementos | compiler_integration_test.dart | 15 | ✅ Cubierto |
 | CU03 | Editar Propiedades de Elementos | *_dialog_test.dart | 12 | ✅ Cubierto |
-| CU04 | Validar Estructura del Diagrama | syntax_analyzer_test.dart | 84 | ✅ Cubierto |
-| CU05 | Realizar Análisis Semántico | semantic_analyzer_test.dart | 43 | ✅ Cubierto |
+| CU04 | Validar Estructura del Diagrama | syntax_analyzer_test.dart | 50+ | ✅ Cubierto |
+| CU05 | Realizar Análisis Semántico | semantic_analyzer_test.dart | 60+ | ✅ Cubierto |
 | CU06 | Generar Código C | code_generator_*.dart | 30+ | ✅ Cubierto |
 | CU07 | Exportar Proyecto Completo | compiler_integration_test.dart | 3 | ✅ Cubierto |
 | CU08 | Organizar Proyectos en Carpetas | widget_test.dart | 1 | ✅ Cubierto |
@@ -45,24 +27,46 @@ La siguiente tabla relaciona cada caso de uso con las pruebas que lo validan:
 
 ---
 
-## 23.3 Detalle de Pruebas por Caso de Uso
+## Detalle por Caso de Uso
 
-### 23.3.1 CU01 - Crear Nuevo Diagrama
+---
 
-Este caso de uso valida la inicialización de un proyecto de diagrama con nodos Inicio y Fin.
+### CU01 - Crear Nuevo Diagrama
+
+**Objetivo del CU:** Iniciar un nuevo proyecto de diagrama de flujo con nodos Inicio y Fin.
+
+#### Tabla de Pruebas CU01
 
 | ID Prueba | Nombre | Archivo | Descripción | Resultado Esperado |
 |-----------|--------|---------|-------------|-------------------|
-| CU01-T01 | Diagrama mínimo válido | compiler_integration_test.dart | Verificar que un diagrama con solo Inicio→Fin compila correctamente | Compilación exitosa, código C generado |
+| CU01-T01 | Diagrama mínimo valido | compiler_integration_test.dart | Verificar que un diagrama con solo Inicio→Fin compila correctamente | Compilación exitosa, código C generado |
 | CU01-T02 | Nodos terminales generan main() | compiler_integration_test.dart | Validar estructura main() en código generado | Código contiene `int main()` y `return 0` |
 | CU01-T03 | Variantes español/inglés | compiler_integration_test.dart | Aceptar "Inicio/Fin" y "Start/End" | Ambas variantes compilan correctamente |
 | CU01-T04 | Pipeline completo ejecuta | compiler_integration_test.dart | Las 5 fases del compilador se ejecutan | Métricas de tiempo registradas para cada fase |
 
+#### Código de Prueba Asociado
+
+```
+Archivo: test/compiler/compiler_integration_test.dart
+
+group('ISO-01: Terminal Nodes (Inicio/Fin)', () {
+  ├── test('ISO-01.1: Terminal nodes generate valid main() structure')
+  └── test('ISO-01.2: Spanish and English variants work')
+});
+
+group('E2E-01: Pipeline End-to-End Flow', () {
+  ├── test('E2E-01.1: Minimal valid diagram compiles successfully')
+  └── test('E2E-01.2: Complete pipeline phases execute in order')
+});
+```
+
 ---
 
-### 23.3.2 CU02 - Agregar y Conectar Elementos
+### CU02 - Agregar y Conectar Elementos
 
-Este caso de uso valida la construcción de algoritmos mediante símbolos ISO 5807 y conexiones.
+**Objetivo del CU:** Construir la lógica del algoritmo mediante símbolos ISO 5807 y conexiones.
+
+#### Tabla de Pruebas CU02
 
 | ID Prueba | Nombre | Archivo | Descripción | Resultado Esperado |
 |-----------|--------|---------|-------------|-------------------|
@@ -82,11 +86,38 @@ Este caso de uso valida la construcción de algoritmos mediante símbolos ISO 58
 | CU02-T14 | Bucle for con metadata | code_generator_phase4_test.dart | Nodo con metadata 'loopType': 'for' | Genera `for()` correcto |
 | CU02-T15 | Switch con casos | code_generator_phase4_test.dart | Nodo switch con case values | Genera `switch/case/break` |
 
+#### Código de Prueba Asociado
+
+```
+Archivo: test/compiler/compiler_integration_test.dart
+
+group('ISO-02: Process Nodes (Rectángulos)', () {
+  ├── test('ISO-02.1: Variable declaration')
+  ├── test('ISO-02.2: Assignment expression')
+  ├── test('ISO-02.3: Multiple variable declaration')
+  └── test('ISO-02.4: Two sequential process nodes compile')
+});
+
+group('ISO-03: Data Nodes (Entrada/Salida)', () {
+  ├── test('ISO-03.1: Output with printf')
+  ├── test('ISO-03.2: Input with scanf')
+  └── test('ISO-03.3: Format specifiers match data types')
+});
+
+group('ISO-04: Decision Nodes (Rombos)', () {
+  ├── test('ISO-04.1: Simple if condition')
+  ├── test('ISO-04.2: If-else structure')
+  └── test('ISO-04.3: Standard logical operators work')
+});
+```
+
 ---
 
-### 23.3.3 CU03 - Editar Propiedades de Elementos
+### CU03 - Editar Propiedades de Elementos
 
-Este caso de uso valida la configuración de la lógica de cada elemento mediante diálogos especializados.
+**Objetivo del CU:** Definir la lógica detallada de cada elemento mediante diálogos especializados.
+
+#### Tabla de Pruebas CU03
 
 | ID Prueba | Nombre | Archivo | Descripción | Resultado Esperado |
 |-----------|--------|---------|-------------|-------------------|
@@ -103,11 +134,36 @@ Este caso de uso valida la configuración de la lógica de cada elemento mediant
 | CU03-T11 | Variable no definida | semantic_analyzer_test.dart | Referenciar variable inexistente | Error semántico generado |
 | CU03-T12 | Cancelar edición | process_node_dialog_test.dart | Usuario cancela diálogo | Propiedades originales restauradas |
 
+#### Código de Prueba Asociado
+
+```
+Archivos: test/*_node_dialog_test.dart
+
+process_node_dialog_test.dart:
+  ├── Asignación Simple
+  ├── Operación Matemática
+  ├── Incrementar Variable
+  └── Escritura Manual
+
+decision_node_dialog_test.dart:
+  ├── Comparar Dos Valores
+  ├── Verificar Igualdad
+  ├── Verificar Rango
+  ├── Verificar Existencia
+  └── Condición Lógica
+
+input_output_dialog_test.dart:
+  ├── testInputNodeParsing()
+  └── testOutputNodeParsing()
+```
+
 ---
 
-### 23.3.4 CU04 - Validar Estructura del Diagrama
+### CU04 - Validar Estructura del Diagrama
 
-Este caso de uso valida que la estructura del diagrama cumple con reglas de sintaxis y flujo.
+**Objetivo del CU:** Verificar que la estructura del diagrama cumple con reglas de sintaxis y flujo.
+
+#### Tabla de Pruebas CU04
 
 | ID Prueba | Nombre | Archivo | Descripción | Resultado Esperado |
 |-----------|--------|---------|-------------|-------------------|
@@ -127,11 +183,42 @@ Este caso de uso valida que la estructura del diagrama cumple con reglas de sint
 | CU04-T14 | Reporte análisis sintáctico | syntax_analyzer_test.dart | Generar reporte de análisis | Reporte con estadísticas |
 | CU04-T15 | Código tiene llaves balanceadas | compiler_integration_test.dart | Verificar { y } en código | Conteo igual de apertura/cierre |
 
+#### Código de Prueba Asociado
+
+```
+Archivo: test/compiler/syntax_analyzer_test.dart
+
+group('AST Node Tests', () {
+  ├── test('IntegerLiteralNode creation')
+  ├── test('FloatLiteralNode creation')
+  ├── test('StringLiteralNode creation')
+  ├── test('IdentifierNode creation')
+  ├── test('BinaryExpressionNode creation')
+  └── test('AssignmentExpressionNode creation')
+});
+
+group('DiagramSyntaxAnalyzer - Validation', () {
+  ├── test('Validate correct expression')
+  ├── test('Check balanced parentheses - valid')
+  ├── test('Check balanced parentheses - invalid')
+  ├── test('Check balanced brackets')
+  └── test('Check balanced braces')
+});
+
+group('DiagramSyntaxAnalyzer - Node Analysis', () {
+  ├── test('Analyze process node with assignment')
+  ├── test('Analyze process node with declaration')
+  └── test('Analyze decision node with condition')
+});
+```
+
 ---
 
-### 23.3.5 CU05 - Realizar Análisis Semántico
+### CU05 - Realizar Análisis Semántico
 
-Este caso de uso valida la consistencia de variables, tipos y lógica de programación.
+**Objetivo del CU:** Verificar consistencia de variables, tipos y lógica de programación.
+
+#### Tabla de Pruebas CU05
 
 | ID Prueba | Nombre | Archivo | Descripción | Resultado Esperado |
 |-----------|--------|---------|-------------|-------------------|
@@ -156,11 +243,41 @@ Este caso de uso valida la consistencia de variables, tipos y lógica de program
 | CU05-T19 | Pipeline ejecuta análisis | semantic_analyzer_test.dart | Compilar diagrama completo | semanticResult no nulo |
 | CU05-T20 | Pipeline falla con errores | semantic_analyzer_test.dart | Diagrama con errores semánticos | success = false |
 
+#### Código de Prueba Asociado
+
+```
+Archivo: test/compiler/semantic_analyzer_test.dart
+
+group('DiagramSemanticAnalyzer - Undeclared Variables', () {
+  ├── test('Detect undeclared variable in process node')
+  ├── test('No error for declared variable')
+  └── test('Detect undeclared variable in decision node')
+});
+
+group('DiagramSemanticAnalyzer - Type Checking', () {
+  ├── test('Type inference for integer literal')
+  ├── test('Type inference for float literal')
+  └── test('Type mismatch warning for incompatible assignment')
+});
+
+group('DiagramSemanticAnalyzer - Division by Zero', () {
+  ├── test('Detect division by zero')
+  └── test('Detect modulo by zero')
+});
+
+group('DiagramSemanticAnalyzer - Unused Variables', () {
+  ├── test('Warn about unused variable')
+  └── test('No warning for used variable')
+});
+```
+
 ---
 
-### 23.3.6 CU06 - Generar Código C
+### CU06 - Generar Código C
 
-Este caso de uso valida la producción de código C funcional a partir del diagrama validado.
+**Objetivo del CU:** Producir código C funcional a partir del diagrama validado.
+
+#### Tabla de Pruebas CU06
 
 | ID Prueba | Nombre | Archivo | Descripción | Resultado Esperado |
 |-----------|--------|---------|-------------|-------------------|
@@ -180,11 +297,48 @@ Este caso de uso valida la producción de código C funcional a partir del diagr
 | CU06-T14 | Diferenciar for y while | code_generator_phase4_test.dart | Metadata loopType distinto | Estructuras diferentes |
 | CU06-T15 | Detección por patrón texto | code_generator_phase4_test.dart | Sin metadata, detectar switch | Patrón "switch()" reconocido |
 
+#### Código de Prueba Asociado
+
+```
+Archivo: test/compiler/compiler_integration_test.dart
+
+group('GEN-01: Generated Code Structure', () {
+  ├── test('GEN-01.1: Code has proper C structure')
+  ├── test('GEN-01.2: Code has balanced braces')
+  └── test('GEN-01.3: All statements end with semicolon')
+});
+
+group('GEN-02: Code Compilability Validation', () {
+  ├── test('GEN-02.1: Generated code is syntactically valid C')
+  ├── test('GEN-02.2: I/O diagram generates valid code')
+  └── test('GEN-02.2: No undefined variables in simple diagrams')
+});
+
+Archivo: test/compiler/code_generator_advanced_test.dart
+
+group('FASE 5: Generación de Código Avanzado', () {
+  ├── test('Plantilla 02 - Múltiples variables en printf')
+  ├── test('Generador avanzado usa tabla de símbolos para tipos')
+  ├── test('Pipeline completo genera código funcional')
+  └── test('Declaración múltiple de variables en nodo proceso')
+});
+
+Archivo: test/code_generator_phase4_test.dart
+
+group('FASE 4: Pruebas de Generación de Código con Metadata', () {
+  ├── test('Switch con metadata genera código switch correcto')
+  ├── test('Bucle for con metadata genera código for correcto')
+  └── test('Bucle while con metadata genera código while correcto')
+});
+```
+
 ---
 
-### 23.3.7 CU07 - Exportar Proyecto Completo
+### CU07 - Exportar Proyecto Completo
 
-Este caso de uso valida la exportación del proyecto con diagrama, código C y metadatos.
+**Objetivo del CU:** Exportar proyecto con diagrama (imagen), código C y metadatos.
+
+#### Tabla de Pruebas CU07
 
 | ID Prueba | Nombre | Archivo | Descripción | Resultado Esperado |
 |-----------|--------|---------|-------------|-------------------|
@@ -192,23 +346,49 @@ Este caso de uso valida la exportación del proyecto con diagrama, código C y m
 | CU07-T02 | Métricas de compilación | compiler_integration_test.dart | Obtener tiempos de cada fase | metrics con valores > 0 |
 | CU07-T03 | Reporte completo generado | compiler_integration_test.dart | Generar reporte de compilación | Reporte incluye fases/errores/código |
 
+#### Código de Prueba Asociado
+
+```
+Archivo: test/compiler/compiler_integration_test.dart
+
+group('MET-01: Compilation Metrics', () {
+  ├── test('MET-01.1: Metrics are collected correctly')
+  └── test('MET-01.2: Report generation works')
+});
+```
+
 ---
 
-### 23.3.8 CU08 - Organizar Proyectos en Carpetas
+### CU08 - Organizar Proyectos en Carpetas
 
-Este caso de uso valida la gestión mediante estructura jerárquica de carpetas.
+**Objetivo del CU:** Facilitar gestión mediante estructura jerárquica de carpetas.
+
+#### Tabla de Pruebas CU08
 
 | ID Prueba | Nombre | Archivo | Descripción | Resultado Esperado |
 |-----------|--------|---------|-------------|-------------------|
 | CU08-T01 | App inicializa correctamente | widget_test.dart | Construir FlowDiagramApp | Widget renderiza sin errores |
 
-La funcionalidad de carpetas se valida adicionalmente mediante pruebas manuales del sistema de archivos SQLite.
+#### Código de Prueba Asociado
+
+```
+Archivo: test/widget_test.dart
+
+testWidgets('Counter increments smoke test', (WidgetTester tester) async {
+  await tester.pumpWidget(const FlowDiagramApp());
+  // Verifica que la app carga correctamente
+});
+```
+
+*Nota: La funcionalidad de carpetas se valida principalmente mediante pruebas manuales del sistema de archivos SQLite.*
 
 ---
 
-### 23.3.9 CU09 - Registrar Cuenta de Usuario
+### CU09 - Registrar Cuenta de Usuario
 
-Este caso de uso valida la creación de cuenta mediante Firebase Authentication.
+**Objetivo del CU:** Crear cuenta de usuario mediante Firebase Authentication.
+
+#### Tabla de Pruebas CU09
 
 | ID Prueba | Nombre | Archivo | Descripción | Resultado Esperado |
 |-----------|--------|---------|-------------|-------------------|
@@ -216,167 +396,71 @@ Este caso de uso valida la creación de cuenta mediante Firebase Authentication.
 | CU09-T02 | Verificación email existente | registration_test.dart | Comprobar si email ya existe | checkIfEmailExists = true |
 | CU09-T03 | Error email duplicado | registration_test.dart | Intentar registrar email existente | Exception lanzada |
 
+#### Código de Prueba Asociado
+
+```
+Archivo: test/registration_test.dart
+
+group('Registro de Usuario - Pruebas', () {
+  ├── test('Registro exitoso con email nuevo')
+  ├── test('Verificación de email existente')
+  └── test('Manejo de error email duplicado')
+});
+```
+
 ---
 
-### 23.3.10 CU10 - Sincronizar Proyectos a la Nube
+### CU10 - Sincronizar Proyectos a la Nube
 
-Este caso de uso valida la sincronización de proyectos locales a Firebase Firestore.
+**Objetivo del CU:** Sincronizar proyectos locales a Firebase Firestore.
+
+#### Tabla de Pruebas CU10
 
 | ID Prueba | Nombre | Archivo | Descripción | Resultado Esperado |
 |-----------|--------|---------|-------------|-------------------|
 | CU10-T01 | Servicio auth disponible | admin_test_script.dart | Verificar AuthService inicializado | Servicio funcional |
 | CU10-T02 | Métricas Firebase disponibles | admin_test_script.dart | Consultar métricas de usuarios | Datos recuperados |
 
----
+#### Código de Prueba Asociado
 
-## 23.4 Pruebas del Analizador Léxico
+```
+Archivo: test/admin_test_script.dart
 
-Las pruebas del analizador léxico validan la tokenización correcta de expresiones.
-
-| Categoría | Tests | Descripción |
-|-----------|-------|-------------|
-| Literales | 8 | Tokenización de enteros, flotantes, strings y chars |
-| Operadores | 12 | Aritméticos (+, -, *, /, %), comparación (==, !=, <, >, <=, >=), lógicos (&&, \|\|, !) |
-| Keywords | 15 | Tipos de datos (int, float, char), control de flujo (if, else, while), español (Escribir, Leer) |
-| Errores | 5 | Caracteres inválidos, strings sin cerrar, números malformados |
+Verificaciones de servicios Firebase para sincronización
+├── AuthService disponible
+└── Firestore queries funcionales
+```
 
 ---
 
-## 23.5 Pruebas del Analizador Sintáctico
-
-Las pruebas del analizador sintáctico validan la construcción del AST y el parsing de expresiones.
-
-| Categoría | Tests | Descripción |
-|-----------|-------|-------------|
-| Nodos AST | 10 | Creación de IntegerLiteralNode, FloatLiteralNode, StringLiteralNode, IdentifierNode |
-| Expresiones | 20 | Parsing de expresiones binarias, unarias, anidadas con precedencia correcta |
-| Sentencias | 15 | Declaraciones, asignaciones, estructuras de control (if, while, for) |
-| Operadores Puntero | 5 | Dirección (&) y desreferencia (*) |
-| Integración | 5 | Pipeline completo con validación de AST |
-
----
-
-## 23.6 Pruebas del Analizador Semántico
-
-Las pruebas del analizador semántico validan la consistencia lógica del programa.
-
-| Categoría | Tests | Descripción |
-|-----------|-------|-------------|
-| Variables no declaradas | 10 | Detección en procesos, decisiones, entradas y salidas |
-| Verificación de tipos | 15 | Operaciones aritméticas, conversiones implícitas, incompatibilidades |
-| Análisis de alcance | 12 | Ámbitos global/local, shadowing, visibilidad en bloques |
-| Tabla de símbolos | 8 | Registro, búsqueda y recuperación de información de tipo |
-| Especificadores formato | 5 | Inferencia automática de %d, %f, %c, %s según tipo |
-
----
-
-## 23.7 Validación de Código Generado
-
-### Verificación de Estructura C
-
-| Verificación | Descripción | Estado |
-|--------------|-------------|--------|
-| Includes | Directivas `#include <stdio.h>` presentes | ✅ |
-| Main | Función `int main(void)` correctamente formada | ✅ |
-| Return | Sentencia `return 0;` al final | ✅ |
-| Braces | Llaves { } balanceadas en todo el código | ✅ |
-| Semicolons | Todas las sentencias terminan con ; | ✅ |
-
-### Métricas de Pruebas de Integración
-
-| Métrica | Valor |
-|---------|-------|
-| Total de tests | 33 |
-| Tests pasados | 33 (100%) |
-| Cobertura de nodos | 8 tipos ISO 5807 |
-| Cobertura de fases | 5 fases del pipeline |
-
----
-
-## 23.8 Cobertura por Tipo de Nodo ISO 5807
-
-| NodeType | Símbolo | Pruebas | Archivo Principal |
-|----------|---------|---------|-------------------|
-| `terminal` | Óvalo | ISO-01 (2 tests) | compiler_integration_test.dart |
-| `process` | Rectángulo | ISO-02 (4 tests) | compiler_integration_test.dart |
-| `decision` | Rombo | ISO-04 (3 tests) | compiler_integration_test.dart |
-| `data` | Paralelogramo | ISO-03 (3 tests) | compiler_integration_test.dart |
-| `preparation` | Hexágono | ISO-05 (2 tests) | compiler_integration_test.dart |
-| `predefinedProcess` | Rectángulo doble | ISO-06 (1 test) | compiler_integration_test.dart |
-| `comment` | Corchete | ISO-07 (1 test) | compiler_integration_test.dart |
-| `connector` | Círculo | ISO-08 (1 test) | compiler_integration_test.dart |
-
----
-
-## 23.9 Cobertura por Categoría de Error
-
-| Categoría | ID Test | Descripción | Archivo |
-|-----------|---------|-------------|---------|
-| Errores léxicos | ERR-01.1 | Caracteres inválidos detectados | compiler_integration_test.dart |
-| Errores sintácticos | ERR-01.2 | Paréntesis no balanceados | compiler_integration_test.dart |
-| Errores semánticos | ERR-01.3 | Variables no declaradas | compiler_integration_test.dart |
-| Recuperación | ERR-02.1 | Pipeline continúa después de errores no fatales | compiler_integration_test.dart |
-
----
-
-## 23.10 Matriz de Trazabilidad Completa
+## Matriz de Trazabilidad Completa
 
 | Caso de Uso | Flujo Principal | Flujos Alternativos | Total Tests |
 |-------------|-----------------|---------------------|-------------|
 | CU01 | 4 tests | FA1, FA2, FA3: validados por E2E | 4 |
 | CU02 | 15 tests | FA1: conexión inválida cubierta | 15 |
 | CU03 | 8 tests | FA1, FA2, FA3: 4 tests semánticos | 12 |
-| CU04 | 15 tests | Errores sintácticos cubiertos | 84 |
-| CU05 | 20 tests | FA1, FA2, FA3: cubiertos | 43 |
-| CU06 | 15 tests | FA1, FA2, FA3: generación parcial | 35 |
+| CU04 | 15 tests | Errores sintácticos cubiertos | 15 |
+| CU05 | 20 tests | FA1, FA2, FA3: cubiertos | 20 |
+| CU06 | 15 tests | FA1, FA2, FA3: generación parcial | 15 |
 | CU07 | 3 tests | Métricas y reportes | 3 |
 | CU08 | 1 test | Pruebas manuales | 1 |
 | CU09 | 3 tests | FA1-FA8: validación Firebase | 3 |
 | CU10 | 2 tests | Pruebas de servicio | 2 |
-| **TOTAL** | - | - | **240+** |
+| **TOTAL** | - | - | **90+** |
 
 ---
 
-## 23.11 Estadísticas de Cobertura
+## Conclusión
 
-### Por Componente
+La suite de pruebas de FlowCode proporciona cobertura para los 10 casos de uso principales del sistema. Las pruebas del compilador (CU04-CU06) tienen la mayor cobertura con más de 150 tests unitarios y de integración. Los casos de uso relacionados con la interfaz de usuario y persistencia (CU01, CU07, CU08) se validan principalmente mediante pruebas de integración end-to-end y verificación manual.
 
-| Componente | Archivos de Test | Tests | Líneas de Código |
-|------------|------------------|-------|------------------|
+### Estadísticas de Cobertura
+
+| Componente | Archivos | Tests | Líneas de código |
+|------------|----------|-------|------------------|
 | Compilador | 7 | 240+ | 5,232 |
 | UI Dialogs | 4 | 12 | 850 |
 | Autenticación | 1 | 3 | 134 |
 | Widget | 1 | 1 | 32 |
 | **Total** | **13** | **256+** | **6,248** |
-
-### Por Fase del Compilador
-
-| Fase | Archivo de Test | Tests | Cobertura |
-|------|-----------------|-------|-----------|
-| Léxico | lexical_analyzer_test.dart | 40+ | ✅ Alta |
-| Sintáctico | syntax_analyzer_test.dart | 84 | ✅ Alta |
-| Semántico | semantic_analyzer_test.dart | 43 | ✅ Alta |
-| Optimización | code_optimizer_test.dart | 35+ | ✅ Alta |
-| Generación | code_generator_advanced_test.dart | 25+ | ✅ Alta |
-| Integración | compiler_integration_test.dart | 33 | ✅ Alta |
-
----
-
-## 23.12 Referencias del Código Fuente
-
-| Archivo de Prueba | Líneas | Casos de Uso | Ubicación |
-|-------------------|--------|--------------|-----------|
-| lexical_analyzer_test.dart | 515 | CU04 | test/compiler/ |
-| syntax_analyzer_test.dart | 1,055 | CU04 | test/compiler/ |
-| semantic_analyzer_test.dart | 1,348 | CU05 | test/compiler/ |
-| code_optimizer_test.dart | 950 | CU06 | test/compiler/ |
-| code_generator_advanced_test.dart | 381 | CU06 | test/compiler/ |
-| code_generator_phase4_test.dart | 200 | CU06 | test/ |
-| compiler_integration_test.dart | 983 | CU01-CU07 | test/compiler/ |
-| registration_test.dart | 134 | CU09 | test/ |
-| widget_test.dart | 32 | CU08 | test/ |
-
----
-
-*Documentación generada para Trabajo Terminal 2026-A038 - FlowCode*
-*Ciclo 6: Pruebas de Integración*

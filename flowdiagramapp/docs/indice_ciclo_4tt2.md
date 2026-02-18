@@ -1,4 +1,5 @@
 # Índice del Documento Técnico - FlowCode
+
 ## Trabajo Terminal 2026-A038
 
 ---
@@ -6,6 +7,7 @@
 ## Índice
 
 ## 1. Introducción (Pág. 18)
+
 - 1.1 Contexto y Antecedentes (Pág. 18)
 - 1.2 Planteamiento del Problema (Pág. 18)
 - 1.3 Propuesta de Solución (Pág. 19)
@@ -22,6 +24,7 @@
 ## CICLO 1: DEFINICIÓN Y VIABILIDAD ✅ (Pág. 26)
 
 ### 2. Marco teórico (Pág. 28)
+
 - 2.1 Compiladores (Pág. 28)
   - 2.1.1 Fases de compilación (análisis léxico, sintáctico, semántico) (Pág. 29)
   - 2.1.2 Manejo de Errores en Compiladores (Pág. 30)
@@ -50,6 +53,7 @@
 - 2.8 Investigación Bibliográfica (Pág. 50)
 
 ### 3. Estudio de factibilidad (Pág. 52)
+
 - 3.1.1 Factibilidad Técnica (Pág. 52)
 - 3.1.2 Factibilidad Operativa (Pág. 54)
 - 3.1.3 Factibilidad Económica (Pág. 55)
@@ -60,6 +64,7 @@
 - 3.1.8 Modelo de Negocio (Pág. 67)
 
 ### 4. Análisis de requisitos (Pág. 75)
+
 - 4.1 Requisitos Previos del Usuario (Pág. 75)
   - 4.1.1 Conocimientos Técnicos Requeridos (Pág. 75)
   - 4.1.2 Perfil de Usuario Objetivo (Pág. 75)
@@ -86,12 +91,14 @@
   - 4.4.13 CU10 - Sincronizar Proyectos a la Nube (Pág. 119)
 
 ### 5. Arquitectura del Sistema (Pág. 123)
+
 - 5.1 Arquitectura General (Pág. 123)
   - 5.1.1 Justificación de la Elección (Pág. 124)
 - 5.2 Arquitectura en Capas (Pág. 124)
   - 5.2.1 Tecnologías Base de la Arquitectura (Pág. 125)
 
 ### 6. Selección de tecnologías (Pág. 126)
+
 - 6.1 Flutter (Pág. 126)
 - 6.2 Librerías de Gráficos y Visualización (Pág. 126)
   - 6.2.1 Flutter CustomPainter (Pág. 127)
@@ -108,6 +115,7 @@
   - 6.5.2 Gestión de Proyecto: ClickUp (Pág. 128)
 
 ### 7. Análisis de riesgos (Pág. 129)
+
 - 7.1 Identificación de Riesgos (Pág. 129)
   - 7.1.1 Riesgos Técnicos (Pág. 130)
   - 7.1.2 Riesgos de Cronograma (Pág. 131)
@@ -126,6 +134,7 @@
   - 7.4.4 Herramientas de Monitoreo (Pág. 147)
 
 ### 8. Metodología (Pág. 148)
+
 - 8.1 Modelo en Espiral (Pág. 148)
 - 8.2 Ciclos Planificados (Pág. 149)
 - 8.3 Gestión de Proyecto Individual (Pág. 158)
@@ -136,6 +145,7 @@
   - 8.4.4 Criterios de Paso (Pág. 160)
 
 ### 9. Cronograma (Pág. 162)
+
 - 9.1 Cronograma General (Pág. 162)
 
 ---
@@ -143,6 +153,7 @@
 ## CICLO 2: DISEÑO DE INTERFAZ ✅ (Pág. 163)
 
 ### 10. Pantallas principales (Pág. 165)
+
 - 10.1 Pantalla de Inicio de sesión (Pág. 165)
   - 10.1.1 Propósito y Función (Pág. 165)
 - 10.2 Pantalla del Editor de Diagramas (Pág. 166)
@@ -155,11 +166,13 @@
   - 10.5.1 Propósito y Función (Pág. 169)
 
 ### 11. Especificación de componentes de interfaz (Pág. 170)
+
 - 11.1 Componentes de Diagramación (Pág. 170)
   - 11.1.1 Propiedades Interactivas de Símbolos (Pág. 171)
 - 11.2 Componentes de Diálogo (Pág. 171)
 
 ### 12. Especificación visual y paleta de colores (Pág. 172)
+
 - 12.1 Paleta de Colores de Símbolos de Diagramas (Pág. 172)
 - 12.2 Colores de Validación y Estados del Compilador (Pág. 172)
 - 12.3 Paleta de Colores de Interfaz General (Pág. 173)
@@ -171,6 +184,7 @@
 ## CICLO 3: EDITOR DE DIAGRAMAS ✅ (Pág. 179)
 
 ### 14. Implementación del Editor Visual (Pág. 181)
+
 - 14.1 Arquitectura del Componente Editor (Pág. 181)
   - 14.1.1 Biblioteca de renderizado seleccionada (Pág. 181)
   - 14.1.2 Modelo de datos para representación de diagramas (Pág. 181)
@@ -193,6 +207,7 @@
   - 14.6.3 Alineación y distribución automática (Pág. 185)
 
 ### 15. Sistema de Persistencia de Diagramas (Pág. 185)
+
 - 15.1 Esquema de Base de Datos SQLite (Pág. 185)
   - 15.1.1 Tablas para proyectos, diagramas y elementos (Pág. 185)
   - 15.1.2 Serialización de estructura de grafos (Pág. 186)
@@ -220,6 +235,7 @@
 ## CICLO 4: MOTOR DE ANÁLISIS (Pág. 194)
 
 ### 16. Arquitectura del Compilador Fuente-a-Fuente (Pág. 194)
+
 - 16.1 Pipeline de Compilación (Pág. 194)
   - 16.1.1 Diagrama de fases del transpilador (Pág. 194)
   - 16.1.2 Clase DiagramCompilerPipeline (Pág. 195)
@@ -239,6 +255,7 @@
   - 16.4.4 Detección de variables no declaradas (Pág. 201)
 
 ### 17. Tabla de Símbolos (Pág. 202)
+
 - 17.1 Estructura de SymbolTable (Pág. 202)
   - 17.1.1 Clase Symbol y atributos (Pág. 202)
   - 17.1.2 Tipos de datos soportados (DataType) (Pág. 202)
@@ -250,6 +267,7 @@
   - 17.3.2 Valores por defecto en C (Pág. 204)
 
 ### 18. Sistema de Errores del Compilador (Pág. 205)
+
 - 18.1 Clasificación de Errores (CompilerErrorCode) (Pág. 205)
   - 18.1.1 Errores léxicos (Pág. 205)
   - 18.1.2 Errores sintácticos (Pág. 205)
@@ -265,6 +283,7 @@
 ## CICLO 5: GENERADOR DE CÓDIGO (Pág. 208)
 
 ### 19. Nodos del Árbol de Sintaxis Abstracta (Pág. 208)
+
 - 19.1 Jerarquía de Nodos AST (Pág. 208)
   - 19.1.1 Clase base ASTNode (Pág. 208)
   - 19.1.2 Nodos literales (IntegerLiteralNode, FloatLiteralNode, etc.) (Pág. 208)
@@ -275,6 +294,7 @@
   - 19.2.2 Generación de representación textual (Pág. 210)
 
 ### 20. Optimización del AST (Pág. 211)
+
 - 20.1 DiagramCodeOptimizer (Pág. 211)
   - 20.1.1 Niveles de optimización (OptimizationLevel) (Pág. 211)
   - 20.1.2 Configuración del optimizador (OptimizerConfig) (Pág. 211)
@@ -285,6 +305,7 @@
 - 20.3 Métricas de Optimización (OptimizationMetrics) (Pág. 213)
 
 ### 21. Generación de Código C (Pág. 214)
+
 - 21.1 AdvancedCodeGenerator (Pág. 214)
   - 21.1.1 Opciones de generación (CodeGenOptions) (Pág. 214)
   - 21.1.2 Orden de ejecución de nodos (Pág. 214)
@@ -304,6 +325,7 @@
 ## CICLO 6: INTEGRACIÓN (Pág. 219)
 
 ### 22. Integración del Pipeline Completo (Pág. 219)
+
 - 22.1 Flujo de Compilación End-to-End (Pág. 219)
   - 22.1.1 Entrada: Diagramas de flujo (Nodos y Conexiones) (Pág. 219)
   - 22.1.2 Salida: Código C compilable (Pág. 219)
@@ -315,6 +337,7 @@
   - 22.3.2 Mapeo símbolo-código C (Pág. 221)
 
 ### 23. Pruebas de Integración (Pág. 222)
+
 - 23.1 Casos de Prueba del Compilador (Pág. 222)
   - 23.1.1 Pruebas del analizador léxico (Pág. 222)
   - 23.1.2 Pruebas del analizador sintáctico (Pág. 222)
@@ -329,6 +352,7 @@
 ## CICLO 7: PRUEBAS Y DOCUMENTACIÓN (Pág. 225)
 
 ### 24. Resultados y Pruebas (Pág. 225)
+
 - 24.1 Criterios de Validación Técnica (Pág. 225)
   - 24.1.1 Criterios de Corrección Funcional (Pág. 225)
   - 24.1.2 Criterios de Calidad de Código Generado (Pág. 226)
@@ -364,6 +388,7 @@
 ### Anexo A: Alcance de símbolos/constructos en TT I (Pág. 237)
 
 ### Anexo B: Catálogo de errores y advertencias (Pág. 237)
+
 - B.2 Clasificación de Mensajes por Severidad (Pág. 237)
 - B.3 ERRORES SINTÁCTICOS O DE ESTRUCTURA DEL DIAGRAMA (E-SYN) (Pág. 238)
 - B.4 ERRORES SEMÁNTICOS (E-SEM) (Pág. 239)
@@ -543,6 +568,7 @@
 **Notas sobre el Índice:**
 
 ✅ **Ciclos Completados:**
+
 - Ciclo 1: Definición y Viabilidad (100%)
 - Ciclo 2: Diseño de Interfaz (100%)
 - Ciclo 3: Editor de Diagramas (100%)
@@ -553,6 +579,7 @@
 - Ciclo 5: Generador de Código
 - Ciclo 6: Integración
 - Ciclo 7: Pruebas y Documentación
+
 ---
 
 **Estado del Documento:** Versión actualizada al 12/02/2026
