@@ -95,168 +95,195 @@ Desarrollar Fase 1 del transpilador: Análisis Estructural del Grafo
 
 Ciclo 4: Motor de Análisis (Enero - Febrero 2025)
 
-El  cuarto  ciclo  implementa  las  Fases  2  y  3  del  transpilador,  enfocándose  en  el  parsing  de expresiones C contenidas dentro de los símbolos del diagrama y la validación semántica mediante tabla de símbolos. A diferencia de un compilador tradicional, FlowCode omite el análisis léxico ya que los símbolos ISO 5807 son tokens visuales directos.
+El cuarto ciclo implementa las primeras tres fases del transpilador fuente-a-fuente: análisis léxico, análisis sintáctico y análisis semántico. El pipeline de compilación se coordina mediante la clase DiagramCompilerPipeline, que orquesta las cinco fases secuenciales del conversor. Este ciclo también desarrolla la tabla de símbolos y el sistema de errores del compilador.
 
 Objetivos del Ciclo 4:
 
-Fase 2: Implementar análisis sintáctico de expresiones C
+Arquitectura del Compilador (Tema 16):
 
-- Desarrollar parser para expresiones aritméticas (+, -, \*, /, %)  
-- Implementar parser para expresiones lógicas (&&, ||, !)  
-- Implementar parser para expresiones relacionales (<, >, <=, >=, ==, !=)  
-- Desarrollar 7 validaciones sintácticas de expresiones (E-EXP-01 a E-EXP-07)  
+- Diseñar e implementar el pipeline de compilación con 5 fases secuenciales  
+- Desarrollar la clase DiagramCompilerPipeline como orquestador central  
+- Implementar opciones de compilación configurables (CompilerOptions)  
+
+Fase 1: Implementar análisis léxico (DiagramLexicalAnalyzer)
+
+- Desarrollar el sistema de tokens (TokenType) con aproximadamente 80 tipos diferentes  
+- Implementar tokenización del contenido textual de cada nodo del diagrama  
+- Reconocer identificadores, literales, palabras reservadas (C y español), operadores y delimitadores  
+- Construir la versión inicial de la tabla de símbolos durante el análisis  
+
+Fase 2: Implementar análisis sintáctico (DiagramSyntaxAnalyzer)
+
+- Desarrollar parser de descenso recursivo para expresiones C  
+- Implementar parser para expresiones aritméticas (+, -, \*, /, %)  
+- Implementar parser para expresiones lógicas (&&, ||, !) y relacionales (<, >, <=, >=, ==, !=)  
+- Construir el Árbol de Sintaxis Abstracta (AST) con ProgramNode como raíz  
 - Integrar parser con editor visual para validación en tiempo de edición  
 
-Fase 3: Implementar análisis semántico
+Fase 3: Implementar análisis semántico (DiagramSemanticAnalyzer)
 
-- Construir tabla de símbolos para rastrear variables declaradas y sus tipos  
-- Desarrollar análisis de flujo de datos (reaching definitions) para detectar variables no iializadas  
-- Implementar 10 reglas semánticas (S01-S10) para validación de tipos y alcances  
-- Desarrollar sistema de detección de errores semánticos con mensajes descriptivos  
-- Crear suite de 50 casos de prueba de validación semántica
+- Implementar verificación de tipos (DataType) para operaciones y asignaciones  
+- Desarrollar análisis de alcance (ScopeAnalysisResult) para variables  
+- Implementar detección de variables no declaradas  
+- Desarrollar análisis de flujo de datos para detectar variables no inicializadas  
+- Crear sistema de detección de errores semánticos con mensajes descriptivos  
+
+Tabla de Símbolos (Tema 17):
+
+- Implementar la clase SymbolTable con estructura de datos para identificadores  
+- Desarrollar la clase SymbolInfo con atributos (nombre, tipo, categoría, ubicación, estado)  
+- Implementar tipos de datos soportados (DataType): integer, float, double, char, string, boolean  
+- Desarrollar gestión de alcances con ámbitos global y local  
+- Implementar métodos de búsqueda y resolución de símbolos (lookup, declareSymbol)  
+- Agregar especificadores de formato para printf/scanf y valores por defecto en C  
+
+Sistema de Errores (Tema 18):
+
+- Implementar clasificación de errores (CompilerErrorCode) por fase  
+- Definir errores léxicos (códigos 1001-1010): caracteres inesperados, cadenas sin cerrar, etc.  
+- Definir errores sintácticos (códigos 2001-2010): tokens inesperados, paréntesis desbalanceados, etc.  
+- Definir errores semánticos (códigos 3001-3011): variables no declaradas, tipos incompatibles, etc.  
+- Implementar niveles de severidad (CompilerSeverity): info, warning, error, fatal  
+- Desarrollar identificación de fases de compilación (CompilerPhase)  
 
 Entregables del Ciclo 4:
 
-- Parser de expresiones C funcional para expresiones aritméticas, lógicas y relacionales  
-- 7  validaciones  sintácticas  E-EXP  implementadas  (paréntesis  balanceados,  operadores válidos, identificadores correctos)  
-- Tabla de símbolos implementada con soporte para alcances locales  
-- Algoritmo de reaching definitions para análisis de flujo de datos  
-- reglas semánticas S01-S10 implementadas:  
-  - S01: Variables declaradas antes de uso
-  - S02: No redeclaración de variables en mismo alcance
-  - S03: Compatibilidad de tipos en asignaciones
-  - S04: Compatibilidad de tipos en expresiones aritméticas
-  - S05: Expresiones booleanas en condiciones
-  - S06-S10: Validaciones adicionales de inicialización y alcance
-- Sistema de detección de variables no inicializadas antes de lectura  
+- DiagramLexicalAnalyzer funcional con sistema de tokens completo  
+- DiagramSyntaxAnalyzer con parser de descenso recursivo  
+- DiagramSemanticAnalyzer con verificación de tipos y alcances  
+- Tabla de símbolos (SymbolTable) con soporte para alcances anidados  
+- Sistema de errores estructurado con clasificación por tipo, severidad y fase  
+- Reportes de compilación (CompilationResult) con métricas de análisis  
+- Suite de pruebas unitarias para cada analizador (léxico, sintáctico, semántico)  
 - Integración completa con editor visual para feedback en tiempo real  
-- Suite  de  50  casos  de  prueba  de  validación  semántica  (variables  no  declaradas,  tipos incompatibles, no inicializadas)  
-- Informe técnico del Ciclo 4 documentando el diseño del parser y la tabla de símbolos
+- Informe técnico del Ciclo 4 documentando la arquitectura del compilador
 
 Ciclo 5: Generador de Código (Febrero - Abril 2025)
 
-Este ciclo implementa las Fases 4 y 5 del transpilador, desarrollando la representación intermedia del diagrama validado y el generador que produce código C funcional y compilable. El código generado debe ser compatible con GCC/Clang y cumplir con el estándar C89/C99 básico.
+Este ciclo implementa las Fases 4 y 5 del transpilador: optimización del AST y generación de código C. El AST construido en el Ciclo 4 sirve como representación intermedia, la cual se optimiza antes de traducirse a código C funcional compatible con el estándar C99.
 
 Objetivos del Ciclo 5:
 
-` `Fase 4: Desarrollar representación intermedia (RI)
+Nodos del Árbol de Sintaxis Abstracta (Tema 19):
 
-- Diseñar esquema JSON para representar el grafo anotado con información semántica  
-- Implementar  traductor  de  diagrama  validado  a  RI  preservando  toda  la  información necesaria  
-- Validar serialización y deserialización de la RI  
+- Implementar la jerarquía completa de nodos AST con clase base ASTNode  
+- Desarrollar nodos literales (IntegerLiteralNode, FloatLiteralNode, StringLiteralNode, CharLiteralNode, BooleanLiteralNode)  
+- Implementar nodos de expresión (BinaryExpressionNode, UnaryExpressionNode, AssignmentExpressionNode, IdentifierNode, FunctionCallNode)  
+- Desarrollar nodos de sentencia (DeclarationStatementNode, IfStatementNode, WhileStatementNode, ForStatementNode, BlockStatementNode, InputStatementNode, OutputStatementNode)  
+- Implementar el patrón Visitor (ASTVisitor) para recorrido y procesamiento del AST  
+- Desarrollar generación de representación textual del AST para depuración  
 
-Fase 5: Implementar generador de código C
+Fase 4: Optimización del AST (Tema 20):
 
-- Desarrollar generador de declaraciones de variables (int, float, char)  
-- Implementar generación de estructuras de control (if/else, anidamiento)  
-- Implementar generación de bucles (while, for, do-while)  
-- Desarrollar generación de entrada/salida estándar (scanf, printf con formatos correctos)  
-- Crear formateador automático de código con indentación apropiada  
-- Implementar visor de código con syntax highlighting  
-- Validar código generado mediante compilación automática con GCC/Clang  
-- Crear suite de 15 casos de prueba con diagramas de complejidad creciente
+- Implementar DiagramCodeOptimizer con cuatro niveles de optimización (none, basic, standard, aggressive)  
+- Desarrollar configuración del optimizador (OptimizerConfig) con parámetros ajustables  
+- Implementar plegado de constantes (Constant Folding) para evaluar expresiones literales  
+- Implementar eliminación de código muerto (Dead Code Elimination) para ramas inalcanzables  
+- Desarrollar simplificación de expresiones usando identidades algebraicas (x+0=x, x*1=x, x-x=0)  
+- Implementar métricas de optimización (OptimizationMetrics) para reportar transformaciones aplicadas  
+
+Fase 5: Generación de Código C (Tema 21):
+
+- Implementar AdvancedCodeGenerator con opciones configurables (CodeGenOptions)  
+- Desarrollar algoritmo de orden de ejecución basado en recorrido BFS del grafo  
+- Implementar traducción de nodos terminales (Inicio → main(), Fin → return 0)  
+- Desarrollar generación de nodos de proceso (declaraciones, asignaciones, expresiones)  
+- Implementar generación de nodos de decisión (if/else, switch)  
+- Desarrollar generación de nodos de preparación (for, while, do-while)  
+- Implementar generación de nodos de datos (scanf/printf con especificadores de formato correctos)  
+- Desarrollar generación de encabezados estándar (stdio.h, stdlib.h, string.h, math.h) según necesidad  
+- Implementar formateador automático de código con indentación configurable  
 
 Entregables del Ciclo 5:
 
-- Esquema de representación intermedia basado en JSON documentado completamente  
-- Traductor de diagrama a RI que preserva información estructural, sintáctica y semántica  
-- Generador de código C funcional que produce programas compilables  
-- Generador de declaraciones de variables con tipos int, float, char  
-- Generador de estructuras de control if/else con soporte para anidamiento  
-- Generador de bucles while, for y do-while  
-- Generador de operaciones de E/S estándar: scanf con formatos correctos (%d, %f, %c) y printf  
-- Formateador automático que produce código con indentación estándar de 4 espacios  
+- Jerarquía completa de nodos AST implementada en ast_nodes.dart (~1305 líneas)  
+- Patrón Visitor (ASTVisitor, DefaultASTVisitor, TraversingASTVisitor) para procesamiento del AST  
+- DiagramCodeOptimizer con 4 niveles de optimización y múltiples pasadas iterativas  
+- Técnicas de optimización implementadas: constant folding, eliminación de código muerto, simplificación algebraica  
+- AdvancedCodeGenerator funcional que produce código C99 compilable  
+- Mapeo completo de símbolos ISO 5807 a construcciones C:  
+  - Terminal (Inicio) → int main(void) {  
+  - Terminal (Fin) → return 0; }  
+  - Proceso → declaraciones, asignaciones  
+  - Datos → scanf(), printf()  
+  - Decisión → if-else, switch  
+  - Preparación → for, while, do-while  
+  - Proceso Predefinido → llamadas a función  
+- Generación automática de especificadores de formato según tipo de variable (%d, %f, %lf, %c, %s)  
 - Visor de código integrado al editor con syntax highlighting para C  
-- Suite de 15 casos de prueba validados con compilación automática en GCC/Clang:  
-  - 5 algoritmos básicos secuenciales
-  - 5 algoritmos con condicionales
-  - 5 algoritmos con bucles
-- Documentación del mapeo Diagrama → RI → Código C  
-- Informe técnico del Ciclo 5 documentando el proceso de generación de código
+- Suite de pruebas del generador de código (code_generator_advanced_test.dart)  
+- Informe técnico del Ciclo 5 documentando la arquitectura del AST, optimizador y generador
 
 Alcance del lenguaje objetivo:
 
-- Soportado: Tipos primitivos (int, float, char), E/S estándar (scanf/printf), estructuras de control (if/else, while, for), variables locales, expresiones aritméticas/lógicas/relacionales
-- Excluido del alcance: Punteros, estructuras (struct), memoria dinámica (malloc/free), funciones múltiples, recursión, arrays multidimensionales (estos conceptos exceden las capacidades  de  representación  del  estándar  ISO  5807  y  la  complejidad  de  análisis semántico factible en el plazo del trabajo terminal)
+- Soportado: Tipos primitivos (int, float, double, char, string, bool), E/S estándar (scanf/printf), estructuras de control (if/else, while, for, do-while), variables locales, expresiones aritméticas/lógicas/relacionales, operadores de asignación compuesta  
+- Excluido del alcance: Punteros, estructuras (struct), memoria dinámica (malloc/free), funciones múltiples definidas por usuario, recursión, arrays multidimensionales
 
 Ciclo 6: Integración (Abril - Mayo 2025)
 
-El  sexto  ciclo  integra  todas  las  fases  del  transpilador  en  un  pipeline  completo  y  funcional, implementando el flujo de inicio a fin desde la creación del diagrama hasta la exportación de código compilable. Se realizan optimizaciones de rendimiento y se validan las métricas técnicas establecidas en el protocolo.
+El sexto ciclo integra todas las fases del transpilador en un pipeline completo y funcional, conectando el compilador con el editor visual e implementando el flujo de inicio a fin desde la creación del diagrama hasta la generación de código C compilable. También se desarrolla la suite completa de pruebas de integración.
 
 Objetivos del Ciclo 6:
 
-- Integrar las 5 fases del transpilador en pipeline completo: Análisis Estructural → Análisis Sintáctico → Análisis Semántico → Representación Intermedia → Generación de Código  
-- Implementar flujo completo: crear diagrama → validar → generar código → exportar  
-- Optimizar rendimiento del motor de traducción para diagramas de 50+ nodos  
-- Desarrollar sistema de exportación de código como archivos .c y .txt  
-- Realizar pruebas de integración de inicio a fin con casos reales  
-- Corregir errores críticos identificados durante la integración  
-- Validar métricas técnicas establecidas en el protocolo:  
-  - Precisión del transpilador: ≥95% de diagramas válidos generan código compilable
-  - Sensibilidad de detección de errores: ≥90%
-  - Tiempo de generación de código: <5 segundos para algoritmos de complejidad media
+- Implementar mapeo completo de 6 símbolos ISO 5807 a código C:  
+  - Terminal (Inicio) → int main(void) { ... }  
+  - Terminal (Fin) → return 0; }  
+  - Proceso → declaraciones, asignaciones, expresiones  
+  - Decisión → if/else, switch/case  
+  - Preparación → for, while, do-while  
+  - Datos → printf(), scanf() con especificadores automáticos  
+  - Proceso Predefinido → llamadas a funciones  
+- Soportar símbolos adicionales para documentación visual (conectores, comentarios, documentos)  
+
+Pruebas de Integración (Tema 23):
+
+- Desarrollar suite completa de pruebas del compilador:  
+  - lexical_analyzer_test.dart: 40+ tests para análisis léxico  
+  - syntax_analyzer_test.dart: 84 tests para análisis sintáctico  
+  - semantic_analyzer_test.dart: 43 tests para análisis semántico  
+  - code_generator_advanced_test.dart: 25+ tests para generación de código  
+  - compiler_integration_test.dart: 33 tests de integración end-to-end  
+- Implementar validación de código generado:  
+  - Verificar compilabilidad con GCC  
+  - Validar correctitud funcional del código  
+- Establecer trazabilidad entre casos de uso (CU01-CU10) y pruebas implementadas  
 
 Entregables del Ciclo 6:
 
-- Pipeline completo implementado y funcional con las 5 fases integradas  
-- Sistema de exportación de código como archivos .c (código fuente) y .txt (texto plano)  
-- Interfaz de usuario para controlar el proceso completo de traducción  
-- Suite de pruebas de integración end-to-end con 20 casos reales de uso  
-- Optimizaciones de rendimiento del motor:  
-- Caché de resultados de validación
-- Procesamiento incremental de cambios en el diagrama
-- Optimización de estructuras de datos del grafo
-- Validación de métricas técnicas con reporte detallado:  
+- Pipeline DiagramCompilerPipeline completamente integrado y funcional  
+- Integración UI-Compilador mediante FloatingToolbar con botón de compilación  
+- CompilerResultsDialog con 6 pestañas para visualización de resultados:  
+  - Resumen: métricas generales (nodos, tokens, símbolos, errores, tiempo)  
+  - Léxico: tokens extraídos por nodo  
+  - AST: árbol de sintaxis abstracta generado  
+  - Semántico: tabla de símbolos y errores semánticos  
+  - Optimización: transformaciones aplicadas  
+  - Código: código C generado con syntax highlighting  
+- Sistema de visualización de errores con colores según severidad:  
+  - Fatal (rojo oscuro): detiene compilación  
+  - Error (rojo): impide generar código  
+  - Warning (naranja): código generado con advertencias  
+  - Info (azul): información adicional  
+- Mapeo completo de símbolos ISO 5807 implementado con tabla de correspondencias  
+- Suite de pruebas de integración: 8 archivos, ~4,648 líneas, 240+ tests  
+- Cobertura de 10 casos de uso documentados con trazabilidad a pruebas  
+- Validación de código generado con compilación GCC exitosa  
+- Informe técnico del Ciclo 6 documentando la integración y pruebas
 
-  𝐷𝑖𝑎𝑔𝑟𝑎𝑚𝑎𝑠 𝑣á𝑙𝑖𝑑𝑜𝑠 𝑞𝑢𝑒 𝑔𝑒𝑛𝑒𝑟𝑎𝑛 𝑐ó𝑑𝑖𝑔𝑜 𝑐𝑜𝑚𝑝𝑖𝑙𝑎𝑏𝑙𝑒 𝑃𝑟𝑒𝑐𝑖𝑠𝑖ó𝑛  =      × 100
+Ciclo 7: Pruebas y Documentación (Mayo - Junio 2025)
 
-𝑇𝑜𝑡𝑎𝑙 𝑑𝑖𝑎𝑔𝑟𝑎𝑚𝑎𝑠 𝑣á𝑙𝑖𝑑𝑜𝑠
-
-𝐸𝑟𝑟𝑜𝑟𝑒𝑠 𝑑𝑒𝑡𝑒𝑐𝑡𝑎𝑑𝑜𝑠 𝑐𝑜𝑟𝑟𝑒𝑐𝑡𝑎𝑚𝑒𝑛𝑡𝑒 𝑆𝑒𝑛𝑠𝑖𝑏𝑖𝑙𝑖𝑑𝑎𝑑  =      × 100
-
-𝑇𝑜𝑡𝑎𝑙 𝑒𝑟𝑟𝑜𝑟𝑒𝑠 𝑟𝑒𝑎𝑙𝑒𝑠
-
-- Corrección de errores críticos de integración  
-- Aplicación FlowCode completamente funcional lista para pruebas finales  
-- Informe técnico del Ciclo 6 documentando la integración y métricas alcanzadas
-
-Ciclo 7: Pulimiento y Documentación (Mayo - Junio 2025)
-
-El ciclo final valida exhaustivamente el sistema completo mediante un banco extenso de casos de prueba,  verifica  el  cumplimiento  de  todas  las  métricas  técnicas  y  genera  la  documentación completa del proyecto para la entrega final.
+El último ciclo muestra la validación del sistema completo, documenta los resultados de pruebas funcionales, de rendimiento y robustez, evalúa el cumplimiento de los criterios de éxito establecidos en la metodología espiral, e identifica las limitaciones del sistema.
 
 Objetivos del Ciclo 7:
 
-- Corregir bugs menores identificados
-- Mejorar interfaz de usuario para presentación final
-- Crear manual de usuario básico
-- Preparar documentación técnica del código
-- Crear presentación y demo para defensa
+- Definir criterios de validación técnica objetivos y medibles
+- Ejecutar suite completa de pruebas funcionales del compilador
+- Medir métricas de rendimiento y escalabilidad
+- Validar robustez ante entradas problemáticas
+- Evaluar cumplimiento de criterios de éxito del proyecto
+- Documentar limitaciones identificadas durante la validación
 
 Entregables del Ciclo 7:
 
-- Banco de 100 diagramas de prueba categorizados:  
-- 30 algoritmos básicos (secuenciales, E/S simple)
-- 40 algoritmos con condicionales (if-else simple, anidados, casos múltiples)
-- 30 algoritmos con bucles (while, for, do-while, anidados)
-- Script de automatización que:  
-  - Genera código C para cada diagrama del banco
-  - Compila automáticamente con GCC
-  - Registra éxito/fallo de compilación
-  - Ejecuta código generado con entradas de prueba predefinidas
-  - Genera reporte estadístico de métricas
-- Reporte de validación de métricas técnicas:  
-  - Precisión del transpilador calculada y documentada
-  - Sensibilidad de detección de errores calculada y documentada
-  - Análisis de casos fallidos y mejoras implementadas
-- Manual de usuario con:  
-  - Guía de inicio rápido
-  - Tutorial paso a paso de creación de diagramas
-  - Explicación de mensajes de error
-  - Ejemplos de diagramas comunes (suma, factorial, fibonacci, búsqueda)
-- Documentación técnica que incluye:  
-- Arquitectura completa del sistema en capas
-- Descripción detallada de cada fase del transpilador
-- Diagramas UML: clases, secuencia, componentes, despliegue
-- Especificación de la gramática soportada
-- Especificación de las 14 validaciones E-SYN
-“FlowCode: Aplicación para la conversión de diagramas de flujo a código C estructurado para dispositivos móviles Android”   157 ![](Aspose.Words.f30bd684-d796-49cd-b335-10e30d5b4e53.001.png)![](Aspose.Words.f30bd684-d796-49cd-b335-10e30d5b4e53.002.png)
+- Manual de usuario
+- Documentación técnica

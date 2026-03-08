@@ -17,15 +17,15 @@ Los criterios de validación técnica definen los parámetros objetivos que el c
 
 La corrección funcional evalúa que el compilador traduzca correctamente los diagramas de flujo a código C válido. Los criterios específicos son:
 
-| ID | Criterio | Umbral de Aceptación |
-|----|----------|---------------------|
-| CF-01 | Traducción de nodos terminales | 100% de nodos Inicio/Fin generan main() válido |
-| CF-02 | Traducción de nodos de proceso | Declaraciones y asignaciones sintácticamente correctas |
-| CF-03 | Traducción de nodos de datos | scanf/printf con especificadores de formato apropiados |
-| CF-04 | Traducción de nodos de decisión | Estructuras if/else con condiciones correctamente evaluables |
-| CF-05 | Traducción de nodos de iteración | Bucles while/for/do-while con sintaxis válida |
-| CF-06 | Manejo de expresiones | Operadores aritméticos, lógicos y relacionales correctos |
-| CF-07 | Tabla de símbolos | Propagación correcta de tipos y declaraciones |
+| ID | Criterio | Umbral de Aceptación | Requisito Vinculado |
+|----|----------|---------------------|--------------------|
+| CF-01 | Traducción de nodos terminales | 100% de nodos Inicio/Fin generan main() válido | RF06 |
+| CF-02 | Traducción de nodos de proceso | Declaraciones y asignaciones sintácticamente correctas | RF07, RF08 |
+| CF-03 | Traducción de nodos de datos | scanf/printf con especificadores de formato apropiados | RF09 |
+| CF-04 | Traducción de nodos de decisión | Estructuras if/else con condiciones correctamente evaluables | RF08 |
+| CF-05 | Traducción de nodos de iteración | Bucles while/for/do-while con sintaxis válida | RF08 |
+| CF-06 | Manejo de expresiones | Operadores aritméticos, lógicos y relacionales correctos | RF05, RF08 |
+| CF-07 | Tabla de símbolos | Propagación correcta de tipos y declaraciones | RF-V02, RF-V03 |
 
 El cumplimiento se verifica mediante tests unitarios que comparan el código generado contra patrones esperados y tests de integración que validan flujos completos de compilación.
 
@@ -33,13 +33,13 @@ El cumplimiento se verifica mediante tests unitarios que comparan el código gen
 
 La calidad del código generado se mide por su legibilidad, estructura y compilabilidad. Los criterios establecidos son:
 
-| ID | Criterio | Descripción | Umbral |
-|----|----------|-------------|--------|
-| CG-01 | Compilabilidad | Código compila sin errores con gcc | 100% |
-| CG-02 | Indentación | Código indentado consistentemente | 2 espacios por nivel |
-| CG-03 | Comentarios | Inclusión de comentarios explicativos | Comentario por sección |
-| CG-04 | Includes | Headers estándar incluidos | stdio.h mínimo |
-| CG-05 | Estructura main | Función main con return 0 | Obligatorio |
+| ID | Criterio | Descripción | Umbral | Requisito Vinculado |
+|----|----------|-------------|--------|--------------------|
+| CG-01 | Compilabilidad | Código compila sin errores con gcc | 100% | RNF12 |
+| CG-02 | Indentación | Código indentado consistentemente | 2 espacios por nivel | RF06 |
+| CG-03 | Comentarios | Inclusión de comentarios explicativos | Comentario por sección | RF06 |
+| CG-04 | Includes | Headers estándar incluidos | stdio.h mínimo | RF06 |
+| CG-05 | Estructura main | Función main con return 0 | Obligatorio | RF06 |
 
 El optimizador de código aplica técnicas como constant folding y eliminación de código muerto para mejorar la calidad del código generado sin alterar su semántica.
 
@@ -47,12 +47,12 @@ El optimizador de código aplica técnicas como constant folding y eliminación 
 
 El rendimiento del compilador se evalúa según los tiempos de compilación establecidos en la metodología espiral:
 
-| ID | Criterio | Umbral |
-|----|----------|--------|
-| CR-01 | Tiempo de compilación para diagramas simples (≤10 nodos) | < 1 segundo |
-| CR-02 | Tiempo de compilación para diagramas medios (≤50 nodos) | < 5 segundos |
-| CR-03 | Tiempo de compilación para diagramas complejos (≤100 nodos) | < 10 segundos |
-| CR-04 | Escalabilidad | Complejidad temporal O(n) o mejor |
+| ID | Criterio | Umbral | Requisito Vinculado |
+|----|----------|--------|--------------------|
+| CR-01 | Tiempo de compilación para diagramas simples (≤10 nodos) | < 1 segundo | RNF04 |
+| CR-02 | Tiempo de compilación para diagramas medios (≤50 nodos) | < 5 segundos | RNF04 |
+| CR-03 | Tiempo de compilación para diagramas complejos (≤100 nodos) | < 10 segundos | RNF04 |
+| CR-04 | Escalabilidad | Complejidad temporal O(n) o mejor | RNF04, RNF05 |
 
 Estos criterios garantizan una experiencia de usuario fluida durante la generación de código, permitiendo iteraciones rápidas en el proceso de diseño y compilación.
 
@@ -60,15 +60,15 @@ Estos criterios garantizan una experiencia de usuario fluida durante la generaci
 
 La suite de pruebas debe cubrir todos los componentes del compilador con suficiente profundidad:
 
-| Componente | Archivo de Test | Tests Requeridos |
-|------------|-----------------|------------------|
-| Analizador Léxico | lexical_analyzer_test.dart | Tokenización de todos los tipos de token |
-| Analizador Sintáctico | syntax_analyzer_test.dart | Parsing de todas las construcciones válidas |
-| Analizador Semántico | semantic_analyzer_test.dart | Detección de todos los tipos de error semántico |
-| Optimizador | code_optimizer_test.dart | Todas las optimizaciones implementadas |
-| Generador | code_generator_advanced_test.dart | Generación para cada tipo de nodo |
-| Integración | compiler_integration_test.dart | Flujos end-to-end completos |
-| Rendimiento | compiler_benchmark_test.dart | Benchmarks de escalabilidad y complejidad |
+| Componente | Archivo de Test | Tests Requeridos | Requisitos Vinculados |
+|------------|-----------------|------------------|----------------------|
+| Analizador Léxico | lexical_analyzer_test.dart | Tokenización de todos los tipos de token | RF-V01 |
+| Analizador Sintáctico | syntax_analyzer_test.dart | Parsing de todas las construcciones válidas | RF-V01, RF-V06 |
+| Analizador Semántico | semantic_analyzer_test.dart | Detección de todos los tipos de error semántico | RF-V02, RF-V03, RF-V04, RF-V05 |
+| Optimizador | code_optimizer_test.dart | Todas las optimizaciones implementadas | RF06 |
+| Generador | code_generator_advanced_test.dart | Generación para cada tipo de nodo | RF06, RF07, RF08, RF09 |
+| Integración | compiler_integration_test.dart | Flujos end-to-end completos | RF06, RF-V01 a RF-V07 |
+| Rendimiento | compiler_benchmark_test.dart | Benchmarks de escalabilidad y complejidad | RNF04 |
 
 La cobertura mínima aceptable es del 80% del código de cada componente, priorizando los caminos críticos de la lógica de compilación.
 
@@ -76,15 +76,15 @@ La cobertura mínima aceptable es del 80% del código de cada componente, priori
 
 La robustez evalúa el comportamiento del compilador ante entradas inválidas o casos límite:
 
-| ID | Criterio | Comportamiento Esperado |
-|----|----------|------------------------|
-| RB-01 | Diagrama vacío | Error descriptivo sin crash |
-| RB-02 | Nodo sin conexiones | Advertencia y continuación si es posible |
-| RB-03 | Expresión malformada | Error de sintaxis con ubicación |
-| RB-04 | Variable no declarada | Error semántico con sugerencia |
-| RB-05 | División por cero | Advertencia en tiempo de análisis |
-| RB-06 | Tipos incompatibles | Advertencia de tipo con conversión implícita |
-| RB-07 | Ciclos infinitos potenciales | Detección y advertencia |
+| ID | Criterio | Comportamiento Esperado | Requisito Vinculado |
+|----|----------|------------------------|--------------------|
+| RB-01 | Diagrama vacío | Error descriptivo sin crash | RF-V01, RF-V07 |
+| RB-02 | Nodo sin conexiones | Advertencia y continuación si es posible | RF-V01, RF-V05 |
+| RB-03 | Expresión malformada | Error de sintaxis con ubicación | RF-V07 |
+| RB-04 | Variable no declarada | Error semántico con sugerencia | RF-V02 |
+| RB-05 | División por cero | Advertencia en tiempo de análisis | RF-V03 |
+| RB-06 | Tipos incompatibles | Advertencia de tipo con conversión implícita | RF-V03 |
+| RB-07 | Ciclos infinitos potenciales | Detección y advertencia | RF-V04 |
 
 El compilador debe fallar graciosamente, proporcionando mensajes de error informativos que ayuden al usuario a corregir los problemas en su diagrama.
 
@@ -110,16 +110,16 @@ La validación de corrección funcional se realizó mediante 282 tests unitarios
 
 **Resultados por Componente:**
 
-| Componente | Tests | Aprobados | Porcentaje |
-|------------|------:|----------:|-----------:|
-| Analizador Léxico | 45 | 45 | 100% |
-| Analizador Sintáctico | 92 | 92 | 100% |
-| Analizador Semántico | 38 | 38 | 100% |
-| Optimizador de Código | 42 | 42 | 100% |
-| Generador de Código | 6 | 6 | 100% |
-| Integración ISO 5807 | 42 | 42 | 100% |
-| Benchmarks | 17 | 17 | 100% |
-| **Total** | **282** | **282** | **100%** |
+| Componente | Tests | Aprobados | Porcentaje | Requisitos Verificados |
+|------------|------:|----------:|-----------:|----------------------|
+| Analizador Léxico | 45 | 45 | 100% | RF-V01 |
+| Analizador Sintáctico | 92 | 92 | 100% | RF-V01, RF-V06 |
+| Analizador Semántico | 38 | 38 | 100% | RF-V02, RF-V03, RF-V04, RF-V05 |
+| Optimizador de Código | 42 | 42 | 100% | RF06 |
+| Generador de Código | 6 | 6 | 100% | RF06, RF07, RF08, RF09 |
+| Integración ISO 5807 | 42 | 42 | 100% | RF02, RF06, RF08 |
+| Benchmarks | 17 | 17 | 100% | RNF04 |
+| **Total** | **282** | **282** | **100%** | — |
 
 **Detalle de Tests por Categoría:**
 
@@ -135,13 +135,13 @@ Las pruebas de integración verifican el flujo completo del pipeline end-to-end,
 
 La calidad del código generado se evaluó mediante inspección de los resultados de compilación y análisis de patrones:
 
-| Aspecto | Resultado | Verificación |
-|---------|-----------|--------------|
-| Compilabilidad con gcc | ✅ Verificado | Código generado compila sin errores |
-| Estructura main() correcta | ✅ Verificado | Todos incluyen int main() y return 0 |
-| Headers incluidos | ✅ Verificado | stdio.h presente en todos los casos |
-| Indentación consistente | ✅ Verificado | 2 espacios por nivel de anidación |
-| Especificadores de formato | ✅ Verificado | %d, %f, %s, %c según tipo de dato |
+| Aspecto | Resultado | Verificación | Requisito Vinculado |
+|---------|-----------|--------------|--------------------|
+| Compilabilidad con gcc | ✅ Verificado | Código generado compila sin errores | RNF12 |
+| Estructura main() correcta | ✅ Verificado | Todos incluyen int main() y return 0 | RF06 |
+| Headers incluidos | ✅ Verificado | stdio.h presente en todos los casos | RF06 |
+| Indentación consistente | ✅ Verificado | 2 espacios por nivel de anidación | RF06 |
+| Especificadores de formato | ✅ Verificado | %d, %f, %s, %c según tipo de dato | RF07, RF09 |
 
 **Ejemplo de Código Generado (Plantilla P02):**
 
@@ -197,17 +197,17 @@ Las pruebas de robustez validan el comportamiento del compilador ante entradas p
 
 **Matriz de Resultados de Robustez:**
 
-| Escenario | Comportamiento | Mensaje | Resultado |
-|-----------|---------------|---------|-----------|
-| Variable no declarada en proceso | Error semántico | "Variable 'x' no declarada" | ✅ Detectado |
-| Variable no declarada en decisión | Error semántico | "Variable 'x' no declarada" | ✅ Detectado |
-| Variable no declarada en entrada | Error semántico | "Variable 'x' no declarada" | ✅ Detectado |
-| Variable no declarada en salida | Error semántico | "Variable 'x' no declarada" | ✅ Detectado |
-| Declaración duplicada | Error semántico | "Variable 'x' ya declarada" | ✅ Detectado |
-| División por cero literal | Advertencia | "División por cero detectada" | ✅ Detectado |
-| Módulo por cero literal | Advertencia | "Módulo por cero detectado" | ✅ Detectado |
-| Variable no utilizada | Advertencia | "Variable 'x' declarada pero no utilizada" | ✅ Detectado |
-| Incompatibilidad de tipos | Advertencia | "Asignación de tipo incompatible" | ✅ Detectado |
+| Escenario | Comportamiento | Mensaje | Resultado | Requisito Vinculado |
+|-----------|---------------|---------|-----------|--------------------|
+| Variable no declarada en proceso | Error semántico | "Variable 'x' no declarada" | ✅ Detectado | RF-V02 |
+| Variable no declarada en decisión | Error semántico | "Variable 'x' no declarada" | ✅ Detectado | RF-V02 |
+| Variable no declarada en entrada | Error semántico | "Variable 'x' no declarada" | ✅ Detectado | RF-V02 |
+| Variable no declarada en salida | Error semántico | "Variable 'x' no declarada" | ✅ Detectado | RF-V02 |
+| Declaración duplicada | Error semántico | "Variable 'x' ya declarada" | ✅ Detectado | RF-V02 |
+| División por cero literal | Advertencia | "División por cero detectada" | ✅ Detectado | RF-V03 |
+| Módulo por cero literal | Advertencia | "Módulo por cero detectado" | ✅ Detectado | RF-V03 |
+| Variable no utilizada | Advertencia | "Variable 'x' declarada pero no utilizada" | ✅ Detectado | RF-V02 |
+| Incompatibilidad de tipos | Advertencia | "Asignación de tipo incompatible" | ✅ Detectado | RF-V03 |
 
 El sistema de errores clasifica los mensajes por severidad (error, advertencia, información) y proporciona ubicación precisa del problema para facilitar la corrección por parte del usuario.
 
@@ -225,24 +225,24 @@ Esta sección evalúa el cumplimiento global de los criterios establecidos para 
 
 **Matriz de Cumplimiento:**
 
-| Criterio | Umbral | Resultado | Estado |
-|----------|--------|-----------|--------|
-| Tests de Corrección Funcional | ≥ 95% aprobados | 100% (282/282) | ✅ Cumplido |
-| Compilabilidad de código generado | 100% | 100% | ✅ Cumplido |
-| Tiempo de compilación medio | < 5,000 ms | 0.80 ms | ✅ Cumplido |
-| Escalabilidad | O(n) | O(n) verificado | ✅ Cumplido |
-| Detección de errores semánticos | 100% categorías | 9/9 categorías | ✅ Cumplido |
-| Cobertura de tipos de nodo | 6 tipos ISO 5807 | 6 tipos | ✅ Cumplido |
+| Criterio | Umbral | Resultado | Estado | Requisitos Vinculados |
+|----------|--------|-----------|--------|----------------------|
+| Tests de Corrección Funcional | ≥ 95% aprobados | 100% (282/282) | ✅ Cumplido | RF06, RF07, RF08, RF09 |
+| Compilabilidad de código generado | 100% | 100% | ✅ Cumplido | RNF12 |
+| Tiempo de compilación medio | < 5,000 ms | 0.80 ms | ✅ Cumplido | RNF04 |
+| Escalabilidad | O(n) | O(n) verificado | ✅ Cumplido | RNF04, RNF05 |
+| Detección de errores semánticos | 100% categorías | 9/9 categorías | ✅ Cumplido | RF-V02, RF-V03, RF-V04, RF-V05 |
+| Cobertura de tipos de nodo | 6 tipos ISO 5807 | 6 tipos | ✅ Cumplido | RF02 |
 
 **Resumen de Cumplimiento por Área:**
 
-| Área | Criterios Evaluados | Cumplidos | Porcentaje |
-|------|--------------------:|----------:|-----------:|
-| Corrección Funcional | 7 | 7 | 100% |
-| Calidad de Código | 5 | 5 | 100% |
-| Rendimiento | 4 | 4 | 100% |
-| Robustez | 7 | 7 | 100% |
-| **Total** | **23** | **23** | **100%** |
+| Área | Criterios Evaluados | Cumplidos | Porcentaje | Requisitos Cubiertos |
+|------|--------------------:|----------:|-----------:|---------------------|
+| Corrección Funcional | 7 | 7 | 100% | RF02, RF05, RF06, RF07, RF08, RF09, RF-V02, RF-V03 |
+| Calidad de Código | 5 | 5 | 100% | RF06, RNF12 |
+| Rendimiento | 4 | 4 | 100% | RNF04, RNF05 |
+| Robustez | 7 | 7 | 100% | RF-V01 a RF-V07 |
+| **Total** | **23** | **23** | **100%** | — |
 
 El proyecto cumple todos los criterios de éxito establecidos. La siguiente tabla resume los indicadores clave de rendimiento (KPIs) del compilador:
 
@@ -267,26 +267,26 @@ Durante el proceso de validación se identificaron las siguientes limitaciones d
 
 **Limitaciones Funcionales:**
 
-| ID | Limitación | Impacto | Mitigación |
-|----|-----------|---------|-----------|
-| LF-01 | No soporta funciones definidas por usuario | Medio | Subprocesos como abstracción alternativa |
-| LF-02 | Arrays limitados a una dimensión | Bajo | Documentar como restricción conocida |
-| LF-03 | No soporta estructuras (struct) | Medio | Fuera del alcance para fundamentos |
-| LF-04 | Tipos de datos limitados a int, float, char, string | Bajo | Suficiente para el temario objetivo |
+| ID | Limitación | Impacto | Mitigación | Requisito Relacionado |
+|----|-----------|---------|-----------|-----------------------|
+| LF-01 | No soporta funciones definidas por usuario | Medio | Subprocesos como abstracción alternativa | RF08 (alcance limitado) |
+| LF-02 | Arrays limitados a una dimensión | Bajo | Documentar como restricción conocida | RF07 (alcance limitado) |
+| LF-03 | No soporta estructuras (struct) | Medio | Fuera del alcance para fundamentos | RF07 (fuera de alcance) |
+| LF-04 | Tipos de datos limitados a int, float, char, string | Bajo | Suficiente para el temario objetivo | RF07 |
 
 **Limitaciones de Rendimiento:**
 
-| ID | Limitación | Impacto | Mitigación |
-|----|-----------|---------|-----------|
-| LP-01 | Diagramas >100 nodos no testeados extensivamente | Bajo | Escenario poco común en práctica |
-| LP-02 | Optimizaciones limitadas sin patrones complejos | Bajo | Funcionalidad correcta garantizada |
+| ID | Limitación | Impacto | Mitigación | Requisito Relacionado |
+|----|-----------|---------|-----------|-----------------------|
+| LP-01 | Diagramas >100 nodos no testeados extensivamente | Bajo | Escenario poco común en práctica | RNF04 |
+| LP-02 | Optimizaciones limitadas sin patrones complejos | Bajo | Funcionalidad correcta garantizada | RNF04 |
 
 **Limitaciones de Plataforma:**
 
-| ID | Limitación | Impacto | Mitigación |
-|----|-----------|---------|-----------|
-| LPL-01 | Código generado exclusivamente en C | Medio | Alcance definido del proyecto |
-| LPL-02 | Compilación cruzada no soportada | Bajo | Fuera del alcance |
+| ID | Limitación | Impacto | Mitigación | Requisito Relacionado |
+|----|-----------|---------|-----------|-----------------------|
+| LPL-01 | Código generado exclusivamente en C | Medio | Alcance definido del proyecto | RNF12 |
+| LPL-02 | Compilación cruzada no soportada | Bajo | Fuera del alcance | RNF12 (fuera de alcance) |
 
 **Recomendaciones para Trabajo Futuro:**
 
@@ -320,12 +320,12 @@ Todos los 282 tests del compilador pasaron exitosamente, validando la correcció
 
 ## Archivos de Test del Compilador
 
-| Archivo | Propósito | Tests |
-|---------|-----------|------:|
-| lexical_analyzer_test.dart | Tokenización y análisis léxico | ~45 |
-| syntax_analyzer_test.dart | Parsing y construcción de AST | ~92 |
-| semantic_analyzer_test.dart | Análisis semántico y detección de errores | ~38 |
-| code_optimizer_test.dart | Optimizaciones de código | ~42 |
-| code_generator_advanced_test.dart | Generación de código C | ~6 |
-| compiler_integration_test.dart | Tests end-to-end ISO 5807 | ~42 |
-| compiler_benchmark_test.dart | Benchmarks de rendimiento | 17 |
+| Archivo | Propósito | Tests | Requisitos Verificados |
+|---------|-----------|------:|----------------------|
+| lexical_analyzer_test.dart | Tokenización y análisis léxico | ~45 | RF-V01 |
+| syntax_analyzer_test.dart | Parsing y construcción de AST | ~92 | RF-V01, RF-V06 |
+| semantic_analyzer_test.dart | Análisis semántico y detección de errores | ~38 | RF-V02 a RF-V05, RF-V07 |
+| code_optimizer_test.dart | Optimizaciones de código | ~42 | RF06, RNF09 |
+| code_generator_advanced_test.dart | Generación de código C | ~6 | RF06, RF07, RF08, RF09 |
+| compiler_integration_test.dart | Tests end-to-end ISO 5807 | ~42 | RF02, RF06, RF08 |
+| compiler_benchmark_test.dart | Benchmarks de rendimiento | 17 | RNF04 |
