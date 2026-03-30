@@ -69,7 +69,7 @@ class TutorialService {
   TutorialPage _getWelcomeTutorial() {
     return TutorialPage(
       id: 'welcome',
-      title: '¡Bienvenido a FlowDiagram App!',
+      title: '¡Bienvenido a FlowCode!',
       subtitle: 'Aprende a crear algoritmos de forma visual',
       category: TutorialCategory.welcome,
       estimatedMinutes: 3,

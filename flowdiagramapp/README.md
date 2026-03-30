@@ -1,6 +1,8 @@
 # FlowCode: Aplicación Android para traducción automática de Diagramas de Flujo a Código C estructurado con validación integrada
 
-Una aplicación móvil Flutter que permite a los usuarios diseñar algoritmos mediante diagramas de flujo y traducirlos automáticamente a código en lenguaje C.
+![Icono de FlowCode](docs/AppIcons/banner_1.png)
+
+Una aplicación móvil Android Flutter que permite a los usuarios diseñar algoritmos mediante diagramas de flujo y traducirlos automáticamente a código en lenguaje C.
 
 ---
 
@@ -135,7 +137,7 @@ class CompilerMetrics {
 
 ## 📋 Descripción
 
-FlowDiagram App es un editor visual intuitivo que permite crear diagramas de flujo de forma sencilla y generar código C funcional automáticamente. La aplicación incluye plantillas predefinidas, validación de estructura lógica y un sistema de almacenamiento local para guardar y cargar diagramas.
+FlowCode (ante llamada FlowDiagram App) es un editor visual intuitivo que permite crear diagramas de flujo de forma sencilla y generar código C funcional automáticamente. La aplicación incluye plantillas predefinidas, validación de estructura lógica y un sistema de almacenamiento local para guardar y cargar diagramas.
 
 ## ✨ Funcionalidades Implementadas
 
@@ -241,11 +243,8 @@ FlowDiagram App es un editor visual intuitivo que permite crear diagramas de flu
   - Captura completa del canvas visible
   - Respeto por temas claro/oscuro
 
-## Funcionalidades en Desarrollo
-
 ### 🎓 Sistema de Ejercicios de Comprensión
 
-- **Ejercicios interactivos** diseñados según el **Nivel 2 de la Taxonomía de Bloom (Comprensión)**
 - **5 categorías de ejercicios**:
   - Símbolos Básicos: Aprende los símbolos fundamentales
   - Estructuras de Control: Decisiones y bucles
@@ -253,47 +252,10 @@ FlowDiagram App es un editor visual intuitivo que permite crear diagramas de flu
   - Conexiones: Flujo lógico del diagrama
   - Avanzado: Conectores y subprocesos
 
-- **Tipos de ejercicios variados**:
-  - Selección múltiple: Identificar símbolos y conceptos
-  - Verdadero o Falso: Distinguir afirmaciones correctas
-  - Relacionar: Comparar símbolos con sus funciones
-  - Ordenamiento: Organizar pasos de algoritmos
-
-- **Características del sistema**:
-  - Interfaz atractiva con animaciones y transiciones suaves
-  - Sistema de puntuación y progreso por categoría
-  - Retroalimentación inmediata con explicaciones detalladas
-  - Animaciones de celebración para respuestas correctas (confeti)
-  - Seguimiento de tiempo de resolución y precisión
-  - Vista previa visual de símbolos de diagramas de flujo
-
-- **Habilidades de comprensión evaluadas**:
-  - ✓ Identificar símbolos y su función
-  - ✓ Distinguir entre diferentes operaciones
-  - ✓ Comparar soluciones algorítmicas
-  - ✓ Explicar el flujo de ejecución
-
-- **Integración con métricas**: Los resultados se almacenan localmente para evaluar:
-  - Tasa de éxito en ejercicios (% de ejercicios completados correctamente)
-  - Tiempo promedio de resolución por categoría
-  - Precisión en las respuestas
-
 - **Acceso**: Botón dedicado "Ejercicios" en la pantalla principal junto a "Crear nuevo diagrama"
 
 ### 📚 Sistema de Tutoriales Integrado
 
-- **Tutoriales interactivos** con animaciones y diseño atractivo para cada tipo de nodo
-- **Pantalla de bienvenida** para usuarios nuevos con introducción animada
-- **16 tutoriales completos** organizados por categorías:
-  - Bienvenida y conceptos básicos
-  - Tutoriales específicos para cada símbolo de diagrama de flujo
-  - Conexiones, validación y generación de código
-- **Nivel de Comprensión (Taxonomía de Bloom)**: Los tutoriales están diseñados para que los usuarios puedan:
-  - Identificar símbolos y su función
-  - Distinguir entre diferentes operaciones
-  - Comparar soluciones algorítmicas
-  - Explicar el flujo de ejecución
-- **Seguimiento de progreso**: SharedPreferences para guardar tutoriales completados
 - **Acceso desde múltiples pantallas**: Botón de tutoriales en login y pantalla principal
 - Ver documentación completa en [TUTORIAL_SYSTEM_README.md](TUTORIAL_SYSTEM_README.md)
 

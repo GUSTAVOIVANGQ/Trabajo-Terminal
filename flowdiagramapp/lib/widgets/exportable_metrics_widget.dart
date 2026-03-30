@@ -42,7 +42,7 @@ class ExportableMetricsWidget extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'FlowDiagram App - Reporte de Métricas',
+          'FlowCode - Reporte de Métricas',
           style: const TextStyle(
             fontSize: 24,
             fontWeight: FontWeight.bold,
@@ -343,7 +343,7 @@ class ExportableMetricsWidget extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(
-            'FlowDiagram App - Panel Administrativo',
+            'FlowCode - Panel Administrativo',
             style: TextStyle(
               fontSize: 12,
               color: Colors.grey[600],

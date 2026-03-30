@@ -15,6 +15,7 @@ dependencies:
   sqflite: ^2.3.0
   path: ^1.8.3
   path_provider: ^2.1.1
+  image_picker: ^1.1.2
   provider: ^6.1.1
   intl: ^0.18.1  # Firebase dependencies
   firebase_core: ^2.32.0
@@ -31,7 +32,9 @@ dependencies:
   image: ^4.1.7
   permission_handler: ^11.3.0
   device_info_plus: ^10.1.0  # Para detectar versión de Android
+  package_info_plus: ^6.0.0
   saver_gallery: ^3.0.6  # Para guardar imágenes en la galería/descargas
+  url_launcher: ^6.3.0
   
   # Los iconos de la aplicación
   cupertino_icons: ^1.0.2
@@ -41,6 +44,7 @@ dev_dependencies:
     sdk: flutter
 
   flutter_lints: ^2.0.0
+  flutter_launcher_icons: ^0.14.4
 
 flutter:
   uses-material-design: true
@@ -48,3 +52,10 @@ flutter:
   # Para agregar activos a tu aplicación, añade una sección de activos, como esta:
   assets:
     - assets/templates/
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path_android: "docs/AppIcons/playstore.png"
+  image_path_ios: "docs/AppIcons/appstore.png"
+  remove_alpha_ios: true

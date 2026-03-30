@@ -24,9 +24,9 @@ class _WelcomeScreenState extends State<WelcomeScreen>
   final List<WelcomePageData> _pages = [
     WelcomePageData(
       icon: Icons.account_tree,
-      title: '¡Bienvenido a FlowDiagram App!',
+      title: '¡Bienvenido a FlowCode!',
       description:
-          'Aprende a crear algoritmos de forma visual usando diagramas de flujo estándar.',
+          'Crea algoritmos de forma visual usando diagramas de flujo estándar.',
       color: Colors.blue,
       features: [
         'Editor visual intuitivo',
@@ -43,31 +43,31 @@ class _WelcomeScreenState extends State<WelcomeScreen>
       features: [
         'Generación automática de código',
         'Código listo para compilar',
-        'Aprende la relación diagrama-código',
+        'Traducción directa de diagrama a código',
       ],
     ),
     WelcomePageData(
-      icon: Icons.school,
-      title: 'Aprende Programación',
+      icon: Icons.verified_user_outlined,
+      title: 'Valida tus Diagramas',
       description:
-          'Comprende los conceptos básicos de programación de manera visual e intuitiva.',
+          'Asegura la integridad estructural y lógica de tus algoritmos antes de generar el código.',
       color: Colors.purple,
       features: [
-        'Nivel: Comprensión (Taxonomía de Bloom)',
-        'Identifica y distingue conceptos',
-        'Compara diferentes soluciones',
+        'Detección de errores y advertencias',
+        'Validación de nodos y conexiones',
+        'Garantiza un código funcional',
       ],
     ),
     WelcomePageData(
       icon: Icons.check_circle_outline,
       title: '¡Comencemos!',
       description:
-          'Explora los tutoriales para aprender cada símbolo y comenzar a crear tus propios algoritmos.',
+          'Consulta las guías y plantillas para comenzar a crear tus propios algoritmos rápidamente.',
       color: Colors.orange,
       features: [
-        'Tutoriales interactivos',
-        'Plantillas para comenzar',
-        'Aprende a tu ritmo',
+        'Guías interactivas',
+        'Plantillas de inicio',
+        'Explora a tu ritmo',
       ],
     ),
   ];

@@ -4,7 +4,7 @@
 
 | Actor   | Descripción                                                                                          | Rol Principal                          |
 |---------|------------------------------------------------------------------------------------------------------|----------------------------------------|
-| Usuario | Usuario (estudiante, desarrollador) principal que utiliza la aplicación para aprender y practicar programación | Crear y editar diagramas, generar código |
+| Usuario | Usuario (desarrollador) principal que utiliza la aplicación para diseñar algoritmos y generar código C | Crear y editar diagramas, generar código |
 
 ---
 
@@ -83,10 +83,21 @@
 |-----------------|------------------------------------------------------------------------------|
 | ID              | CU04                                                                         |
 | Nombre          | Validar Estructura del Diagrama                                              |
-| Actor Principal | Sistema (automático)                                                         |
-| Objetivo        | Verificar que la estructura cumple con reglas de diagramas de flujo           |
+| Actor Principal | Usuario                                                                      |
+| Objetivo        | Validar que la estructura del diagrama sea correcta antes de generar código   |
 | Precondiciones  | Diagrama con al menos un elemento · Motor de validación inicializado         |
 | Postcondiciones | Estado de validación actualizado · Elementos problemáticos identificados · Generador de código informado |
+
+---
+
+## Tabla 40a Flujos Alternativos - CU04
+
+| Escenario                        | Condición                                      | Acción del Sistema                                                |
+|----------------------------------|-------------------------------------------------|-------------------------------------------------------------------|
+| FA1: Sin nodo de inicio          | Diagrama no contiene símbolo de inicio          | Muestra error indicando la ausencia de nodo de inicio             |
+| FA2: Sin nodo de fin             | Diagrama no contiene símbolo de fin             | Muestra error indicando la ausencia de nodo de fin                |
+| FA3: Nodos desconectados         | Existen elementos sin conexión al flujo principal | Resalta nodos desconectados y sugiere conectarlos o eliminarlos |
+| FA4: Ciclo infinito detectado    | Validación detecta un ciclo sin condición de salida | Muestra advertencia indicando posible ciclo infinito           |
 
 ---
 
@@ -96,8 +107,8 @@
 |-----------------|------------------------------------------------------------------------------|
 | ID              | CU05                                                                         |
 | Nombre          | Realizar Análisis Semántico                                                  |
-| Actor Principal | Sistema (automático)                                                         |
-| Objetivo        | Verificar consistencia de variables, tipos y lógica de programación          |
+| Actor Principal | Usuario                                                                      |
+| Objetivo        | Validar la consistencia semántica de variables y tipos declarados en el diagrama |
 | Precondiciones  | Validación estructural aprobada · Al menos un elemento con contenido semántico |
 | Postcondiciones | Tabla de símbolos actualizada · Errores semánticos identificados · Información lista para generador de código |
 
@@ -166,7 +177,7 @@
 | ID              | CU08                                                                         |
 | Nombre          | Organizar Proyectos en Carpetas                                              |
 | Actor Principal | Usuario                                                                      |
-| Objetivo        | Facilitar gestión mediante estructura jerárquica de carpetas                  |
+| Objetivo        | Organizar los proyectos guardados mediante la creación y gestión de carpetas  |
 | Precondiciones  | Al menos un proyecto guardado · Sistema de archivos permite directorios      |
 | Postcondiciones | Proyectos organizados según estructura definida · Referencias mantenidas correctamente |
 
@@ -182,16 +193,16 @@
 
 ---
 
-## Tabla 48 CU09 - Registrar Cuenta de Usuario
+## Tabla 48 CU09 - Registrar Cuenta de Usuario (Opcional)
 
-| Elemento           | Descripción                                                                  |
-|--------------------|------------------------------------------------------------------------------|
-| ID                 | CU09                                                                         |
-| Nombre             | Registrar Cuenta de Usuario                                                  |
-| Actor Principal    | Usuario no registrado                                                        |
-| Actores Secundarios | Firebase Authentication                                                     |
-| Precondiciones     | App instalada en dispositivo Android · Conexión a internet activa · Usuario operando en modo invitado |
-| Postcondiciones    | Cuenta creada exitosamente en Firebase · Usuario autenticado automáticamente · Acceso habilitado a funcionalidad de sincronización |
+| Elemento        | Descripción                                                                  |
+|-----------------|------------------------------------------------------------------------------|
+| ID              | CU09                                                                         |
+| Nombre          | Registrar Cuenta de Usuario                                                  |
+| Actor Principal | Usuario                                                                      |
+| Objetivo        | Crear una cuenta para habilitar la funcionalidad de sincronización en la nube |
+| Precondiciones  | App instalada en dispositivo Android · Conexión a internet activa · Usuario operando en modo invitado (sin cuenta registrada) |
+| Postcondiciones | Cuenta creada exitosamente en Firebase · Usuario autenticado automáticamente · Acceso habilitado a funcionalidad de sincronización |
 
 ---
 
@@ -210,14 +221,14 @@
 
 ---
 
-## Tabla 50 CU10 - Sincronizar Proyectos a la Nube
+## Tabla 50 CU10 - Sincronizar Proyectos a la Nube (Opcional)
 
 | Elemento        | Descripción                                                                                                                                   |
 |-----------------|-----------------------------------------------------------------------------------------------------------------------------------------------|
 | ID              | CU10                                                                                                                                          |
 | Nombre          | Sincronizar Proyectos a la Nube                                                                                                               |
-| Actor Principal | Usuario registrado                                                                                                                            |
-| Objetivo        | Permite a un usuario registrado sincronizar sus proyectos locales a Firebase Firestore para acceder a ellos desde otros dispositivos o como respaldo en la nube. |
+| Actor Principal | Usuario                                                                                                                                       |
+| Objetivo        | Sincronizar los proyectos locales a Firebase Firestore para acceder a ellos desde otros dispositivos o como respaldo en la nube                |
 | Precondiciones  | Usuario autenticado en Firebase · Conexión a internet activa · Al menos un proyecto guardado localmente                                        |
 | Postcondiciones | Proyectos sincronizados en Firestore · Proyectos marcados como "Sincronizado ✓" · Timestamp de última sincronización actualizado              |
 
@@ -235,3 +246,7 @@
 | FA6 | Conflicto de versión (proyecto modificado en otro dispositivo) | Muestra diálogo: "Este proyecto fue modificado en otro dispositivo" · Opciones: "Conservar versión local", "Descargar versión en nube", "Ver diferencias" |
 | FA7 | Usuario cancela sincronización                         | Sistema detiene proceso · Proyectos ya sincronizados conservan estado                                                            |
 | FA8 | Token JWT expirado                                     | Sistema refresca token automáticamente · Si falla: solicita reautenticación                                                      |
+
+---
+
+> **Nota:** Los casos de uso CU09 (Registrar Cuenta de Usuario) y CU10 (Sincronizar Proyectos a la Nube) representan funcionalidad **opcional** que complementa las capacidades principales de la aplicación. Estas funcionalidades no se encuentran contempladas dentro de los objetivos específicos definidos en el protocolo del trabajo terminal, sino que extienden la experiencia del usuario al ofrecer respaldo y acceso multidispositivo mediante servicios en la nube. La aplicación es completamente funcional sin estas características, operando de forma local.

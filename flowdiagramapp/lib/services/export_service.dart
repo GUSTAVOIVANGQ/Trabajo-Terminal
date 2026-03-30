@@ -230,7 +230,7 @@ class ExportService {
       crossAxisAlignment: pw.CrossAxisAlignment.start,
       children: [
         pw.Text(
-          'FlowDiagram App - Reporte de Métricas Administrativas',
+          'FlowCode - Reporte de Métricas Administrativas',
           style: pw.TextStyle(
             fontSize: 20,
             fontWeight: pw.FontWeight.bold,

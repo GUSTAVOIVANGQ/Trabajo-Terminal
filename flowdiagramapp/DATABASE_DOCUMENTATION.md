@@ -30,7 +30,7 @@ FlowDiagram App utiliza una arquitectura de base de datos híbrida que combina *
 ### Ubicación
 - **Archivo**: `flowdiagram.db`
 - **Ruta**: `[Application Documents Directory]/flowdiagram.db`
-- **Versión**: 1
+- **Versión**: 3
 - **Servicio**: `DatabaseService` (`lib/services/database_service.dart`)
 
 ### Tabla: `diagrams`
@@ -48,7 +48,8 @@ CREATE TABLE diagrams(
   updated_at TEXT NOT NULL,
   nodes_data TEXT NOT NULL,
   connections_data TEXT NOT NULL,
-  is_template INTEGER NOT NULL DEFAULT 0
+  is_template INTEGER NOT NULL DEFAULT 0,
+  user_id TEXT
 );
 ```
 
@@ -64,6 +65,7 @@ CREATE TABLE diagrams(
 | `nodes_data` | TEXT | NOT NULL | JSON serializado con información de nodos |
 | `connections_data` | TEXT | NOT NULL | JSON serializado con información de conexiones |
 | `is_template` | INTEGER | NOT NULL, DEFAULT 0 | Indica si es plantilla (1) o diagrama de usuario (0) |
+| `user_id` | TEXT | NULL | ID del usuario propietario del diagrama (agregado en migración v3) |
 
 #### Estructura de `nodes_data` (JSON)
 
@@ -74,14 +76,16 @@ CREATE TABLE diagrams(
     "type": "start",
     "x": 250.0,
     "y": 50.0,
-    "text": "Inicio"
+    "text": "Inicio",
+    "metadata": {}
   },
   {
     "id": "process_1234567890_2",
     "type": "process",
     "x": 250.0,
     "y": 150.0,
-    "text": "resultado = a + b"
+    "text": "resultado = a + b",
+    "metadata": {}
   }
 ]
 ```
@@ -92,6 +96,7 @@ CREATE TABLE diagrams(
 - `x`: Coordenada X en el canvas
 - `y`: Coordenada Y en el canvas
 - `text`: Texto descriptivo del nodo
+- `metadata`: Mapa de metadatos adicionales del nodo (puede contener información específica según el tipo de nodo)
 
 #### Estructura de `connections_data` (JSON)
 
@@ -117,36 +122,41 @@ CREATE TABLE diagrams(
 
 #### Plantillas Predefinidas
 
-Al crear la base de datos, se inicializan 6 plantillas predefinidas. Además, el sistema verifica automáticamente cada vez que se abre la base de datos si faltan plantillas y las carga dinámicamente:
+Al crear la base de datos, se inicializan **20 plantillas educativas** basadas en el temario de Fundamentos de Programación. Las plantillas están organizadas por nivel de dificultad y unidad temática. El sistema verifica automáticamente cada vez que se abre la base de datos si faltan plantillas y las carga dinámicamente. Las plantillas antiguas (4 originales) son eliminadas automáticamente y reemplazadas por las nuevas.
 
-1. **Suma de dos números**
-   - Nodos: Inicio, 2 Entradas, Proceso (suma), Salida, Fin
-   - Descripción: "Plantilla para sumar dos números ingresados por el usuario"
+**UNIDAD I - Nivel 1: Básico - Secuencia**
+1. **01. Hola Mundo**
+2. **02. Declaración y Tipos de Datos**
+3. **03. Calculadora Básica**
+4. **04. Conversión de Temperatura**
 
-2. **Verificación par/impar**
-   - Nodos: Inicio, Entrada, Decisión (módulo 2), 2 Salidas, Fin
-   - Descripción: "Plantilla para verificar si un número es par o impar"
+**UNIDAD I - Nivel 2: Decisiones - Selección**
+5. **05. Par o Impar**
+6. **06. Mayor de Tres Números**
+7. **07. Calculadora con Menú**
+8. **08. Clasificación de Triángulos**
 
-3. **Contador con bucle while**
-   - Nodos: Inicio, Variable, Entrada, Bucle (while), Salida, Proceso (incremento), Salida final, Fin
-   - Descripción: "Plantilla que demuestra el uso de un bucle while para contar números"
+**UNIDAD I - Nivel 3: Iteración - Bucles**
+9. **09. Contador While**
+10. **10. Validación de Entrada (Do-While)**
+11. **11. Tabla de Multiplicar (For)**
+12. **12. Factorial Iterativo**
 
-4. **Menú de opciones con conectores** (NUEVO)
-   - Nodos: Inicio, Entrada, múltiples Decisiones, Conectores de entrada/salida, Salidas, Fin
-   - Descripción: "Plantilla que demuestra el uso de conectores para organizar flujos complejos y evitar cruces de líneas"
-   - **Símbolo demostrado**: Conector (fuera de página)
+**UNIDAD I - Nivel 4: Arreglos**
+13. **13. Suma de Arreglo**
+14. **14. Búsqueda Secuencial**
+15. **15. Ordenamiento Burbuja**
+16. **16. Ordenamiento Selección**
 
-5. **Promedio con comentarios** (NUEVO)
-   - Nodos: Inicio, Variable, múltiples Entradas, Procesos, Comentarios explicativos, Salida, Fin
-   - Descripción: "Plantilla que demuestra el uso de comentarios para documentar y explicar el diagrama de flujo"
-   - **Símbolo demostrado**: Comentario (nota explicativa)
+**UNIDAD II - Nivel 5: Funciones y Apuntadores**
+17. **17. Función Suma**
+18. **18. Función Factorial**
+19. **19. Intercambio (Swap)**
+20. **20. Apuntadores y Arreglos**
 
-6. **Factorial con subprocesos** (NUEVO)
-   - Nodos: Inicio, Entrada, Decisión, Subprocesos (validación, cálculo, formato), Salida, Fin
-   - Descripción: "Plantilla que demuestra el uso de subprocesos para modularizar operaciones complejas como validación, cálculo y formato"
-   - **Símbolo demostrado**: Subproceso (función/procedimiento)
+Las definiciones de las plantillas se encuentran en `lib/services/template_definitions.dart` (clase `TemplateDefinitions`).
 
-**Nota importante**: El sistema implementa una verificación automática de plantillas mediante el método `_ensureTemplatesExist()` que se ejecuta cada vez que se abre la base de datos. Esto garantiza que todas las plantillas estén disponibles incluso si la base de datos fue creada con una versión anterior que tenía menos plantillas.
+**Nota importante**: El sistema implementa una verificación automática de plantillas mediante el método `_ensureTemplatesExist()` que se ejecuta cada vez que se abre la base de datos. Esto garantiza que todas las 20 plantillas estén disponibles incluso si la base de datos fue creada con una versión anterior. Las plantillas antiguas (`Suma de dos números`, `Verificación par/impar`, `Contador con bucle while`, `Factorial con subprocesos`) son detectadas y eliminadas automáticamente durante la migración.
 
 #### Operaciones CRUD
 
@@ -154,10 +164,13 @@ Al crear la base de datos, se inicializan 6 plantillas predefinidas. Además, el
 |-----------|--------|-------------|
 | CREATE | `saveDiagram(SavedDiagram)` | Guarda un nuevo diagrama |
 | READ | `getDiagram(int id)` | Obtiene un diagrama por ID |
-| READ ALL | `getAllDiagrams({includeTemplates})` | Obtiene todos los diagramas |
+| READ ALL | `getAllDiagrams({includeTemplates, userId})` | Obtiene todos los diagramas, opcionalmente filtrados por usuario |
+| READ BY USER | `getDiagramsByUser(String userId)` | Obtiene diagramas de un usuario específico |
 | READ TEMPLATES | `getAllTemplates()` | Obtiene solo las plantillas |
 | UPDATE | `updateDiagram(SavedDiagram)` | Actualiza un diagrama existente |
 | DELETE | `deleteDiagram(int id)` | Elimina un diagrama |
+| DELETE BY USER | `deleteDiagramsByUser(String userId)` | Elimina todos los diagramas de un usuario |
+| RELOAD TEMPLATES | `reloadAllTemplates()` | Fuerza la recarga de todas las plantillas |
 
 ---
 
@@ -178,8 +191,10 @@ Almacena información de usuarios autenticados.
   uid: "firebase_user_id",
   email: "usuario@example.com",
   displayName: "Juan Pérez",
-  createdAt: Timestamp,
-  isAdmin: false,
+  role: "user",
+  createdAt: "2025-11-25T08:00:00Z",
+  lastLogin: "2025-11-25T10:30:00Z",
+  isGuest: false,
   metrics: {
     // Métricas técnicas
     diagramas_creados: 15,
@@ -188,13 +203,13 @@ Almacena información de usuarios autenticados.
     validaciones_fallidas: 3,
     total_validaciones: 21,
     plantillas_usadas: 5,
-    ultima_plantilla: "Suma de dos números",
+    ultima_plantilla: "01. Hola Mundo",
     total_acciones: 150,
     ultima_actividad: "2025-11-25T10:30:00Z",
     tasa_exito_validaciones: 0.857,
     productividad_diaria: 5.2,
     
-    // Métricas educativas
+    // Métricas educativas (anidadas bajo esta clave)
     metricas_educativas: {
       ejercicios_completados: 25,
       ejercicios_exitosos: 20,
@@ -224,8 +239,10 @@ Almacena información de usuarios autenticados.
 | `uid` | String | ID único de Firebase Authentication |
 | `email` | String | Correo electrónico del usuario |
 | `displayName` | String | Nombre completo del usuario |
-| `createdAt` | Timestamp | Fecha de registro |
-| `isAdmin` | Boolean | Indica si es administrador |
+| `role` | String | Rol del usuario (`user`, `admin`, `guest`) |
+| `createdAt` | String (ISO 8601) | Fecha de registro |
+| `lastLogin` | String (ISO 8601) | Fecha de último inicio de sesión |
+| `isGuest` | Boolean | Indica si es usuario invitado |
 | `metrics` | Map | Métricas del usuario (ver estructura detallada abajo) |
 
 #### Estructura de Métricas de Usuario
@@ -275,21 +292,25 @@ Almacena métricas agregadas de todos los usuarios (solo accesible por administr
     admin: 2
   },
   performanceMetrics: {
-    averageSessionTime: 25.5,
-    completionRate: 0.78,
-    errorRate: 0.15
+    diagrams_per_user: 8.33,
+    validations_per_user: 23.33,
+    activity_rate: 0.567
   },
   topUsers: [
     {
       uid: "user_id_1",
       displayName: "Usuario Top 1",
-      totalActions: 500,
-      successRate: 0.95
+      diagramas: 50,
+      validaciones: 120,
+      progreso: 850.0
     }
   ],
-  generatedAt: Timestamp
+  generatedAt: "2025-11-25T10:30:00Z",
+  lastUpdated: "2025-11-25T10:30:00Z"
 }
 ```
+
+**Nota**: Los campos `totalCodeGenerations`, `totalTemplatesUsed` y `lastUpdated` se escriben directamente en Firestore vía transacciones en `_updateGlobalMetrics()`, pero no forman parte del modelo `GlobalMetrics` de Dart. Los campos del modelo Dart son: `totalUsers`, `activeUsers`, `totalDiagrams`, `totalValidations`, `averageUserProgress`, `usersByRole`, `performanceMetrics`, `topUsers`, `generatedAt`.
 
 #### Campos de Métricas Globales
 
@@ -305,7 +326,8 @@ Almacena métricas agregadas de todos los usuarios (solo accesible por administr
 | `usersByRole` | Map | Cantidad de usuarios por rol |
 | `performanceMetrics` | Map | Métricas de rendimiento generales |
 | `topUsers` | Array | Lista de usuarios destacados |
-| `generatedAt` | Timestamp | Fecha de última actualización |
+| `generatedAt` | String (ISO 8601) | Fecha de última generación completa |
+| `lastUpdated` | String (ISO 8601) | Fecha de última actualización incremental |
 
 ---
 
@@ -327,14 +349,12 @@ Almacenamiento de preferencias del usuario y datos ligeros que no requieren una 
 [
   {
     "exerciseId": "exercise_1",
-    "category": "basicSymbols",
-    "difficulty": "easy",
-    "isCorrect": true,
-    "score": 10,
-    "timeSpentSeconds": 45,
-    "selectedAnswers": ["opt1", "opt2"],
-    "correctAnswers": ["opt1", "opt2"],
-    "completedAt": "2025-11-25T10:00:00Z"
+    "userAnswers": "opt1,opt2",
+    "correctAnswers": "opt1,opt2",
+    "isCorrect": 1,
+    "pointsEarned": 10,
+    "completedAt": "2025-11-25T10:00:00Z",
+    "timeSpentSeconds": 45
   }
 ]
 ```
@@ -356,14 +376,35 @@ tutorial_completed_start_node: true
 #### 3.3 ThemeService
 
 **Claves:**
-- `app_theme`: String con el tema seleccionado
+- `app_theme_mode`: String con el tema seleccionado
 
 **Valores posibles:**
 ```
-"ThemeMode.light"
-"ThemeMode.dark"
-"ThemeMode.system"
+"AppThemeMode.light"
+"AppThemeMode.dark"
+"AppThemeMode.system"
 ```
+
+#### 3.4 AuthService (Caché de usuario)
+
+**Claves:**
+- `cached_user`: JSON serializado con los datos del usuario actual
+
+**Estructura de `cached_user`:**
+```json
+{
+  "uid": "firebase_user_id",
+  "email": "usuario@example.com",
+  "displayName": "Juan Pérez",
+  "role": "user",
+  "createdAt": "2025-11-25T08:00:00Z",
+  "lastLogin": "2025-11-25T10:30:00Z",
+  "metrics": {},
+  "isGuest": false
+}
+```
+
+**Uso**: Permite el inicio de sesión offline verificando las credenciales contra la caché local cuando no hay conexión a internet.
 
 ---
 
@@ -384,8 +425,10 @@ erDiagram
         string uid PK
         string email
         string displayName
-        timestamp createdAt
-        boolean isAdmin
+        string role
+        string createdAt
+        string lastLogin
+        boolean isGuest
         map metrics
     }
     
@@ -398,6 +441,7 @@ erDiagram
         json nodes_data
         json connections_data
         int is_template
+        string user_id FK
     }
     
     NODES {
@@ -406,6 +450,7 @@ erDiagram
         float x
         float y
         string text
+        map metadata
     }
     
     CONNECTIONS {
@@ -421,16 +466,17 @@ erDiagram
         int validaciones_fallidas
         int total_validaciones
         float tasa_exito_validaciones
+        float productividad_diaria
         map metricas_educativas
     }
     
     EXERCISE_RESULTS {
         string exerciseId
-        string category
-        boolean isCorrect
-        int score
+        string userAnswers
+        string correctAnswers
+        int isCorrect
+        int pointsEarned
         int timeSpentSeconds
-        list selectedAnswers
         datetime completedAt
     }
     
@@ -444,8 +490,12 @@ erDiagram
         int activeUsers
         int totalDiagrams
         int totalValidations
+        int totalCodeGenerations
+        int totalTemplatesUsed
         float averageUserProgress
         map usersByRole
+        map performanceMetrics
+        list topUsers
     }
 ```
 
@@ -521,7 +571,7 @@ erDiagram
 │getGlobalMetrics  │
 └──────┬───────────┘
        │
-       ├─────────────► Verifica isAdmin
+       ├─────────────► Verifica role == admin
        │
        ├─────────────► Verifica internet
        │
@@ -549,7 +599,7 @@ service cloud.firestore {
       // Lectura: solo el propio usuario o admin
       allow read: if request.auth != null && 
                   (request.auth.uid == userId || 
-                   get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true);
+                   get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin');
       
       // Escritura: solo el propio usuario
       allow write: if request.auth != null && request.auth.uid == userId;
@@ -559,7 +609,7 @@ service cloud.firestore {
     match /global_metrics/{document} {
       // Solo administradores pueden leer/escribir
       allow read, write: if request.auth != null && 
-                         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
+                         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
   }
 }
@@ -648,24 +698,32 @@ service cloud.firestore {
 
 ## 🛠️ Mantenimiento
 
-### Migraciones Futuras
+### Migraciones Implementadas
 
-Si se necesita actualizar la estructura de la base de datos:
+La base de datos actualmente está en la versión 3, con las siguientes migraciones:
 
 ```dart
 Future<Database> _initDatabase() async {
   // ...
   return await openDatabase(
     path, 
-    version: 2, // Incrementar versión
+    version: 3,
     onCreate: _onCreate,
-    onUpgrade: _onUpgrade, // Agregar callback
+    onUpgrade: _onUpgrade,
+    onOpen: (db) async {
+      // Verificar y cargar plantillas cada vez que se abre
+      await _ensureTemplatesExist(db);
+    },
   );
 }
 
 Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
   if (oldVersion < 2) {
-    // Agregar nueva columna
+    // Eliminar plantillas antiguas (4) y cargar las nuevas (20)
+    await _migrateToNewTemplates(db);
+  }
+  if (oldVersion < 3) {
+    // Agregar columna user_id para separar diagramas por usuario
     await db.execute('ALTER TABLE diagrams ADD COLUMN user_id TEXT');
   }
 }
@@ -700,6 +758,6 @@ await File('backup/flowdiagram_backup.db').copy(dbPath);
 
 ---
 
-*Documentación generada el 25 de noviembre de 2025*
+*Documentación actualizada el 7 de marzo de 2026*
 *Versión de la aplicación: 1.0.0*
-*Versión de base de datos SQLite: 1*
+*Versión de base de datos SQLite: 3*

@@ -3,7 +3,7 @@ import '../models/tutorial_step.dart';
 import '../services/tutorial_service.dart';
 import '../widgets/tutorial_widget.dart';
 
-/// Pantalla que muestra la lista de todos los tutoriales disponibles
+/// Pantalla que muestra la lista de todas las guías de uso disponibles
 class TutorialListScreen extends StatefulWidget {
   const TutorialListScreen({super.key});
 
@@ -46,12 +46,12 @@ class _TutorialListScreenState extends State<TutorialListScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Tutoriales'),
+        title: const Text('Guías de Uso'),
         actions: [
           IconButton(
             icon: const Icon(Icons.info_outline),
             onPressed: _showAboutDialog,
-            tooltip: 'Acerca de los tutoriales',
+            tooltip: 'Acerca de la applicación',
           ),
         ],
       ),
@@ -68,9 +68,9 @@ class _TutorialListScreenState extends State<TutorialListScreen> {
           ),
           const SizedBox(height: 16),
           _buildCategorySection(
-            'Conceptos Básicos',
+            'Funcionalidades Principales',
             TutorialCategory.basics,
-            Icons.school,
+            Icons.explore,
             Colors.green,
           ),
           const SizedBox(height: 16),
@@ -127,13 +127,13 @@ class _TutorialListScreenState extends State<TutorialListScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Icon(
-              Icons.school,
+              Icons.help_outline,
               color: Colors.white,
               size: 40,
             ),
             const SizedBox(height: 12),
             const Text(
-              'Centro de Aprendizaje',
+              'Centro de Ayuda',
               style: TextStyle(
                 color: Colors.white,
                 fontSize: 24,
@@ -142,7 +142,7 @@ class _TutorialListScreenState extends State<TutorialListScreen> {
             ),
             const SizedBox(height: 8),
             Text(
-              'Aprende a crear diagramas de flujo y comprende los conceptos básicos de programación.',
+              'Aquí encontrarás guías para crear diagramas de flujo y usar las funciones de la aplicación.',
               style: TextStyle(
                 color: Colors.white.withOpacity(0.9),
                 fontSize: 16,
@@ -155,7 +155,7 @@ class _TutorialListScreenState extends State<TutorialListScreen> {
                 const Icon(Icons.emoji_events, color: Colors.amber, size: 20),
                 const SizedBox(width: 8),
                 Text(
-                  '${_completionStatus.values.where((completed) => completed).length}/${_allTutorials.length} completados',
+                  '${_completionStatus.values.where((completed) => completed).length}/${_allTutorials.length} completadas',
                   style: const TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
@@ -336,33 +336,33 @@ class _TutorialListScreenState extends State<TutorialListScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Acerca de los Tutoriales'),
+        title: const Text('Acerca de las Guías'),
         content: const SingleChildScrollView(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                'Nivel de Aprendizaje: Comprensión',
+                'Propósito de las Guías',
                 style: TextStyle(fontWeight: FontWeight.bold),
               ),
               SizedBox(height: 8),
               Text(
-                'Estos tutoriales están diseñados según la Taxonomía de Bloom, enfocándose en el nivel de COMPRENSIÓN.',
+                'Estas guías están diseñadas para ayudarte a familiarizarte con las funcionalidades de la aplicación de forma rápida y sencilla.',
               ),
               SizedBox(height: 16),
               Text(
-                '¿Qué aprenderás?',
+                '¿Qué encontrarás aquí?',
                 style: TextStyle(fontWeight: FontWeight.bold),
               ),
               SizedBox(height: 8),
-              Text('• Identificar símbolos y su función'),
-              Text('• Distinguir entre diferentes operaciones'),
-              Text('• Comparar soluciones algorítmicas'),
-              Text('• Explicar el flujo de ejecución'),
+              Text('• Descripción de los símbolos y su uso.'),
+              Text('• Cómo realizar diferentes operaciones.'),
+              Text('• Ejemplos de diagramas de flujo.'),
+              Text('• Cómo seguir el flujo de un diagrama.'),
               SizedBox(height: 16),
               Text(
-                'Tómate tu tiempo y practica con los ejemplos. ¡El aprendizaje es un proceso!',
+                'Explora las guías a tu ritmo para sacar el máximo provecho de la aplicación.',
               ),
             ],
           ),

@@ -6,12 +6,11 @@ import '../services/auth_service.dart';
 import '../services/metrics_service.dart'; // Nueva importación
 import '../services/tutorial_service.dart'; // Nueva importación para tutoriales
 import 'editor_screen.dart';
+import 'help_screen.dart';
 import 'profile_screen.dart';
-import 'metrics_screen.dart'; // Nueva importación
-import 'admin_setup_screen.dart'; // Nueva importación para configurar admin
 import 'tutorial_list_screen.dart'; // Nueva importación para tutoriales
 import 'welcome_screen.dart'; // Nueva importación para pantalla de bienvenida
-import 'exercises_screen.dart'; // Nueva importación para ejercicios
+// import 'exercises_screen.dart'; // Nueva importación para ejercicios
 import '../widgets/theme_selector_widget.dart';
 
 class LoadDiagramScreen extends StatefulWidget {
@@ -107,10 +106,15 @@ class _LoadDiagramScreenState extends State<LoadDiagramScreen>
 
   @override
   Widget build(BuildContext context) {
+    final appBarForeground =
+        Theme.of(context).appBarTheme.foregroundColor ?? Colors.white;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Cargar diagrama'),
+        centerTitle: false,
         actions: [
+          /*
           // Botón de ejercicios
           IconButton(
             icon: const Icon(Icons.school),
@@ -123,31 +127,22 @@ class _LoadDiagramScreenState extends State<LoadDiagramScreen>
             },
             tooltip: 'Ejercicios de comprensión',
           ),
+          */
           // Botón para cambiar tema
           const ThemeToggleButton(),
-          // Botón de configuración de admin (temporal)
+
           IconButton(
-            icon: const Icon(Icons.admin_panel_settings),
+            icon: const Icon(Icons.help_outline),
             onPressed: () {
               Navigator.of(context).push(
                 MaterialPageRoute(
-                  builder: (context) => const AdminSetupScreen(),
+                  builder: (context) => const HelpScreen(),
                 ),
               );
             },
-            tooltip: 'Configurar Administrador',
+            tooltip: 'Ayuda',
           ),
-          IconButton(
-            icon: const Icon(Icons.analytics),
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (context) => const MetricsScreen(),
-                ),
-              );
-            },
-            tooltip: 'Mis métricas',
-          ),
+
           IconButton(
             icon: const Icon(Icons.person),
             onPressed: () {
@@ -162,6 +157,10 @@ class _LoadDiagramScreenState extends State<LoadDiagramScreen>
         ],
         bottom: TabBar(
           controller: _tabController,
+          labelColor: appBarForeground,
+          unselectedLabelColor: appBarForeground.withOpacity(0.75),
+          indicatorColor: appBarForeground,
+          dividerColor: Colors.transparent,
           tabs: const [Tab(text: 'Mis diagramas'), Tab(text: 'Plantillas')],
         ),
       ),
@@ -199,7 +198,7 @@ class _LoadDiagramScreenState extends State<LoadDiagramScreen>
               );
             },
             heroTag: 'tutorials_fab',
-            tooltip: 'Tutoriales',
+            tooltip: 'Guías de Uso',
             child: const Icon(Icons.quiz),
             backgroundColor: Colors.deepPurple,
           ),

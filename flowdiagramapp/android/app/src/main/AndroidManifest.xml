@@ -15,7 +15,7 @@
     <application
         android:label="flowdiagramapp"
         android:name="${applicationName}"
-        android:icon="@mipmap/flow_diagram_icon"
+        android:icon="@mipmap/ic_launcher"
         android:requestLegacyExternalStorage="true">  <!-- Para compatibilidad con Android 10 -->
         <activity
             android:name=".MainActivity"

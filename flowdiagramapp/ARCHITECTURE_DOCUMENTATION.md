@@ -185,6 +185,487 @@ lib/
 
 ---
 
+## Diagrama de Clases de Diseño (Compilador y Soporte Técnico)
+
+El siguiente diagrama modela el diseño a nivel de clases de los módulos centrales del sistema, con énfasis en el compilador fuente-a-fuente (pipeline de 5 fases), el validador estructural del diagrama, y los servicios técnicos de persistencia y autenticación.
+
+```mermaid
+classDiagram
+direction LR
+
+%% ============================================================
+%% MODELO DEL DIAGRAMA (EDITOR VISUAL)
+%% ============================================================
+class DiagramNode {
+  +String id
+  +NodeType type
+  +Offset position
+  +String text
+  +Map metadata
+  +DiagramNode copyWith(...)
+  +void updateMetadata(key, value)
+}
+
+class Connection {
+  +DiagramNode source
+  +DiagramNode target
+  +String label
+  +bool isLoopBack
+  +ConnectionAnchor sourceAnchor
+  +ConnectionAnchor targetAnchor
+}
+
+class NodeType {
+  <<enumeration>>
+}
+
+class ConnectionAnchor {
+  <<enumeration>>
+  auto
+  top
+  bottom
+  left
+  right
+}
+
+DiagramNode "1" <-- "0..*" Connection : source
+DiagramNode "1" <-- "0..*" Connection : target
+
+%% ============================================================
+%% VALIDACIÓN ESTRUCTURAL (RF-V01, RF-V04, RF-V05, RF-V07)
+%% ============================================================
+class DiagramValidator {
+  +ValidationResult validateDiagram(nodes, connections)
+}
+
+class ValidationResult {
+  +bool isValid
+  +List errors
+  +List warnings
+  +ValidationResult merge(other)
+}
+
+class ISO5807ConnectionRules {
+  +int minInputs(NodeType)
+  +int minOutputs(NodeType)
+  +bool participatesInFlow(NodeType)
+}
+
+DiagramValidator ..> DiagramNode
+DiagramValidator ..> Connection
+DiagramValidator --> ValidationResult
+DiagramValidator ..> ISO5807ConnectionRules
+ISO5807ConnectionRules ..> NodeType
+
+%% ============================================================
+%% COMPILADOR (PIPELINE 5 FASES)
+%% ============================================================
+class DiagramCompilerPipeline {
+  +CompilerOptions options
+  +CompilationResult compile(nodes, connections)
+  +DiagramLexicalResult runLexicalAnalysis(nodes, connections)
+  +SyntaxAnalysisResult runSyntacticAnalysis(nodes, connections)
+  +SemanticAnalysisResult runSemanticAnalysis(nodes, connections)
+  +OptimizationResult runOptimization(ast)
+}
+
+class CompilerOptions {
+  +int optimizationLevel
+  +bool generateComments
+  +bool strictTypeChecking
+  +bool showWarnings
+  +String targetCStandard
+  +bool includeDebugInfo
+  +String language
+}
+
+class CompilationResult {
+  +bool success
+  +String generatedCode
+  +CompilerErrorCollection errors
+  +SymbolTable symbolTable
+  +DiagramLexicalResult lexicalResult
+  +SyntaxAnalysisResult syntaxResult
+  +SemanticAnalysisResult semanticResult
+  +OptimizationResult optimizationResult
+  +ProgramNode ast
+  +CompilationMetrics metrics
+}
+
+class CompilationMetrics {
+  +int compilationTimeMs
+  +int nodesProcessed
+  +int tokensGenerated
+  +int symbolsInTable
+  +int errorCount
+  +int warningCount
+}
+
+DiagramCompilerPipeline *-- DiagramLexicalAnalyzer
+DiagramCompilerPipeline *-- DiagramSyntaxAnalyzer
+DiagramCompilerPipeline *-- DiagramSemanticAnalyzer
+DiagramCompilerPipeline *-- DiagramCodeOptimizer
+DiagramCompilerPipeline ..> AdvancedCodeGenerator
+DiagramCompilerPipeline ..> CompilerErrorCollection
+DiagramCompilerPipeline ..> CompilerOptions
+
+DiagramCompilerPipeline ..> DiagramNode
+DiagramCompilerPipeline ..> Connection
+DiagramCompilerPipeline --> CompilationResult
+CompilationResult --> CompilationMetrics
+
+%% ============================================================
+%% FASE 1: ANÁLISIS LÉXICO
+%% ============================================================
+class DiagramLexicalAnalyzer {
+  +DiagramLexicalResult analyzeDiagram(nodes, connections)
+  +List~Token~ tokenize(text)
+  +List~Token~ tokenizeNode(node)
+}
+
+class DiagramLexicalResult {
+  +List~NodeLexicalResult~ nodeResults
+  +SymbolTable symbolTable
+  +List~LexicalError~ errors
+  +int tokenCount
+}
+
+class NodeLexicalResult {
+  +String nodeId
+  +NodeType nodeType
+  +List~Token~ tokens
+  +List~LexicalError~ errors
+}
+
+class Token {
+  +TokenType type
+  +String lexeme
+  +int line
+  +int column
+  +bool isSignificant
+}
+
+class TokenType {
+  <<enumeration>>
+}
+
+DiagramLexicalAnalyzer --> DiagramLexicalResult
+DiagramLexicalResult --> NodeLexicalResult
+NodeLexicalResult --> Token
+Token --> TokenType
+DiagramLexicalAnalyzer ..> SymbolTable
+NodeLexicalResult ..> NodeType
+
+%% ============================================================
+%% FASE 2: ANÁLISIS SINTÁCTICO Y AST
+%% ============================================================
+class DiagramSyntaxAnalyzer {
+  +SyntaxAnalysisResult analyzeDiagram(nodes, connections)
+  +NodeSyntaxResult analyzeNode(node)
+  +ASTNode parseExpression(expression)
+}
+
+class SyntaxAnalysisResult {
+  +ProgramNode ast
+  +List~NodeSyntaxResult~ nodeResults
+  +List~CompilerError~ errors
+  +bool isValid
+}
+
+class NodeSyntaxResult {
+  +String nodeId
+  +String nodeType
+  +List~StatementNode~ statements
+  +List~CompilerError~ errors
+  +bool isValid
+}
+
+class ASTNode {
+  <<abstract>>
+  +SourcePosition position
+  +String nodeId
+}
+
+class ProgramNode {
+  +List diagramNodes
+  +List globalDeclarations
+}
+
+class StatementNode {
+  <<abstract>>
+}
+
+DiagramSyntaxAnalyzer --> SyntaxAnalysisResult
+SyntaxAnalysisResult --> ProgramNode
+NodeSyntaxResult --> StatementNode
+ASTNode <|-- ProgramNode
+ASTNode <|-- StatementNode
+DiagramSyntaxAnalyzer ..> DiagramLexicalAnalyzer : tokeniza expresiones
+DiagramSyntaxAnalyzer ..> Token
+DiagramSyntaxAnalyzer ..> DiagramNode
+
+%% ============================================================
+%% FASE 3: ANÁLISIS SEMÁNTICO Y TABLA DE SÍMBOLOS
+%% ============================================================
+class DiagramSemanticAnalyzer {
+  +SemanticAnalysisResult analyzeDiagram(nodes, connections, existingSymbolTable, ast)
+  +SemanticAnalysisResult analyzeAST(ast)
+}
+
+class SemanticAnalysisResult {
+  +bool isValid
+  +List~CompilerError~ errors
+  +List~CompilerError~ warnings
+  +Map nodeResults
+  +SymbolTable symbolTable
+}
+
+class NodeSemanticResult {
+  +String nodeId
+  +bool isValid
+  +List~CompilerError~ errors
+  +List~CompilerError~ warnings
+}
+
+class SymbolTable {
+  +int symbolCount
+  +List~SymbolInfo~ allSymbols
+  +void enterScope(...)
+  +void exitScope()
+  +bool declareSymbol(...)
+}
+
+class SymbolInfo {
+  +String name
+  +DataType dataType
+  +SymbolCategory category
+  +int scopeLevel
+  +bool isInitialized
+  +bool isUsed
+}
+
+class DataType {
+  <<enumeration>>
+}
+
+class SymbolCategory {
+  <<enumeration>>
+}
+
+DiagramSemanticAnalyzer --> SemanticAnalysisResult
+SemanticAnalysisResult --> SymbolTable
+SymbolTable --> SymbolInfo
+SymbolInfo --> DataType
+SymbolInfo --> SymbolCategory
+DiagramSemanticAnalyzer ..> DiagramLexicalAnalyzer
+DiagramSemanticAnalyzer ..> ProgramNode
+DiagramSemanticAnalyzer ..> DiagramNode
+
+%% ============================================================
+%% FASE 4: OPTIMIZACIÓN
+%% ============================================================
+class DiagramCodeOptimizer {
+  +OptimizerConfig config
+  +OptimizationResult optimize(ast, symbolTable)
+}
+
+class OptimizerConfig {
+  +OptimizationLevel level
+  +bool constantFolding
+  +bool deadCodeElimination
+  +int maxPasses
+}
+
+class OptimizationLevel {
+  <<enumeration>>
+  none
+  basic
+  standard
+  aggressive
+}
+
+class OptimizationResult {
+  +bool success
+  +ProgramNode optimizedAST
+  +int totalOptimizations
+  +OptimizationMetrics metrics
+  +List~CompilerError~ errors
+}
+
+class OptimizationMetrics {
+  +int originalNodeCount
+  +int optimizedNodeCount
+  +int constantsFolded
+  +int deadCodeRemoved
+  +double sizeReductionPercent
+}
+
+DiagramCodeOptimizer --> OptimizationResult
+DiagramCodeOptimizer --> OptimizerConfig
+OptimizerConfig --> OptimizationLevel
+OptimizationResult --> OptimizationMetrics
+OptimizationResult --> ProgramNode
+
+%% ============================================================
+%% FASE 5: GENERACIÓN DE CÓDIGO
+%% ============================================================
+class AdvancedCodeGenerator {
+  +CodeGenerationResult generate(nodes, connections, symbolTable, ast)
+}
+
+class CodeGenOptions {
+  +bool includeComments
+  +bool includeTimestamp
+  +String indentation
+  +String targetCStandard
+  +bool debugMode
+}
+
+class CodeGenerationResult {
+  +bool success
+  +String code
+  +List~CompilerError~ errors
+  +CodeGenMetrics metrics
+}
+
+class CodeGenMetrics {
+  +int linesOfCode
+  +int functionsGenerated
+  +int variablesUsed
+  +int generationTimeMs
+}
+
+AdvancedCodeGenerator ..> CodeGenOptions
+AdvancedCodeGenerator --> CodeGenerationResult
+CodeGenerationResult --> CodeGenMetrics
+AdvancedCodeGenerator ..> SymbolTable
+AdvancedCodeGenerator ..> ProgramNode
+AdvancedCodeGenerator ..> DiagramNode
+AdvancedCodeGenerator ..> Connection
+
+%% ============================================================
+%% SISTEMA DE ERRORES (COMPILADOR)
+%% ============================================================
+class CompilerErrorCollection {
+  +void add(error)
+  +void addAll(errors)
+  +bool hasErrors
+  +bool hasFatalErrors
+  +int errorCount
+  +int warningCount
+}
+
+class CompilerError {
+  +CompilerErrorCode code
+  +CompilerSeverity severity
+  +CompilerPhase phase
+  +String message
+  +SourceLocation location
+}
+
+class LexicalError
+class SyntaxError
+
+class SourceLocation {
+  +int line
+  +int column
+  +String nodeId
+}
+
+class CompilerSeverity {
+  <<enumeration>>
+  info
+  warning
+  error
+  fatal
+}
+
+class CompilerPhase {
+  <<enumeration>>
+  structural
+  lexical
+  syntactic
+  semantic
+  optimization
+  codeGen
+}
+
+class CompilerErrorCode {
+  <<enumeration>>
+}
+
+CompilerErrorCollection --> CompilerError
+CompilerError --> CompilerErrorCode
+CompilerError --> CompilerSeverity
+CompilerError --> CompilerPhase
+CompilerError --> SourceLocation
+CompilerError <|-- LexicalError
+CompilerError <|-- SyntaxError
+
+%% ============================================================
+%% PERSISTENCIA (RF11) Y AUTENTICACIÓN (RF15, RF16)
+%% ============================================================
+class SavedDiagram {
+  +int id
+  +String name
+  +String description
+  +DateTime createdAt
+  +DateTime updatedAt
+  +List~DiagramNode~ nodes
+  +List~Connection~ connections
+  +bool isTemplate
+  +String userId
+  +Map toMap()
+}
+
+class DatabaseService {
+  +Future~int~ saveDiagram(diagram)
+  +Future~int~ updateDiagram(diagram)
+  +Future~SavedDiagram~ getDiagram(id)
+  +Future~List~ getAllDiagrams(...)
+  +Future~int~ deleteDiagram(id)
+}
+
+DatabaseService ..> SavedDiagram
+SavedDiagram ..> DiagramNode
+SavedDiagram ..> Connection
+
+class AuthService {
+  +Stream authStateChanges
+  +UserModel currentUser
+  +Future initialize()
+  +Future signInAsGuest()
+  +Future registerWithEmailPassword(...)
+  +Future signInWithEmailPassword(...)
+  +Future signOut()
+}
+
+class UserModel {
+  +String uid
+  +String email
+  +String displayName
+  +UserRole role
+  +bool isGuest
+}
+
+class UserRole {
+  <<enumeration>>
+  user
+  admin
+  guest
+}
+
+class AuthGuard {
+  +Widget child
+}
+
+AuthService --> UserModel
+UserModel --> UserRole
+AuthGuard ..> AuthService
+```
+
+---
+
 ## 🔍 Especificación Detallada de Componentes
 
 ### 1. Validador Estructural (lib/models/diagram_validator.dart)

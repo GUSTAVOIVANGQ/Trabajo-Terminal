@@ -1,5 +1,11 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
+import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../services/auth_service.dart';
 import '../services/theme_service.dart';
 import '../services/sync_service.dart';
@@ -21,8 +27,199 @@ class _ProfileScreenState extends State<ProfileScreen> {
   final AuthService _authService = AuthService();
   final SyncService _syncService = SyncService();
   final DatabaseService _databaseService = DatabaseService();
+  final ImagePicker _imagePicker = ImagePicker();
   bool _isSyncing = false;
   bool _isDeleting = false;
+  bool _isPickingImage = false;
+  String? _profileImagePath;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadProfileImage();
+  }
+
+  String _getProfileImageStorageKey(UserModel user) {
+    return 'profile_image_path_${user.uid}';
+  }
+
+  Future<void> _loadProfileImage() async {
+    final user = _authService.currentUser;
+    if (user == null) return;
+
+    final prefs = await SharedPreferences.getInstance();
+    final storageKey = _getProfileImageStorageKey(user);
+    final savedPath = prefs.getString(storageKey);
+
+    if (savedPath == null) return;
+
+    final savedFile = File(savedPath);
+    if (!await savedFile.exists()) {
+      await prefs.remove(storageKey);
+      return;
+    }
+
+    if (mounted) {
+      setState(() {
+        _profileImagePath = savedPath;
+      });
+    }
+  }
+
+  Future<String> _copyImageToLocalStorage(
+      String sourcePath, UserModel user) async {
+    final appDirectory = await getApplicationDocumentsDirectory();
+    final profileImagesDirectory = Directory(
+      p.join(appDirectory.path, 'profile_images'),
+    );
+
+    if (!await profileImagesDirectory.exists()) {
+      await profileImagesDirectory.create(recursive: true);
+    }
+
+    final extension =
+        p.extension(sourcePath).isNotEmpty ? p.extension(sourcePath) : '.jpg';
+    final targetPath = p.join(
+      profileImagesDirectory.path,
+      '${user.uid}_avatar$extension',
+    );
+
+    final copiedFile = await File(sourcePath).copy(targetPath);
+    return copiedFile.path;
+  }
+
+  Future<void> _pickAndSaveProfileImage() async {
+    if (_isPickingImage) return;
+
+    final user = _authService.currentUser;
+    if (user == null) return;
+
+    setState(() => _isPickingImage = true);
+
+    try {
+      final pickedFile = await _imagePicker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 85,
+        maxWidth: 1200,
+      );
+
+      if (pickedFile == null) return;
+
+      final localImagePath = await _copyImageToLocalStorage(
+        pickedFile.path,
+        user,
+      );
+
+      final prefs = await SharedPreferences.getInstance();
+      final storageKey = _getProfileImageStorageKey(user);
+      final previousImagePath = prefs.getString(storageKey);
+      await prefs.setString(storageKey, localImagePath);
+
+      if (previousImagePath != null && previousImagePath != localImagePath) {
+        final previousFile = File(previousImagePath);
+        if (await previousFile.exists()) {
+          await previousFile.delete();
+        }
+      }
+
+      if (mounted) {
+        setState(() {
+          _profileImagePath = localImagePath;
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Foto de perfil actualizada localmente'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('No se pudo actualizar la foto: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isPickingImage = false);
+      }
+    }
+  }
+
+  Future<void> _resetProfileImage() async {
+    if (_isPickingImage || _profileImagePath == null) return;
+
+    final user = _authService.currentUser;
+    if (user == null) return;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Restablecer foto de perfil'),
+        content: const Text(
+          'Se eliminará la foto local y volverás a ver la inicial del usuario.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Restablecer'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    setState(() => _isPickingImage = true);
+
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final storageKey = _getProfileImageStorageKey(user);
+      final savedPath = prefs.getString(storageKey) ?? _profileImagePath;
+      await prefs.remove(storageKey);
+
+      if (savedPath != null) {
+        final savedFile = File(savedPath);
+        if (await savedFile.exists()) {
+          await savedFile.delete();
+        }
+      }
+
+      if (mounted) {
+        setState(() {
+          _profileImagePath = null;
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Foto de perfil restablecida'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('No se pudo restablecer la foto: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isPickingImage = false);
+      }
+    }
+  }
 
   Future<void> _signOut() async {
     final confirmed = await showDialog<bool>(
@@ -43,8 +240,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
     );
 
-    if (confirmed == true && mounted) {
+    if (confirmed == true) {
       await _authService.signOut();
+      if (!mounted) return;
+
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(builder: (context) => const LoginScreen()),
         (route) => false,
@@ -497,8 +696,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Mi Perfil'),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
       ),
       body: Padding(
         padding: const EdgeInsets.all(24.0),
@@ -513,21 +710,85 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
               child: Column(
                 children: [
-                  CircleAvatar(
-                    radius: 50,
-                    backgroundColor: user.isAdmin ? Colors.purple : Colors.blue,
-                    child: Text(
-                      user.displayName.isNotEmpty
-                          ? user.displayName.substring(0, 1).toUpperCase()
-                          : 'U',
-                      style: const TextStyle(
-                        fontSize: 32,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
+                  Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      GestureDetector(
+                        onTap:
+                            _isPickingImage ? null : _pickAndSaveProfileImage,
+                        child: CircleAvatar(
+                          radius: 50,
+                          backgroundColor:
+                              user.isAdmin ? Colors.purple : Colors.blue,
+                          foregroundImage: _profileImagePath != null
+                              ? FileImage(File(_profileImagePath!))
+                              : null,
+                          child: _profileImagePath == null
+                              ? Text(
+                                  user.displayName.isNotEmpty
+                                      ? user.displayName
+                                          .substring(0, 1)
+                                          .toUpperCase()
+                                      : 'U',
+                                  style: const TextStyle(
+                                    fontSize: 32,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white,
+                                  ),
+                                )
+                              : null,
+                        ),
                       ),
-                    ),
+                      Positioned(
+                        right: -2,
+                        bottom: -2,
+                        child: Material(
+                          color: Theme.of(context).colorScheme.primary,
+                          shape: const CircleBorder(),
+                          child: InkWell(
+                            customBorder: const CircleBorder(),
+                            onTap: _isPickingImage
+                                ? null
+                                : _pickAndSaveProfileImage,
+                            child: Padding(
+                              padding: const EdgeInsets.all(8),
+                              child: _isPickingImage
+                                  ? const SizedBox(
+                                      width: 18,
+                                      height: 18,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        color: Colors.white,
+                                      ),
+                                    )
+                                  : const Icon(
+                                      Icons.photo_camera,
+                                      size: 18,
+                                      color: Colors.white,
+                                    ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Cambiar foto',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Theme.of(context).colorScheme.primary,
+                          fontWeight: FontWeight.w600,
+                        ),
+                  ),
+                  if (_profileImagePath != null) ...[
+                    const SizedBox(height: 4),
+                    TextButton.icon(
+                      onPressed: _isPickingImage ? null : _resetProfileImage,
+                      icon: const Icon(Icons.refresh),
+                      label: const Text('Restablecer foto'),
+                    ),
+                  ],
+                  const SizedBox(height: 8),
                   Text(
                     user.displayName,
                     style: Theme.of(context).textTheme.headlineSmall?.copyWith(
