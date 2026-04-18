@@ -196,7 +196,64 @@ Cada símbolo en la tabla encapsula los metadatos necesarios sobre un identifica
 
 La categoría del símbolo distingue entre variables regulares, constantes y parámetros de función. Esta clasificación permite aplicar reglas semánticas específicas, como prohibir la asignación a constantes.
 
-**[Figura 60. Diagrama de clases de la tabla de símbolos, mostrando los atributos y relaciones entre la clase de símbolo, la clase de ámbito y la clase gestora de la tabla.]**
+**Figura 60. Diagrama de clases de la tabla de símbolos (implementación).**
+
+Implementación: `lib/compiler/symbol_table.dart`.
+
+**Clase `SymbolInfo` (símbolo).**
+
+| Atributo | Tipo | Descripción |
+| --- | --- | --- |
+| `name` | `String` | Identificador del símbolo. |
+| `dataType` | `DataType` | Tipo del símbolo (con representación equivalente en C). |
+| `category` | `SymbolCategory` | Categoría (variable, constante, parámetro, etc.). |
+| `scopeLevel` | `int` | Nivel del ámbito donde se declaró (0 = global). |
+| `scopeId` | `int` | Identificador del ámbito donde se declaró. |
+| `declaringNodeId` | `String?` | ID del nodo del diagrama donde se declaró. |
+| `declarationLine` | `int` | Línea (base 1) dentro del texto del nodo. |
+| `declarationColumn` | `int` | Columna (base 1) dentro del texto del nodo. |
+| `isInitialized` | `bool` | Marca si el símbolo recibió un valor antes de usarse. |
+| `isUsed` | `bool` | Marca si el símbolo fue referenciado al menos una vez. |
+| `initialValue` | `dynamic` | Valor inicial (si existe). |
+| `arrayDimensions` | `List<int>?` | Dimensiones del arreglo (si aplica). |
+| `parameterTypes` | `List<DataType>?` | Tipos de parámetros (si el símbolo representa una función). |
+| `returnType` | `DataType?` | Tipo de retorno (si el símbolo representa una función). |
+| `metadata` | `Map<String, dynamic>` | Metadatos adicionales (extensible). |
+
+**Clase `Scope` (ámbito).**
+
+| Atributo | Tipo | Descripción |
+| --- | --- | --- |
+| `id` | `int` | Identificador único del ámbito. |
+| `level` | `int` | Profundidad del ámbito (0 = global). |
+| `parent` | `Scope?` | Ámbito padre (nulo para el ámbito global). |
+| `symbols` | `Map<String, SymbolInfo>` | Tabla local: nombre → símbolo declarado en el ámbito. |
+| `children` | `List<Scope>` | Lista de ámbitos hijos. |
+| `nodeId` | `String?` | ID del nodo donde se creó el ámbito. |
+| `description` | `String` | Descripción del ámbito (p. ej., `if-then`, `while-body`). |
+
+**Clase `SymbolTable` (gestor).**
+
+| Atributo interno | Tipo | Descripción |
+| --- | --- | --- |
+| `_scopes` | `List<Scope>` | Registro de todos los ámbitos creados. |
+| `_currentScope` | `Scope?` | Ámbito activo durante el análisis. |
+| `_scopeIdCounter` | `int` | Contador para IDs únicos de ámbitos. |
+| `_globalSymbols` | `Map<String, SymbolInfo>` | Acceso directo a símbolos declarados en nivel global. |
+| `_allSymbols` | `List<SymbolInfo>` | Lista total de símbolos declarados (iteración y reportes). |
+| `_errors` | `List<String>` | Errores generados por operaciones de la tabla de símbolos. |
+| `_warnings` | `List<String>` | Advertencias generadas por operaciones de la tabla de símbolos. |
+
+Relaciones principales:
+
+| Relación | Multiplicidad | Implementación |
+| --- | --- | --- |
+| `SymbolTable` → `Scope` | 1 a N | `_scopes: List<Scope>` y `_currentScope: Scope?`. |
+| `Scope` → `Scope` (jerarquía) | 0..1 (padre), 0..N (hijos) | `parent: Scope?` y `children: List<Scope>`. |
+| `Scope` → `SymbolInfo` | 0..N | `symbols: Map<String, SymbolInfo>`. |
+| `SymbolInfo` → `Scope` (referencia por ID) | 1 | `scopeLevel` y `scopeId`. |
+
+Nota: el enumerado `DataType` incluye valores internos adicionales (p. ej., `void_`, `array`, `pointer`, `function_`, `unknown`) para cubrir casos del análisis; la Tabla 95a detalla el subconjunto de tipos primitivos con mapeo directo a C.
 
 ### 17.1.2 Tipos de datos soportados
 
