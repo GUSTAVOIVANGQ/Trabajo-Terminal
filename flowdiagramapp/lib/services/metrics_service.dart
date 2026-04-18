@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import '../models/metric_model.dart';
 import 'auth_service.dart';
+import 'analytics_service.dart';
 
 class MetricsService {
   static final MetricsService _instance = MetricsService._internal();
@@ -10,6 +11,7 @@ class MetricsService {
 
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final AuthService _authService = AuthService();
+  final AnalyticsService _analyticsService = AnalyticsService();
 
   /// Verifica si hay conexión a internet
   Future<bool> _hasInternetConnection() async {
@@ -28,6 +30,7 @@ class MetricsService {
 
     final hasInternet = await _hasInternetConnection();
     final metrics = Map<String, dynamic>.from(user.metrics);
+    final isGuestUser = user.isGuest;
 
     // Actualizar métricas básicas
     metrics['total_acciones'] = (metrics['total_acciones'] ?? 0) + 1;
@@ -67,8 +70,15 @@ class MetricsService {
     // Actualizar en la base de datos y cache
     await _authService.updateUserMetrics(user.uid, metrics);
 
+    // Publicar telemetría de uso (si existe consentimiento activo)
+    await _analyticsService.logUserAction(
+      action: action,
+      category: category,
+      metadata: metadata,
+    );
+
     // Si hay internet, también actualizar métricas globales
-    if (hasInternet) {
+    if (hasInternet && !isGuestUser) {
       await _updateGlobalMetrics(action, metadata);
     }
   }
@@ -139,6 +149,13 @@ class MetricsService {
     metrics['metricas_educativas'] = educationalMetrics;
 
     await _authService.updateUserMetrics(user.uid, metrics);
+
+    await _analyticsService.logEducationalMetric(
+      successful: successful,
+      errorsFound: errorsFound,
+      hintsUsed: hintsUsed,
+      timeSpentSeconds: timeSpent.inSeconds,
+    );
   }
 
   /// Obtiene el resumen de métricas del usuario actual

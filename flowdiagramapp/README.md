@@ -13,11 +13,13 @@ Una aplicación móvil Android Flutter que permite a los usuarios diseñar algor
 FlowCode ahora genera código C correcto para estructuras avanzadas:
 
 #### ✅ **Switch Statement**
+
 - **Antes**: Generaba múltiples `if-else` anidados ❌
 - **Ahora**: Genera código `switch() { case: break; }` correcto ✅
 - **Uso**: Menú "Conceptos" → "Switch"
 
 **Ejemplo:**
+
 ```c
 // Código generado por FlowCode
 switch (opcion) {
@@ -34,11 +36,13 @@ switch (opcion) {
 ```
 
 #### ✅ **Bucle For**
+
 - **Antes**: Indistinguible de `while`, generaba código genérico ❌
 - **Ahora**: Genera bucles `for(init; cond; incr)` específicos ✅
 - **Uso**: Menú "Conceptos" → "For"
 
 **Ejemplo:**
+
 ```c
 // Código generado por FlowCode
 for (int i = 0; i < 10; i++) {
@@ -47,11 +51,13 @@ for (int i = 0; i < 10; i++) {
 ```
 
 #### ✅ **Bucle While**
+
 - **Antes**: Mezclado con for, sin diferenciación ❌
 - **Ahora**: Genera bucles `while(cond)` diferenciados ✅
 - **Uso**: Menú "Conceptos" → "While"
 
 **Ejemplo:**
+
 ```c
 // Código generado por FlowCode
 while (contador < 100) {
@@ -62,10 +68,12 @@ while (contador < 100) {
 ### 🔍 **Sistema de Detección Inteligente**
 
 **Doble prioridad de detección:**
+
 1. **Metadata explícito** (100% precisión) - Insertado automáticamente desde "Conceptos"
 2. **Análisis de patrón de texto** (fallback) - Para diagramas legacy o creados manualmente
 
 **Resultados de pruebas:**
+
 - ✅ 7/7 pruebas pasadas (100% éxito)
 - ✅ Backward compatibility con diagramas existentes
 - ✅ 0 errores de compilación
@@ -81,23 +89,25 @@ while (contador < 100) {
 
 ## 📖 **Descripción General**
 
-El producto principal es implementar un compilador fuente a fuente (Diagramas de flujo a codigo en c). Esta aplicacion debe conviertir los diagramas de flujo a codigo en lenguaje c funcional mediante las fases de un compilador. El compilador esta terminado y listo para pruebas. 
+El producto principal es implementar un compilador fuente a fuente (Diagramas de flujo a codigo en c). Esta aplicacion debe conviertir los diagramas de flujo a codigo en lenguaje c funcional mediante las fases de un compilador. El compilador esta terminado y listo para pruebas.
 
 **Análisis estructural del diagrama de flujo:**
+
 - **Validación sintáctica básica** (estructura del diagrama).
 - **Generación de código directo** (traducción 1:1 de nodos a C).
 
 ### 🏗️ Arquitectura del Compilador
-| Fase | Actividad | Módulo Responsable |
-| :--- | :--- | :--- |
-| **FASE 1** | Análisis de Diagrama | ✅ `CompilerPipeline` |
-| **FASE 2** | Construcción de AST | ✅ `ASTBuilder` |
-| **FASE 3** | Análisis Semántico | ✅ `SemanticAnalyzer` |
-| **FASE 4** | Optimización AST | ✅ `ASTOptimizer` |
-| **FASE 5** | Generación de Código | ✅ `AdvancedCodeGenerator` |
 
+| Fase             | Actividad              | Módulo Responsable         |
+| :--------------- | :--------------------- | :-------------------------- |
+| **FASE 1** | Análisis de Diagrama  | ✅`CompilerPipeline`      |
+| **FASE 2** | Construcción de AST   | ✅`ASTBuilder`            |
+| **FASE 3** | Análisis Semántico   | ✅`SemanticAnalyzer`      |
+| **FASE 4** | Optimización AST      | ✅`ASTOptimizer`          |
+| **FASE 5** | Generación de Código | ✅`AdvancedCodeGenerator` |
 
 **Entregables:**
+
 - ✅ Sistema completo integrado
 - ✅ Documentación técnica del compilador
 - ✅ Casos de prueba automatizados
@@ -110,22 +120,24 @@ El producto principal es implementar un compilador fuente a fuente (Diagramas de
 ### **🔧 Aspectos Técnicos que Agregar:**
 
 1. **Manejo de Errores Robusto:**
+
    - Sistema de recuperación de errores
    - Mensajes de error descriptivos
    - Sugerencias de corrección automática
-
 2. **Optimizaciones Específicas para Diagramas:**
+
    - Detección de bucles infinitos
    - Validación de rutas no alcanzables
    - Optimización de saltos condicionales
-
 3. **Extensibilidad:**
+
    - Soporte para nuevos tipos de nodos
    - Plugin system para validaciones personalizadas
    - API para exportar a otros lenguajes
 
 ### **📊 Métricas de Validación:**
-``` dart
+
+```dart
 // Crear: lib/compiler/compiler_metrics.dart
 class CompilerMetrics {
   double lexicalAccuracy;    // % tokens correctos
@@ -142,7 +154,9 @@ FlowCode (ante llamada FlowDiagram App) es un editor visual intuitivo que permit
 ## ✨ Funcionalidades Implementadas
 
 ### 🎨 Editor Visual
+
 - **Paleta de nodos**: Incluye todos los tipos de nodos esenciales conforme a **ISO 5807**:
+
   - Nodo de inicio (óvalo verde)
   - Nodo de fin (óvalo rojo)
   - Nodo de proceso (rectángulo azul) - Incluye operaciones aritméticas y declaraciones de variables
@@ -150,22 +164,23 @@ FlowCode (ante llamada FlowDiagram App) es un editor visual intuitivo que permit
   - Nodo de dato (paralelogramo púrpura) - Unifica entrada/salida de datos
   - Nodo de bucle (hexagonal naranja)
   - Nodo de subproceso (rectángulo con doble línea morado)
-
 - **Interacciones avanzadas**:
+
   - Arrastrar y soltar nodos en el canvas
   - Zoom y desplazamiento (pan) del área de trabajo
   - Conexión visual entre nodos mediante líneas con flechas
   - Selección y edición de nodos con diálogos especializados y dropdowns
   - Etiquetado de conexiones entre nodos
   - Grid de alineación opcional
-
 - **Diálogos mejorados para usuarios no programadores**:
+
   - **Nodo de Dato**: Dropdown con 10 tipos de operaciones predefinidas (lectura de entero, flotante, cadena, carácter, línea completa + escritura con las mismas variantes)
   - **Nodo de Proceso**: 8 tipos de operaciones (asignación, operaciones aritméticas, incremento/decremento, declaración, inicialización, constantes, arreglos)
   - Vista previa de código generado en tiempo real
   - Interpretación inteligente de texto existente
 
 ### 🔗 Sistema de Conexiones
+
 - Conexión intuitiva entre nodos
 - Puntos de conexión automáticos (arriba, abajo, izquierda, derecha)
 - Validación de conexiones lógicas
@@ -173,42 +188,48 @@ FlowCode (ante llamada FlowDiagram App) es un editor visual intuitivo que permit
 - Detección de colisiones mejorada
 
 ### ✅ Validación de Diagramas
+
 - **Validaciones estructurales**:
+
   - Verificación de nodo de inicio único
   - Verificación de al menos un nodo de fin
   - Validación de conexiones lógicas
   - Detección de nodos desconectados
   - Validación específica para nodos de decisión (múltiples salidas)
-
 - **Retroalimentación visual**:
+
   - Diálogo de resultados de validación
   - Clasificación entre errores y advertencias
   - Mensajes descriptivos para cada problema detectado
 
 ### 🔧 Generación de Código C
+
 - **Generador automático** que produce código C funcional
 - **Características del código generado**:
+
   - Inclusión automática de librerías estándar (`stdio.h`, `stdlib.h`, `stdbool.h`)
   - Declaración automática de variables utilizadas
   - Función main() completa
   - Comentarios con fecha de generación
   - Formateo adecuado del código
-
 - **Soporte para estructuras**:
+
   - Secuencias lineales
   - Estructuras condicionales (if/else)
   - Entrada y salida de datos
   - Procesamiento de variables
 
 ### 💾 Sistema de Almacenamiento
+
 - **Base de datos SQLite local** para persistencia
 - **Funcionalidades de guardado**:
+
   - Guardar diagramas con nombre y descripción
   - Actualizar diagramas existentes
   - Cargar diagramas guardados
   - Eliminar diagramas
-
 - **Sistema de plantillas**:
+
   - **20 plantillas educativas** basadas en el temario de Fundamentos de Programación (ESCOM ISC 2020)
   - **UNIDAD I - Básico**: Hola Mundo, Tipos de Datos, Calculadora, Conversión Temperatura
   - **UNIDAD I - Decisiones**: Par/Impar, Mayor de 3, Calculadora Menú, Triángulos
@@ -219,18 +240,21 @@ FlowCode (ante llamada FlowDiagram App) es un editor visual intuitivo que permit
   - Ver [PLANTILLAS_SIMBOLOS.md](PLANTILLAS_SIMBOLOS.md) para documentación completa
 
 ### 📱 Interfaz de Usuario
+
 - **Diseño Material 3** moderno
 - **Navegación fluida** entre pantallas:
+
   - Pantalla de carga/selección de diagramas
   - Editor principal con canvas interactivo
   - Diálogos modales para edición
-
 - **Controles intuitivos**:
+
   - Barra de herramientas con acciones principales
   - Paleta lateral de nodos
   - Menús contextuales para opciones avanzadas
 
 ### 📸 Exportación de Diagramas
+
 - **Formatos de exportación**:
   - PNG con alta calidad y soporte para transparencia
   - JPG con compresión optimizada y fondo blanco
@@ -246,12 +270,12 @@ FlowCode (ante llamada FlowDiagram App) es un editor visual intuitivo que permit
 ### 🎓 Sistema de Ejercicios de Comprensión
 
 - **5 categorías de ejercicios**:
+
   - Símbolos Básicos: Aprende los símbolos fundamentales
   - Estructuras de Control: Decisiones y bucles
   - Flujo de Datos: Entrada, salida y variables
   - Conexiones: Flujo lógico del diagrama
   - Avanzado: Conectores y subprocesos
-
 - **Acceso**: Botón dedicado "Ejercicios" en la pantalla principal junto a "Crear nuevo diagrama"
 
 ### 📚 Sistema de Tutoriales Integrado
@@ -280,21 +304,19 @@ FlowCode (ante llamada FlowDiagram App) es un editor visual intuitivo que permit
 
 ### 1. Métricas Técnicas
 
-- **Precisión del compilador:**  
-  Porcentaje de diagramas válidos que generan código C sintácticamente correcto.  
-  _Meta: 100% para diagramas estructuralmente válidos._
-
-- **Detección de errores:**  
-  Capacidad del validador para identificar errores estructurales (implementado) y semánticos (en desarrollo).  
+- **Precisión del compilador:**Porcentaje de diagramas válidos que generan código C sintácticamente correcto._Meta: 100% para diagramas estructuralmente válidos._
+- **Detección de errores:**
+  Capacidad del validador para identificar errores estructurales (implementado) y semánticos (en desarrollo).
   _Meta: detectar el 100% de errores estructurales y semánticos comunes._
 
 ---
 
-Estas métricas permitirán evaluar la calidad técnica del compilador fuente a fuente. La aplicacion no se compromete a evaluar la calidad educativa o la comprensión de los conceptos de programación por parte de los usuarios.  
+Estas métricas permitirán evaluar la calidad técnica del compilador fuente a fuente. La aplicacion no se compromete a evaluar la calidad educativa o la comprensión de los conceptos de programación por parte de los usuarios.
 
 ## 🚀 Funcionalidad sin conexión
 
 FlowDiagram App puede ser utilizada completamente **sin internet** para:
+
 - Crear y editar diagramas de flujo.
 - Generar código en lenguaje C.
 - Validar y guardar diagramas en el dispositivo.
@@ -303,6 +325,7 @@ FlowDiagram App puede ser utilizada completamente **sin internet** para:
 ## 🌐 Funcionalidad con internet
 
 Una conexión a internet es requerida únicamente para:
+
 - Sincronizar tus diagramas y respaldos en la nube.
 - Compartir diagramas o código con otros usuarios.
 - Consultar métricas globales o comparativas (opcional).
@@ -335,17 +358,20 @@ dependencies:
 ## 🚀 Instalación y Ejecución
 
 1. **Clonar el repositorio**
+
 ```bash
 git clone [url-del-repositorio]
 cd flowdiagramapp
 ```
 
-2. **Instalar dependencias**
+1. **Instalar dependencias**
+
 ```bash
 flutter pub get
 ```
 
-3. **Ejecutar la aplicación**
+1. **Ejecutar la aplicación**
+
 ```bash
 flutter run
 ```
@@ -376,42 +402,43 @@ lib/
 ## 🎯 Estado del Desarrollo
 
 ### ✅ Completado
-- [x] Editor visual básico con todos los tipos de nodos
-- [x] Sistema de conexiones entre nodos
-- [x] Arrastrar y soltar, zoom y desplazamiento
-- [x] Validación completa de diagramas
-- [x] Generación de código C funcional
-- [x] Sistema de guardado y carga con SQLite
-- [x] Plantillas predefinidas
-- [x] Interfaz de usuario moderna
-- [x] Inicio de sesión y funcionamiento offline
-- [x] Métricas de Evaluación
-- [x] Modo oscuro
-- [x] Importar/exportar diagramas a jpg.
-- [x] Optimización del rendimiento del canvas
+
+- [X] Editor visual básico con todos los tipos de nodos
+- [X] Sistema de conexiones entre nodos
+- [X] Arrastrar y soltar, zoom y desplazamiento
+- [X] Validación completa de diagramas
+- [X] Generación de código C funcional
+- [X] Sistema de guardado y carga con SQLite
+- [X] Plantillas predefinidas
+- [X] Interfaz de usuario moderna
+- [X] Inicio de sesión y funcionamiento offline
+- [X] Métricas de Evaluación
+- [X] Modo oscuro
+- [X] Importar/exportar diagramas a jpg.
+- [X] Optimización del rendimiento del canvas
   - Implementación de arrastre fluido con feedback visual en tiempo real
   - Uso de AnimationController para suavizar movimientos de nodos
   - Optimización de repintado usando RepaintBoundary y AnimatedBuilder
   - Mejora en la detección de colisiones y gestión de eventos de toque
-- [x] **Mejoras para usuarios no programadores (Nodo de Proceso)**
+- [X] **Mejoras para usuarios no programadores (Nodo de Proceso)**
   - Diálogo especializado con opciones predefinidas (asignación, operaciones matemáticas, incremento/decremento)
   - Vista previa en tiempo real del código generado
   - Interpretación inteligente del texto existente
   - Interfaz guiada que reduce errores de sintaxis
   - Cumplimiento de estándares ANSI/ISO 5807
-- [x] Mejorar la interfaz de usuario para usuario no programadores (Nodo de Proceso completado).
-- [x] Mejorar la interfaz de usuario para usuario no programadores (Nodo de decisión).
-- [x] Implementación del Símbolo: Subproceso/Función
-- [x] **Simplificación de símbolos según ISO 5807**
+- [X] Mejorar la interfaz de usuario para usuario no programadores (Nodo de Proceso completado).
+- [X] Mejorar la interfaz de usuario para usuario no programadores (Nodo de decisión).
+- [X] Implementación del Símbolo: Subproceso/Función
+- [X] **Simplificación de símbolos según ISO 5807**
   - Fusión de símbolos "Entrada" y "Salida" en un único símbolo "Dato" (paralelogramo)
   - Fusión de símbolo "Variable" con símbolo "Proceso" (rectángulo)
   - Diálogo de Dato con dropdown para 10 tipos de operaciones I/O
   - Diálogo de Proceso expandido con 8 tipos de operaciones (procesamiento + declaraciones)
   - Reducción de 11 a 9 símbolos esenciales conforme a estándar internacional
 - [X] Programacion de las estructuras generadas por cada boton del panel "C concepts"
-- [x] 20 plantillas implementadas usando de referencia el temario de Fundamentos de Programación (ESCOM ISC 2020)
+- [X] 20 plantillas implementadas usando de referencia el temario de Fundamentos de Programación (ESCOM ISC 2020)
 - [X] Generación de código C y validacion estructural mejorada
-- [x] Implementar las fases de un transpilador: análisis léxico, sintáctico, semántico, representación intermedia, tabla de símbolos y generación de código C funcional ✅
+- [X] Implementar las fases de un transpilador: análisis léxico, sintáctico, semántico, representación intermedia, tabla de símbolos y generación de código C funcional ✅
 - [X] Tutorial integrado para cada tipo de nodo
 - [X] La exportación de diagramas a JPG/PNG no se exporta correctamente en algunos dispositivos Android (problema de permisos).
 - [X] Separación de diagramas por usuario - Cada usuario ahora ve solo sus propios diagramas
@@ -426,15 +453,14 @@ lib/
   - Al hacer zoom (pinch), la vista ahora se centra en el punto focal del gesto
   - Se mantiene la posición del diagrama visible durante el zoom
   - Experiencia de zoom más natural e intuitiva
+- [X] Aceptación de Aviso de Privacidad
+- [X] Agregar la opcion de exportación de código a archivos .c ademas de exportacion a imagen.
 
 ## 🔄 En Desarrollo
 
-- [ ] Agregar la opcion de exportación de código a archivos .c ademas de exportacion a imagen.
+- [ ] Arreglar la sincronización de diagramas de flujo con Firebase Storage. Firebase console debe habilitar el almacenamiento en la nube.
 
 ### 🎯 Próximas Funcionalidades
-
-- [ ] Aceptación de Aviso de Privacidad
-- [ ] Revisar la sincronización de diagramas de flujo con Firebase Storage. Firebase console debe habilitar el almacenamiento en la nube.
 
 ## 📄 Licencia
 
@@ -446,4 +472,4 @@ Este es un proyecto académico. Para sugerencias o mejoras, por favor crea un is
 
 ---
 
-*Desarrollado con ❤️ usando Flutter*
+_Desarrollado con ❤️ usando Flutter_

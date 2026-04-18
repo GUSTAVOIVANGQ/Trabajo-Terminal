@@ -38,6 +38,8 @@ dependencies:
   
   # Los iconos de la aplicación
   cupertino_icons: ^1.0.2
+  firebase_analytics: ^10.10.7
+  firebase_crashlytics: ^3.5.7
 
 dev_dependencies:
   flutter_test:

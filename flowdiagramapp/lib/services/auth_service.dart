@@ -3,6 +3,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import '../models/user_model.dart';
+import 'analytics_service.dart';
+import 'crash_reporting_service.dart';
 import 'dart:convert';
 
 class AuthService {
@@ -12,6 +14,8 @@ class AuthService {
 
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final AnalyticsService _analyticsService = AnalyticsService();
+  final CrashReportingService _crashReportingService = CrashReportingService();
   UserModel? _currentUser;
 
   // Stream del estado de autenticación
@@ -86,11 +90,41 @@ class AuthService {
   Future<UserModel> signInAsGuest() async {
     _currentUser = UserModel.guest();
     await _saveUserToCache(_currentUser!);
+    await _configureConsentServicesForCurrentUser();
     return _currentUser!;
   }
 
   // Verificar si el usuario actual es invitado
   bool get isGuestUser => _currentUser?.isGuest ?? false;
+
+  bool _isTelemetryOptIn(UserModel? user) {
+    if (user == null) return false;
+    final value = user.metrics['telemetry_opt_in'];
+    return value == true;
+  }
+
+  bool _isCrashReportsOptIn(UserModel? user) {
+    if (user == null) return false;
+    final value = user.metrics['crash_reports_opt_in'];
+    return value == true;
+  }
+
+  Future<void> _configureConsentServicesForCurrentUser() async {
+    if (_currentUser == null) {
+      await _analyticsService.disableCollection();
+      await _crashReportingService.disableCollection();
+      return;
+    }
+
+    await _analyticsService.configureCollection(
+      telemetryOptIn: _isTelemetryOptIn(_currentUser),
+      isGuest: _currentUser!.isGuest,
+    );
+    await _crashReportingService.configureCollection(
+      crashReportsOptIn: _isCrashReportsOptIn(_currentUser),
+      isGuest: _currentUser!.isGuest,
+    );
+  }
 
   // Registro de usuario
   Future<UserModel?> registerWithEmailPassword({
@@ -98,6 +132,8 @@ class AuthService {
     required String password,
     required String displayName,
     UserRole role = UserRole.user,
+    bool telemetryOptIn = false,
+    bool crashReportsOptIn = false,
   }) async {
     final hasInternet = await _hasInternetConnection();
     if (!hasInternet) {
@@ -135,6 +171,15 @@ class AuthService {
 
       // Crear el documento del usuario en Firestore
       final now = DateTime.now();
+      final initialMetrics = <String, dynamic>{
+        'privacy_notice_accepted': true,
+        'privacy_notice_accepted_at': now.toIso8601String(),
+        'telemetry_opt_in': telemetryOptIn,
+        'telemetry_updated_at': now.toIso8601String(),
+        'crash_reports_opt_in': crashReportsOptIn,
+        'crash_reports_updated_at': now.toIso8601String(),
+      };
+
       final userModel = UserModel(
         uid: user.uid,
         email: email,
@@ -142,12 +187,14 @@ class AuthService {
         role: role,
         createdAt: now,
         lastLogin: now,
+        metrics: initialMetrics,
       );
 
       await _firestore.collection('users').doc(user.uid).set(userModel.toMap());
 
       _currentUser = userModel;
       await _saveUserToCache(userModel);
+      await _configureConsentServicesForCurrentUser();
 
       return userModel;
     } on FirebaseAuthException catch (e) {
@@ -200,6 +247,7 @@ class AuthService {
         if (_currentUser != null) {
           await _saveUserToCache(_currentUser!);
           await _updateLastLogin(_currentUser!.uid);
+          await _configureConsentServicesForCurrentUser();
         }
 
         return _currentUser;
@@ -211,6 +259,7 @@ class AuthService {
       final cachedUser = await _loadUserFromCache();
       if (cachedUser != null && cachedUser.email == email) {
         _currentUser = cachedUser;
+        await _configureConsentServicesForCurrentUser();
         return _currentUser;
       } else {
         throw Exception(
@@ -229,6 +278,8 @@ class AuthService {
 
     _currentUser = null;
     await _clearUserCache();
+    await _analyticsService.disableCollection();
+    await _crashReportingService.disableCollection();
   }
 
   // Obtener usuario desde Firestore
@@ -283,7 +334,7 @@ class AuthService {
       String uid, Map<String, dynamic> metrics) async {
     final hasInternet = await _hasInternetConnection();
 
-    if (hasInternet && _currentUser != null) {
+    if (hasInternet && _currentUser != null && !_currentUser!.isGuest) {
       try {
         await _firestore.collection('users').doc(uid).update({
           'metrics': metrics,
@@ -292,17 +343,20 @@ class AuthService {
         // Actualizar usuario en cache
         _currentUser = _currentUser!.copyWith(metrics: metrics);
         await _saveUserToCache(_currentUser!);
+        await _configureConsentServicesForCurrentUser();
       } catch (e) {
         print('Error actualizando métricas: $e');
         // En caso de error, actualizar solo en cache local
         _currentUser = _currentUser!.copyWith(metrics: metrics);
         await _saveUserToCache(_currentUser!);
+        await _configureConsentServicesForCurrentUser();
       }
     } else {
       // Sin internet, actualizar solo en cache local
       if (_currentUser != null) {
         _currentUser = _currentUser!.copyWith(metrics: metrics);
         await _saveUserToCache(_currentUser!);
+        await _configureConsentServicesForCurrentUser();
       }
     }
   }
@@ -424,6 +478,8 @@ class AuthService {
 
     _currentUser = null;
     await _clearUserCache();
+    await _analyticsService.disableCollection();
+    await _crashReportingService.disableCollection();
   }
 
   // Sincronizar usuario de Authentication con Firestore
@@ -444,6 +500,7 @@ class AuthService {
       if (firestoreUser != null) {
         _currentUser = firestoreUser;
         await _saveUserToCache(firestoreUser);
+        await _configureConsentServicesForCurrentUser();
         return firestoreUser;
       }
 
@@ -464,6 +521,7 @@ class AuthService {
           .set(userModel.toMap());
       _currentUser = userModel;
       await _saveUserToCache(userModel);
+      await _configureConsentServicesForCurrentUser();
 
       return userModel;
     } catch (e) {
@@ -499,6 +557,8 @@ class AuthService {
       // Limpiar estado local
       _currentUser = null;
       await _clearUserCache();
+      await _analyticsService.disableCollection();
+      await _crashReportingService.disableCollection();
     } catch (e) {
       throw Exception('Error al eliminar usuario: ${e.toString()}');
     }
@@ -535,6 +595,8 @@ class AuthService {
         // Limpiar estado local
         _currentUser = null;
         await _clearUserCache();
+        await _analyticsService.disableCollection();
+        await _crashReportingService.disableCollection();
       }
     } catch (e) {
       throw Exception('Error al eliminar usuario por email: ${e.toString()}');
@@ -645,6 +707,8 @@ class AuthService {
       onProgress?.call('Limpiando datos locales...');
       _currentUser = null;
       await _clearUserCache();
+      await _analyticsService.disableCollection();
+      await _crashReportingService.disableCollection();
 
       onProgress?.call('Cuenta eliminada exitosamente');
     } on FirebaseAuthException catch (e) {

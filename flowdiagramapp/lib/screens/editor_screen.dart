@@ -1,7 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:intl/intl.dart';
 import '../widgets/flow_diagram_canvas_final.dart';
-import '../widgets/node_palette.dart';
 import '../widgets/programming_concepts_palette.dart';
 import '../widgets/editor_side_panel.dart';
 import '../widgets/node_editor_dialog.dart';
@@ -18,7 +20,20 @@ import '../services/database_service.dart';
 import '../services/metrics_service.dart'; // Nueva importación
 import '../services/diagram_export_service.dart'; // Importación para exportación
 import '../services/auth_service.dart'; // Importación para autenticación
+import '../services/auto_save_settings_service.dart';
 import '../compiler/compiler.dart'; // Compilador completo
+
+class _DiagramHistorySnapshot {
+  final List<DiagramNode> nodes;
+  final List<Connection> connections;
+  final String? selectedNodeId;
+
+  const _DiagramHistorySnapshot({
+    required this.nodes,
+    required this.connections,
+    required this.selectedNodeId,
+  });
+}
 
 class EditorScreen extends StatefulWidget {
   final SavedDiagram? initialDiagram;
@@ -30,6 +45,12 @@ class EditorScreen extends StatefulWidget {
 }
 
 class _EditorScreenState extends State<EditorScreen> {
+  static const double _minZoomScale = 0.5;
+  static const double _maxZoomScale = 2.0;
+  static const double _zoomStep = 0.1;
+  static const int _maxHistoryStates = 100;
+  static const Duration _autoSaveInterval = Duration(seconds: 2);
+
   final List<DiagramNode> nodes = [];
   final List<Connection> connections = [];
   DiagramNode? selectedNode;
@@ -49,7 +70,21 @@ class _EditorScreenState extends State<EditorScreen> {
   final DatabaseService _databaseService = DatabaseService();
   final MetricsService _metricsService = MetricsService(); // Nuevo servicio
   final AuthService _authService = AuthService(); // Servicio de autenticación
+  final AutoSaveSettingsService _autoSaveSettingsService =
+      AutoSaveSettingsService();
   bool _hasUnsavedChanges = false;
+  bool _autoSaveEnabled = false;
+  bool _isAutoSaving = false;
+  Timer? _autoSaveTimer;
+
+  final List<_DiagramHistorySnapshot> _history = [];
+  int _historyIndex = -1;
+  int _savedHistoryIndex = -1;
+  bool _isApplyingHistory = false;
+
+  bool get _canUndo => _historyIndex > 0;
+  bool get _canRedo =>
+      _historyIndex >= 0 && _historyIndex < _history.length - 1;
 
   // GlobalKey para capturar el canvas y exportar
   final GlobalKey _canvasKey = GlobalKey();
@@ -68,399 +103,742 @@ class _EditorScreenState extends State<EditorScreen> {
     // Si se proporciona un diagrama inicial, cargarlo
     if (widget.initialDiagram != null) {
       _loadDiagram(widget.initialDiagram!);
+    } else {
+      _resetHistoryFromCurrentState();
     }
+
+    _initializeAutoSave();
+  }
+
+  @override
+  void dispose() {
+    _autoSaveTimer?.cancel();
+    super.dispose();
   }
 
   void _loadDiagram(SavedDiagram diagram) {
+    final loadedNodes = _cloneNodes(diagram.nodes);
+    final loadedNodeById = {for (final node in loadedNodes) node.id: node};
+    final loadedConnections =
+        _cloneConnections(diagram.connections, loadedNodeById);
+
     setState(() {
       nodes.clear();
       connections.clear();
 
       // Agregar nodos y conexiones del diagrama cargado
-      nodes.addAll(diagram.nodes);
-      connections.addAll(diagram.connections);
+      nodes.addAll(loadedNodes);
+      connections.addAll(loadedConnections);
+      selectedNode = null;
+      selectedConnection = null;
+      connectionStart = null;
+      isConnecting = false;
 
       // Almacenar referencia al diagrama actual
       currentDiagram = diagram;
       _hasUnsavedChanges = false;
     });
+
+    _resetHistoryFromCurrentState();
+  }
+
+  Future<void> _initializeAutoSave() async {
+    final userId = _authService.currentUser?.uid;
+    final enabled =
+        await _autoSaveSettingsService.isAutoSaveEnabled(userId: userId);
+
+    if (!mounted) return;
+
+    _autoSaveEnabled = enabled;
+    _configureAutoSaveTimer();
+  }
+
+  void _configureAutoSaveTimer() {
+    _autoSaveTimer?.cancel();
+
+    if (!_autoSaveEnabled) {
+      return;
+    }
+
+    _autoSaveTimer = Timer.periodic(_autoSaveInterval, (_) {
+      _performAutoSave();
+    });
+  }
+
+  Future<void> _performAutoSave() async {
+    if (!_autoSaveEnabled || _isAutoSaving || !_hasUnsavedChanges) {
+      return;
+    }
+
+    _isAutoSaving = true;
+
+    try {
+      final now = DateTime.now();
+      final userId = _getCurrentUserId();
+
+      if (currentDiagram == null) {
+        final String draftName =
+            'borrador_${DateFormat('yyyyMMdd_HHmmss').format(now)}';
+        final draftDiagram = SavedDiagram(
+          name: draftName,
+          description: 'Autoguardado',
+          createdAt: now,
+          updatedAt: now,
+          nodes: nodes,
+          connections: connections,
+          userId: userId,
+        );
+
+        final id = await _databaseService.saveDiagram(draftDiagram);
+
+        if (!mounted) return;
+
+        setState(() {
+          currentDiagram = draftDiagram.copyWith(id: id);
+          _markCurrentStateAsSavedInHistory();
+        });
+      } else {
+        final updatedDiagram = currentDiagram!.copyWith(
+          updatedAt: now,
+          nodes: nodes,
+          connections: connections,
+          userId: currentDiagram!.userId ?? userId,
+        );
+
+        await _databaseService.updateDiagram(updatedDiagram);
+
+        if (!mounted) return;
+
+        setState(() {
+          currentDiagram = updatedDiagram;
+          _markCurrentStateAsSavedInHistory();
+        });
+      }
+    } catch (_) {
+      // El autoguardado no debe bloquear la edición si falla.
+    } finally {
+      _isAutoSaving = false;
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(currentDiagram?.name ?? 'Diagrama de Flujo'),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => _handleBackNavigation(context),
-        ),
-        actions: [
-          // Botón para validar el diagrama
-          IconButton(
-            icon: const Icon(Icons.check_circle_outline),
-            tooltip: 'Validar diagrama',
-            onPressed: _validateDiagram,
-          ),
-          // Botón para guardar diagrama
-          IconButton(
-            icon: _hasUnsavedChanges
-                ? const Icon(Icons.save, color: Colors.amber)
-                : const Icon(Icons.save),
-            tooltip: 'Guardar diagrama',
-            onPressed: _showSaveDiagramDialog,
-          ),
-          // Botón para cargar diagrama
-          IconButton(
-            icon: const Icon(Icons.folder_open),
-            tooltip: 'Cargar diagrama',
-            onPressed: () => _navigateToLoadDiagram(context),
-          ),
-          // Menú de generación de código con dos opciones
-          PopupMenuButton<String>(
-            icon: const Icon(Icons.code),
-            tooltip: 'Generar código',
-            onSelected: (value) {
-              if (value == 'simple') {
-                _generateCode();
-              } else if (value == 'compiler') {
-                _compileWithFullPipeline();
-              }
-            },
-            itemBuilder: (context) => [
-              const PopupMenuItem(
-                value: 'simple',
-                child: Row(
-                  children: [
-                    Icon(Icons.flash_on, color: Colors.orange),
-                    SizedBox(width: 8),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('Generador Simple'),
-                        Text(
-                          'Traducción directa a C',
-                          style: TextStyle(fontSize: 11, color: Colors.grey),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              const PopupMenuItem(
-                value: 'compiler',
-                child: Row(
-                  children: [
-                    Icon(Icons.precision_manufacturing, color: Colors.blue),
-                    SizedBox(width: 8),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('Compilador Avanzado'),
-                        Text(
-                          'Análisis completo + Optimización',
-                          style: TextStyle(fontSize: 11, color: Colors.grey),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          // Menú de exportación
-          PopupMenuButton<String>(
-            icon: const Icon(Icons.file_download),
-            tooltip: 'Exportar diagrama',
-            onSelected: (value) {
-              if (value == 'png') {
-                _exportDiagramAsPNG();
-              } else if (value == 'jpg') {
-                _exportDiagramAsJPG();
-              }
-            },
-            itemBuilder: (context) => [
-              const PopupMenuItem(
-                value: 'png',
-                child: Row(
-                  children: [
-                    Icon(Icons.image),
-                    SizedBox(width: 8),
-                    Text('Exportar como PNG'),
-                  ],
-                ),
-              ),
-              const PopupMenuItem(
-                value: 'jpg',
-                child: Row(
-                  children: [
-                    Icon(Icons.photo),
-                    SizedBox(width: 8),
-                    Text('Exportar como JPG'),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          if (selectedNode != null)
-            IconButton(
-              icon: const Icon(Icons.edit),
-              tooltip: 'Editar nodo',
-              onPressed: () => _editSelectedNode(),
+    return CallbackShortcuts(
+      bindings: {
+        const SingleActivator(LogicalKeyboardKey.keyZ, control: true): _undo,
+        const SingleActivator(LogicalKeyboardKey.keyY, control: true): _redo,
+        const SingleActivator(
+          LogicalKeyboardKey.keyZ,
+          control: true,
+          shift: true,
+        ): _redo,
+      },
+      child: Focus(
+        autofocus: true,
+        child: Scaffold(
+          appBar: AppBar(
+            title: Text(currentDiagram?.name ?? 'Diagrama de Flujo'),
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back),
+              onPressed: () => _handleBackNavigation(context),
             ),
-          if (selectedNode != null)
-            IconButton(
-              icon: const Icon(Icons.delete),
-              tooltip: 'Eliminar nodo',
-              onPressed: () => _deleteSelectedNode(),
-            ),
-          // Nuevo botón para gestionar conexiones
-          if (selectedNode != null)
-            IconButton(
-              icon: isConnecting
-                  ? const Icon(Icons.link_off)
-                  : const Icon(Icons.link),
-              tooltip: isConnecting ? 'Cancelar conexión' : 'Crear conexión',
-              onPressed: () {
-                setState(() {
-                  if (isConnecting) {
-                    connectionStart = null;
-                    isConnecting = false;
-                    // _showSnackBar('Conexión cancelada');
-                  } else {
-                    connectionStart = selectedNode;
-                    isConnecting = true;
-                    // _showSnackBar('Selecciona otro nodo para conectarlo');
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.undo),
+                tooltip: 'Deshacer',
+                onPressed: _canUndo ? _undo : null,
+              ),
+              IconButton(
+                icon: const Icon(Icons.redo),
+                tooltip: 'Rehacer',
+                onPressed: _canRedo ? _redo : null,
+              ),
+              // Botón para validar el diagrama
+              IconButton(
+                icon: const Icon(Icons.check_circle_outline),
+                tooltip: 'Validar diagrama',
+                onPressed: _validateDiagram,
+              ),
+              // Botón para guardar diagrama
+              IconButton(
+                icon: _hasUnsavedChanges
+                    ? const Icon(Icons.save, color: Colors.amber)
+                    : const Icon(Icons.save),
+                tooltip: 'Guardar diagrama',
+                onPressed: _showSaveDiagramDialog,
+              ),
+              // Botón para cargar diagrama
+              IconButton(
+                icon: const Icon(Icons.folder_open),
+                tooltip: 'Cargar diagrama',
+                onPressed: () => _navigateToLoadDiagram(context),
+              ),
+              // Menú de generación de código con dos opciones
+              PopupMenuButton<String>(
+                icon: const Icon(Icons.code),
+                tooltip: 'Generar código',
+                onSelected: (value) {
+                  if (value == 'simple') {
+                    _generateCode();
+                  } else if (value == 'compiler') {
+                    _compileWithFullPipeline();
                   }
-                });
-              },
-            ),
-        ],
-      ),
-      body: Row(
-        children: [
-          // Panel lateral con pestañas para símbolos y conceptos
-          EditorSidePanel(
-            onNodeSelected: (nodeType) {
-              // No seleccionar automáticamente el nodo si estamos en modo conexión
-              _addNode(nodeType, autoSelect: !isConnecting);
-            },
-            onConceptSelected: (conceptType) {
-              _addConcept(conceptType);
-            },
-          ),
-
-          // Área principal del canvas
-          Expanded(
-            child: Stack(
-              children: [
-                FlowDiagramCanvas(
-                  nodes: nodes,
-                  connections: connections,
-                  selectedNode: selectedNode,
-                  panOffset: panOffset,
-                  scale: currentScale,
-                  canvasKey: _canvasKey, // Agregar el GlobalKey
-                  onPanUpdate: (details) {
-                    if (!isConnecting) {
-                      setState(() {
-                        panOffset += details.delta;
-                      });
-                    }
-                  },
-                  onScaleStart: (details) {
-                    // Guardar estado inicial del zoom para cálculo correcto
-                    _scaleStart = currentScale;
-                    _focalPointStart = details.localFocalPoint;
-                    _panOffsetStart = panOffset;
-                  },
-                  onScaleUpdate: (details) {
-                    if (!isConnecting) {
-                      setState(() {
-                        // Calcular la nueva escala basada en la escala inicial
-                        final newScale =
-                            (_scaleStart * details.scale).clamp(0.5, 2.0);
-
-                        // Calcular el punto focal en coordenadas del canvas (antes de la transformación)
-                        // focalPoint = panOffset + focalPointLocal / scale
-                        final focalPointCanvas =
-                            (_focalPointStart - _panOffsetStart) / _scaleStart;
-
-                        // Calcular el nuevo panOffset para mantener el punto focal en la misma posición
-                        // Queremos que: focalPointLocal = panOffset + focalPointCanvas * scale
-                        // Por lo tanto: panOffset = focalPointLocal - focalPointCanvas * scale
-                        final newPanOffset = details.localFocalPoint -
-                            focalPointCanvas * newScale;
-
-                        currentScale = newScale;
-                        panOffset = newPanOffset;
-                      });
-                    }
-                  },
-                  onNodeTap: (node) {
-                    print('Editor recibió tap en nodo: ${node?.type}');
+                },
+                itemBuilder: (context) => [
+                  const PopupMenuItem(
+                    value: 'simple',
+                    child: Row(
+                      children: [
+                        Icon(Icons.flash_on, color: Colors.orange),
+                        SizedBox(width: 8),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('Generador Simple'),
+                            Text(
+                              'Traducción directa a C',
+                              style:
+                                  TextStyle(fontSize: 11, color: Colors.grey),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  const PopupMenuItem(
+                    value: 'compiler',
+                    child: Row(
+                      children: [
+                        Icon(Icons.precision_manufacturing, color: Colors.blue),
+                        SizedBox(width: 8),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('Compilador Avanzado'),
+                            Text(
+                              'Análisis completo + Optimización',
+                              style:
+                                  TextStyle(fontSize: 11, color: Colors.grey),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              // Menú de exportación
+              PopupMenuButton<String>(
+                icon: const Icon(Icons.file_download),
+                tooltip: 'Exportar diagrama',
+                onSelected: (value) {
+                  if (value == 'png') {
+                    _exportDiagramAsPNG();
+                  } else if (value == 'jpg') {
+                    _exportDiagramAsJPG();
+                  } else if (value == 'pdf') {
+                    _exportDiagramAsPDF();
+                  } else if (value == 'c') {
+                    _exportCodeAsCFile();
+                  }
+                },
+                itemBuilder: (context) => [
+                  const PopupMenuItem(
+                    value: 'png',
+                    child: Row(
+                      children: [
+                        Icon(Icons.image),
+                        SizedBox(width: 8),
+                        Text('Exportar como PNG'),
+                      ],
+                    ),
+                  ),
+                  const PopupMenuItem(
+                    value: 'jpg',
+                    child: Row(
+                      children: [
+                        Icon(Icons.photo),
+                        SizedBox(width: 8),
+                        Text('Exportar como JPG'),
+                      ],
+                    ),
+                  ),
+                  const PopupMenuItem(
+                    value: 'pdf',
+                    child: Row(
+                      children: [
+                        Icon(Icons.picture_as_pdf),
+                        SizedBox(width: 8),
+                        Text('Exportar como PDF'),
+                      ],
+                    ),
+                  ),
+                  const PopupMenuItem(
+                    value: 'c',
+                    child: Row(
+                      children: [
+                        Icon(Icons.description),
+                        SizedBox(width: 8),
+                        Text('Exportar código .c'),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              if (selectedNode != null)
+                IconButton(
+                  icon: const Icon(Icons.edit),
+                  tooltip: 'Editar nodo',
+                  onPressed: () => _editSelectedNode(),
+                ),
+              if (selectedNode != null)
+                IconButton(
+                  icon: const Icon(Icons.delete),
+                  tooltip: 'Eliminar nodo',
+                  onPressed: () => _deleteSelectedNode(),
+                ),
+              // Nuevo botón para gestionar conexiones
+              if (selectedNode != null)
+                IconButton(
+                  icon: isConnecting
+                      ? const Icon(Icons.link_off)
+                      : const Icon(Icons.link),
+                  tooltip:
+                      isConnecting ? 'Cancelar conexión' : 'Crear conexión',
+                  onPressed: () {
                     setState(() {
-                      if (node == null) {
-                        // Si se toca un área vacía, deseleccionamos todo
-                        if (!isConnecting) {
-                          print('Deseleccionando nodo');
-                          selectedNode = null;
-                          selectedConnection = null;
-                        }
-                      } else if (isConnecting && connectionStart != null) {
-                        // Si estamos en modo conexión y ya tenemos un nodo de origen,
-                        // este tap es para seleccionar el nodo destino y crear la conexión
-                        if (connectionStart != node) {
-                          // Evitar conectar un nodo consigo mismo
-                          _createConnection(connectionStart!, node);
-                          // Después de crear la conexión, salimos del modo conexión
-                          isConnecting = false;
-                          connectionStart = null;
-                        } else {
-                          _showSnackBar(
-                              'No puedes conectar un nodo consigo mismo');
-                        }
+                      if (isConnecting) {
+                        connectionStart = null;
+                        isConnecting = false;
+                        // _showSnackBar('Conexión cancelada');
                       } else {
-                        // Si no estamos en modo conexión, simplemente seleccionamos el nodo
-                        print('Seleccionando nodo: ${node.type}');
-                        selectedNode = node;
-                        selectedConnection =
-                            null; // Deseleccionar cualquier conexión
-                      }
-                    });
-
-                    // Mostrar indicación visual de que el nodo fue seleccionado
-                    // if (node != null && !isConnecting) {
-                    //   String nodeName = "";
-                    //   switch (node.type) {
-                    //     case NodeType.start:
-                    //       nodeName = "Inicio";
-                    //       break;
-                    //     case NodeType.end:
-                    //       nodeName = "Fin";
-                    //       break;
-                    //     case NodeType.process:
-                    //       nodeName = "Proceso";
-                    //       break;
-                    //     case NodeType.decision:
-                    //       nodeName = "Decisión";
-                    //       break;
-                    //     case NodeType.loop:
-                    //       nodeName = "Bucle";
-                    //       break;
-                    //     case NodeType.input:
-                    //       nodeName = "Entrada";
-                    //       break;
-                    //     case NodeType.output:
-                    //       nodeName = "Salida";
-                    //       break;
-                    //     case NodeType.variable:
-                    //       nodeName = "Variable";
-                    //       break;
-                    //     case NodeType.connector:
-                    //       nodeName = "Conector";
-                    //       break;
-                    //     case NodeType.comment:
-                    //       nodeName = "Comentario";
-                    //       break;
-                    //     case NodeType.subprocess:
-                    //       nodeName = "Subproceso";
-                    //       break;
-                    //   }
-                    //   _showSnackBar('Nodo ${nodeName} seleccionado');
-                    // }
-                  },
-                  onNodeLongPress: (node) {
-                    setState(() {
-                      // Solo iniciar conexión si no estamos ya en ese modo
-                      if (!isConnecting) {
-                        connectionStart = node;
-                        selectedNode = node;
+                        connectionStart = selectedNode;
                         isConnecting = true;
-                        // _showSnackBar('Selecciona otro nodo para conectarlos');
+                        // _showSnackBar('Selecciona otro nodo para conectarlo');
                       }
-                    });
-                  },
-                  onNodeDragUpdate: (node, offset) {
-                    setState(() {
-                      node.position = offset;
-                      _hasUnsavedChanges = true;
-                    });
-                  },
-                  onConnectionTap: (connection) {
-                    setState(() {
-                      selectedConnection = connection;
-                      selectedNode = null; // Deseleccionar cualquier nodo
-                      _showConnectionOptionsDialog(connection);
                     });
                   },
                 ),
+            ],
+          ),
+          body: Row(
+            children: [
+              // Panel lateral con pestañas para símbolos y conceptos
+              EditorSidePanel(
+                onNodeSelected: (nodeType) {
+                  // No seleccionar automáticamente el nodo si estamos en modo conexión
+                  _addNode(nodeType, autoSelect: !isConnecting);
+                },
+                onConceptSelected: (conceptType) {
+                  _addConcept(conceptType);
+                },
+              ),
 
-                // Indicador visual cuando estamos en modo conexión
-                if (isConnecting)
-                  Positioned(
-                    top: 16,
-                    left: 0,
-                    right: 0,
-                    child: Center(
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 8,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.blue.withOpacity(0.8),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: const Text(
-                          'Modo conexión: Toca otro nodo para conectar',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
+              // Área principal del canvas
+              Expanded(
+                child: Stack(
+                  children: [
+                    FlowDiagramCanvas(
+                      nodes: nodes,
+                      connections: connections,
+                      selectedNode: selectedNode,
+                      panOffset: panOffset,
+                      scale: currentScale,
+                      canvasKey: _canvasKey, // Agregar el GlobalKey
+                      onPanUpdate: (details) {
+                        if (!isConnecting) {
+                          setState(() {
+                            panOffset += details.delta;
+                          });
+                        }
+                      },
+                      onScaleStart: (details) {
+                        // Guardar estado inicial del zoom para cálculo correcto
+                        _scaleStart = currentScale;
+                        _focalPointStart = details.localFocalPoint;
+                        _panOffsetStart = panOffset;
+                      },
+                      onScaleUpdate: (details) {
+                        if (!isConnecting) {
+                          setState(() {
+                            // Calcular la nueva escala basada en la escala inicial
+                            final newScale = (_scaleStart * details.scale)
+                                .clamp(_minZoomScale, _maxZoomScale)
+                                .toDouble();
+
+                            // Calcular el punto focal en coordenadas del canvas (antes de la transformación)
+                            // focalPoint = panOffset + focalPointLocal / scale
+                            final focalPointCanvas =
+                                (_focalPointStart - _panOffsetStart) /
+                                    _scaleStart;
+
+                            // Calcular el nuevo panOffset para mantener el punto focal en la misma posición
+                            // Queremos que: focalPointLocal = panOffset + focalPointCanvas * scale
+                            // Por lo tanto: panOffset = focalPointLocal - focalPointCanvas * scale
+                            final newPanOffset = details.localFocalPoint -
+                                focalPointCanvas * newScale;
+
+                            currentScale = newScale;
+                            panOffset = newPanOffset;
+                          });
+                        }
+                      },
+                      onNodeTap: (node) {
+                        print('Editor recibió tap en nodo: ${node?.type}');
+                        setState(() {
+                          if (node == null) {
+                            // Si se toca un área vacía, deseleccionamos todo
+                            if (!isConnecting) {
+                              print('Deseleccionando nodo');
+                              selectedNode = null;
+                              selectedConnection = null;
+                            }
+                          } else if (isConnecting && connectionStart != null) {
+                            // Si estamos en modo conexión y ya tenemos un nodo de origen,
+                            // este tap es para seleccionar el nodo destino y crear la conexión
+                            if (connectionStart != node) {
+                              // Evitar conectar un nodo consigo mismo
+                              _createConnection(connectionStart!, node);
+                              // Después de crear la conexión, salimos del modo conexión
+                              isConnecting = false;
+                              connectionStart = null;
+                            } else {
+                              _showSnackBar(
+                                  'No puedes conectar un nodo consigo mismo');
+                            }
+                          } else {
+                            // Si no estamos en modo conexión, simplemente seleccionamos el nodo
+                            print('Seleccionando nodo: ${node.type}');
+                            selectedNode = node;
+                            selectedConnection =
+                                null; // Deseleccionar cualquier conexión
+                          }
+                        });
+
+                        // Mostrar indicación visual de que el nodo fue seleccionado
+                        // if (node != null && !isConnecting) {
+                        //   String nodeName = "";
+                        //   switch (node.type) {
+                        //     case NodeType.start:
+                        //       nodeName = "Inicio";
+                        //       break;
+                        //     case NodeType.end:
+                        //       nodeName = "Fin";
+                        //       break;
+                        //     case NodeType.process:
+                        //       nodeName = "Proceso";
+                        //       break;
+                        //     case NodeType.decision:
+                        //       nodeName = "Decisión";
+                        //       break;
+                        //     case NodeType.loop:
+                        //       nodeName = "Bucle";
+                        //       break;
+                        //     case NodeType.input:
+                        //       nodeName = "Entrada";
+                        //       break;
+                        //     case NodeType.output:
+                        //       nodeName = "Salida";
+                        //       break;
+                        //     case NodeType.variable:
+                        //       nodeName = "Variable";
+                        //       break;
+                        //     case NodeType.connector:
+                        //       nodeName = "Conector";
+                        //       break;
+                        //     case NodeType.comment:
+                        //       nodeName = "Comentario";
+                        //       break;
+                        //     case NodeType.subprocess:
+                        //       nodeName = "Subproceso";
+                        //       break;
+                        //   }
+                        //   _showSnackBar('Nodo ${nodeName} seleccionado');
+                        // }
+                      },
+                      onNodeLongPress: (node) {
+                        setState(() {
+                          // Solo iniciar conexión si no estamos ya en ese modo
+                          if (!isConnecting) {
+                            connectionStart = node;
+                            selectedNode = node;
+                            isConnecting = true;
+                            // _showSnackBar('Selecciona otro nodo para conectarlos');
+                          }
+                        });
+                      },
+                      onNodeDragUpdate: (node, offset) {
+                        setState(() {
+                          node.position = offset;
+                        });
+                      },
+                      onNodeDragEnd: (didMove) {
+                        if (!didMove) return;
+
+                        setState(() {
+                          _hasUnsavedChanges = true;
+                        });
+                        _recordHistoryState();
+                      },
+                      onConnectionTap: (connection) {
+                        setState(() {
+                          selectedConnection = connection;
+                          selectedNode = null; // Deseleccionar cualquier nodo
+                          _showConnectionOptionsDialog(connection);
+                        });
+                      },
+                    ),
+
+                    // Indicador visual cuando estamos en modo conexión
+                    if (isConnecting)
+                      Positioned(
+                        top: 16,
+                        left: 0,
+                        right: 0,
+                        child: Center(
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 8,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.blue.withOpacity(0.8),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: const Text(
+                              'Modo conexión: Toca otro nodo para conectar',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                  ),
-              ],
-            ),
+                  ],
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
-      floatingActionButton: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (isConnecting)
-            FloatingActionButton(
-              onPressed: () {
-                setState(() {
-                  connectionStart = null;
-                  isConnecting = false;
-                });
-                // _showSnackBar('Conexión cancelada');
-              },
-              heroTag: 'cancel',
-              mini: true,
-              tooltip: 'Cancelar conexión',
-              backgroundColor: Colors.red,
-              child: const Icon(Icons.close),
-            ),
-          const SizedBox(height: 8),
-          FloatingActionButton(
-            onPressed: () {
-              setState(() {
-                // Resetear el desplazamiento y la escala
-                panOffset = Offset.zero;
-                currentScale = 1.0;
-              });
-            },
-            heroTag: 'center',
-            tooltip: 'Centrar diagrama',
-            child: const Icon(Icons.center_focus_strong),
+          floatingActionButton: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (isConnecting)
+                FloatingActionButton(
+                  onPressed: () {
+                    setState(() {
+                      connectionStart = null;
+                      isConnecting = false;
+                    });
+                    // _showSnackBar('Conexión cancelada');
+                  },
+                  heroTag: 'cancel',
+                  mini: true,
+                  tooltip: 'Cancelar conexión',
+                  backgroundColor: Colors.red,
+                  child: const Icon(Icons.close),
+                ),
+              const SizedBox(height: 8),
+              FloatingActionButton(
+                onPressed: currentScale >= _maxZoomScale
+                    ? null
+                    : () => _zoomCanvas(zoomIn: true),
+                heroTag: 'zoom_in',
+                mini: true,
+                tooltip: 'Acercar (+)',
+                child: const Icon(Icons.zoom_in),
+              ),
+              const SizedBox(height: 8),
+              FloatingActionButton(
+                onPressed: currentScale <= _minZoomScale
+                    ? null
+                    : () => _zoomCanvas(zoomIn: false),
+                heroTag: 'zoom_out',
+                mini: true,
+                tooltip: 'Alejar (-)',
+                child: const Icon(Icons.zoom_out),
+              ),
+              const SizedBox(height: 8),
+              FloatingActionButton(
+                onPressed: () {
+                  setState(() {
+                    // Resetear el desplazamiento y la escala
+                    panOffset = Offset.zero;
+                    currentScale = 1.0;
+                  });
+                },
+                heroTag: 'center',
+                tooltip: 'Centrar diagrama',
+                child: const Icon(Icons.center_focus_strong),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
+  }
+
+  void _zoomCanvas({required bool zoomIn}) {
+    if (isConnecting) return;
+
+    final renderObject = _canvasKey.currentContext?.findRenderObject();
+    if (renderObject is! RenderBox) return;
+
+    final focalPointLocal = renderObject.size.center(Offset.zero);
+    final targetScale =
+        zoomIn ? (currentScale + _zoomStep) : (currentScale - _zoomStep);
+    final newScale = targetScale.clamp(_minZoomScale, _maxZoomScale).toDouble();
+
+    if ((newScale - currentScale).abs() < 0.0001) return;
+
+    setState(() {
+      // Mantener fijo el centro visible del canvas al aplicar zoom por botón.
+      final focalPointCanvas = (focalPointLocal - panOffset) / currentScale;
+      panOffset = focalPointLocal - focalPointCanvas * newScale;
+      currentScale = newScale;
+    });
+  }
+
+  List<DiagramNode> _cloneNodes(List<DiagramNode> sourceNodes) {
+    return sourceNodes
+        .map(
+          (node) => node.copyWith(
+            position: Offset(node.position.dx, node.position.dy),
+            metadata: Map<String, dynamic>.from(node.metadata),
+          ),
+        )
+        .toList();
+  }
+
+  List<Connection> _cloneConnections(
+    List<Connection> sourceConnections,
+    Map<String, DiagramNode> nodeById,
+  ) {
+    final clonedConnections = <Connection>[];
+
+    for (final connection in sourceConnections) {
+      final source = nodeById[connection.source.id];
+      final target = nodeById[connection.target.id];
+
+      if (source == null || target == null) continue;
+
+      clonedConnections.add(
+        Connection(
+          source: source,
+          target: target,
+          label: connection.label,
+          isLoopBack: connection.isLoopBack,
+          sourceAnchor: connection.sourceAnchor,
+          targetAnchor: connection.targetAnchor,
+        ),
+      );
+    }
+
+    return clonedConnections;
+  }
+
+  _DiagramHistorySnapshot _createSnapshotFromCurrentState() {
+    final snapshotNodes = _cloneNodes(nodes);
+    final nodeById = {for (final node in snapshotNodes) node.id: node};
+    final snapshotConnections = _cloneConnections(connections, nodeById);
+
+    return _DiagramHistorySnapshot(
+      nodes: snapshotNodes,
+      connections: snapshotConnections,
+      selectedNodeId: selectedNode?.id,
+    );
+  }
+
+  void _applySnapshot(_DiagramHistorySnapshot snapshot) {
+    _isApplyingHistory = true;
+
+    final restoredNodes = _cloneNodes(snapshot.nodes);
+    final restoredNodeById = {for (final node in restoredNodes) node.id: node};
+    final restoredConnections =
+        _cloneConnections(snapshot.connections, restoredNodeById);
+
+    nodes
+      ..clear()
+      ..addAll(restoredNodes);
+    connections
+      ..clear()
+      ..addAll(restoredConnections);
+
+    selectedNode = snapshot.selectedNodeId != null
+        ? restoredNodeById[snapshot.selectedNodeId!]
+        : null;
+    selectedConnection = null;
+    connectionStart = null;
+    isConnecting = false;
+
+    _isApplyingHistory = false;
+  }
+
+  void _updateUnsavedChangesFlagFromHistory() {
+    _hasUnsavedChanges =
+        _savedHistoryIndex < 0 || _historyIndex != _savedHistoryIndex;
+  }
+
+  void _resetHistoryFromCurrentState() {
+    _history
+      ..clear()
+      ..add(_createSnapshotFromCurrentState());
+    _historyIndex = 0;
+    _savedHistoryIndex = 0;
+    _updateUnsavedChangesFlagFromHistory();
+  }
+
+  void _recordHistoryState() {
+    if (_isApplyingHistory) return;
+
+    if (_historyIndex >= 0 && _historyIndex < _history.length - 1) {
+      _history.removeRange(_historyIndex + 1, _history.length);
+      if (_savedHistoryIndex > _historyIndex) {
+        _savedHistoryIndex = -1;
+      }
+    }
+
+    _history.add(_createSnapshotFromCurrentState());
+    _historyIndex = _history.length - 1;
+
+    if (_history.length > _maxHistoryStates) {
+      _history.removeAt(0);
+      _historyIndex--;
+
+      if (_savedHistoryIndex >= 0) {
+        _savedHistoryIndex--;
+        if (_savedHistoryIndex < 0) {
+          _savedHistoryIndex = -1;
+        }
+      }
+    }
+
+    _updateUnsavedChangesFlagFromHistory();
+  }
+
+  void _markCurrentStateAsSavedInHistory() {
+    _savedHistoryIndex = _historyIndex;
+    _updateUnsavedChangesFlagFromHistory();
+  }
+
+  void _undo() {
+    if (!_canUndo) return;
+
+    setState(() {
+      _historyIndex--;
+      _applySnapshot(_history[_historyIndex]);
+      _updateUnsavedChangesFlagFromHistory();
+    });
+  }
+
+  void _redo() {
+    if (!_canRedo) return;
+
+    setState(() {
+      _historyIndex++;
+      _applySnapshot(_history[_historyIndex]);
+      _updateUnsavedChangesFlagFromHistory();
+    });
   }
 
   // Control de navegación hacia atrás con verificación de cambios sin guardar
@@ -514,6 +892,7 @@ class _EditorScreenState extends State<EditorScreen> {
       }
       _hasUnsavedChanges = true;
     });
+    _recordHistoryState();
 
     // Registrar métrica de creación de nodo
     _metricsService.trackUserAction(
@@ -598,6 +977,7 @@ class _EditorScreenState extends State<EditorScreen> {
       selectedNode = node;
       _hasUnsavedChanges = true;
     });
+    _recordHistoryState();
 
     _metricsService.trackUserAction(
       action: 'concepto_agregado',
@@ -623,6 +1003,7 @@ class _EditorScreenState extends State<EditorScreen> {
       selectedNode = node;
       _hasUnsavedChanges = true;
     });
+    _recordHistoryState();
 
     _metricsService.trackUserAction(
       action: 'concepto_agregado',
@@ -647,6 +1028,7 @@ class _EditorScreenState extends State<EditorScreen> {
       selectedNode = node;
       _hasUnsavedChanges = true;
     });
+    _recordHistoryState();
 
     _metricsService.trackUserAction(
       action: 'concepto_agregado',
@@ -671,6 +1053,7 @@ class _EditorScreenState extends State<EditorScreen> {
       selectedNode = node;
       _hasUnsavedChanges = true;
     });
+    _recordHistoryState();
 
     _metricsService.trackUserAction(
       action: 'concepto_agregado',
@@ -695,6 +1078,7 @@ class _EditorScreenState extends State<EditorScreen> {
       selectedNode = node;
       _hasUnsavedChanges = true;
     });
+    _recordHistoryState();
 
     _metricsService.trackUserAction(
       action: 'concepto_agregado',
@@ -719,6 +1103,7 @@ class _EditorScreenState extends State<EditorScreen> {
       selectedNode = node;
       _hasUnsavedChanges = true;
     });
+    _recordHistoryState();
 
     _metricsService.trackUserAction(
       action: 'concepto_agregado',
@@ -743,6 +1128,7 @@ class _EditorScreenState extends State<EditorScreen> {
       selectedNode = node;
       _hasUnsavedChanges = true;
     });
+    _recordHistoryState();
 
     _metricsService.trackUserAction(
       action: 'concepto_agregado',
@@ -817,6 +1203,7 @@ class _EditorScreenState extends State<EditorScreen> {
       selectedNode = forNode;
       _hasUnsavedChanges = true;
     });
+    _recordHistoryState();
 
     _metricsService.trackUserAction(
       action: 'concepto_agregado',
@@ -888,6 +1275,7 @@ class _EditorScreenState extends State<EditorScreen> {
       selectedNode = decisionNode;
       _hasUnsavedChanges = true;
     });
+    _recordHistoryState();
 
     _metricsService.trackUserAction(
       action: 'concepto_agregado',
@@ -960,6 +1348,7 @@ class _EditorScreenState extends State<EditorScreen> {
       selectedNode = bodyNode;
       _hasUnsavedChanges = true;
     });
+    _recordHistoryState();
 
     _metricsService.trackUserAction(
       action: 'concepto_agregado',
@@ -1027,6 +1416,7 @@ class _EditorScreenState extends State<EditorScreen> {
       selectedNode = decisionNode;
       _hasUnsavedChanges = true;
     });
+    _recordHistoryState();
 
     _metricsService.trackUserAction(
       action: 'concepto_agregado',
@@ -1204,6 +1594,7 @@ class _EditorScreenState extends State<EditorScreen> {
       selectedNode = switchExprNode;
       _hasUnsavedChanges = true;
     });
+    _recordHistoryState();
 
     _metricsService.trackUserAction(
       action: 'concepto_agregado',
@@ -1254,6 +1645,7 @@ class _EditorScreenState extends State<EditorScreen> {
           connectionStart = null;
           isConnecting = false;
         });
+        _recordHistoryState();
 
         // if (shouldBeLoopBack) {
         //   _showSnackBar(
@@ -1385,6 +1777,7 @@ class _EditorScreenState extends State<EditorScreen> {
         connectionStart = null;
         isConnecting = false;
       });
+      _recordHistoryState();
 
       // if (isLoopBack) {
       //   _showSnackBar(
@@ -1407,6 +1800,7 @@ class _EditorScreenState extends State<EditorScreen> {
       connections.remove(connection);
       _hasUnsavedChanges = true;
     });
+    _recordHistoryState();
     // _showSnackBar('Conexión eliminada');
   }
 
@@ -1502,16 +1896,18 @@ class _EditorScreenState extends State<EditorScreen> {
         case 'rotate_source':
           setState(() {
             connection.sourceAnchor = _getNextAnchor(connection.sourceAnchor);
-            // Reabrir el diálogo para ver el cambio
-            _showConnectionOptionsDialog(connection);
+            _hasUnsavedChanges = true;
           });
+          _recordHistoryState();
+          _showConnectionOptionsDialog(connection);
           break;
         case 'rotate_target':
           setState(() {
             connection.targetAnchor = _getNextAnchor(connection.targetAnchor);
-            // Reabrir el diálogo para ver el cambio
-            _showConnectionOptionsDialog(connection);
+            _hasUnsavedChanges = true;
           });
+          _recordHistoryState();
+          _showConnectionOptionsDialog(connection);
           break;
         case 'delete':
           _deleteConnection(connection);
@@ -1588,6 +1984,7 @@ class _EditorScreenState extends State<EditorScreen> {
         connection.label = newLabel;
         _hasUnsavedChanges = true;
       });
+      _recordHistoryState();
       // _showSnackBar('Etiqueta actualizada');
     }
   }
@@ -1598,6 +1995,7 @@ class _EditorScreenState extends State<EditorScreen> {
       connection.isLoopBack = !connection.isLoopBack;
       _hasUnsavedChanges = true;
     });
+    _recordHistoryState();
     // _showSnackBar(
     //   connection.isLoopBack
     //       ? 'Conexión cambiada a flecha cuadrada'
@@ -1701,6 +2099,7 @@ class _EditorScreenState extends State<EditorScreen> {
         }
         _hasUnsavedChanges = true;
       });
+      _recordHistoryState();
     }
   }
 
@@ -1902,6 +2301,7 @@ class _EditorScreenState extends State<EditorScreen> {
       selectedNode = null;
       _hasUnsavedChanges = true;
     });
+    _recordHistoryState();
   }
 
   void _showSnackBar(String message) {
@@ -2109,7 +2509,7 @@ class _EditorScreenState extends State<EditorScreen> {
           final id = await _databaseService.saveDiagram(newDiagram);
           setState(() {
             currentDiagram = newDiagram.copyWith(id: id);
-            _hasUnsavedChanges = false;
+            _markCurrentStateAsSavedInHistory();
           });
           // _showSnackBar('Diagrama guardado correctamente');
         } else {
@@ -2127,7 +2527,7 @@ class _EditorScreenState extends State<EditorScreen> {
           await _databaseService.updateDiagram(updatedDiagram);
           setState(() {
             currentDiagram = updatedDiagram;
-            _hasUnsavedChanges = false;
+            _markCurrentStateAsSavedInHistory();
           });
           // _showSnackBar('Diagrama actualizado correctamente');
         }
@@ -2202,6 +2602,9 @@ class _EditorScreenState extends State<EditorScreen> {
         return;
       }
 
+      final ThemeData exportTheme = Theme.of(context);
+      final bool isDarkMode = exportTheme.brightness == Brightness.dark;
+
       // Mostrar indicador de progreso
       showDialog(
         context: context,
@@ -2228,7 +2631,10 @@ class _EditorScreenState extends State<EditorScreen> {
 
       // Exportar usando el servicio
       final String filePath = await DiagramExportService.exportDiagramToPNG(
-        canvasKey: _canvasKey,
+        exportTheme: exportTheme,
+        isDarkMode: isDarkMode,
+        nodes: nodes,
+        connections: connections,
         diagramName: diagramName,
       );
 
@@ -2257,6 +2663,9 @@ class _EditorScreenState extends State<EditorScreen> {
         return;
       }
 
+      final ThemeData exportTheme = Theme.of(context);
+      final bool isDarkMode = exportTheme.brightness == Brightness.dark;
+
       // Mostrar indicador de progreso
       showDialog(
         context: context,
@@ -2283,7 +2692,10 @@ class _EditorScreenState extends State<EditorScreen> {
 
       // Exportar usando el servicio
       final String filePath = await DiagramExportService.exportDiagramToJPG(
-        canvasKey: _canvasKey,
+        exportTheme: exportTheme,
+        isDarkMode: isDarkMode,
+        nodes: nodes,
+        connections: connections,
         diagramName: diagramName,
       );
 
@@ -2302,6 +2714,164 @@ class _EditorScreenState extends State<EditorScreen> {
       // Mostrar error
       _showSnackBar('Error al exportar JPG: $e');
     }
+  }
+
+  /// Exporta el diagrama actual como PDF básico
+  Future<void> _exportDiagramAsPDF() async {
+    try {
+      if (nodes.isEmpty) {
+        _showSnackBar('No hay nodos para exportar');
+        return;
+      }
+
+      final ThemeData exportTheme = Theme.of(context);
+      final bool isDarkMode = exportTheme.brightness == Brightness.dark;
+
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(
+          child: Card(
+            child: Padding(
+              padding: EdgeInsets.all(20),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  CircularProgressIndicator(),
+                  SizedBox(height: 16),
+                  Text('Exportando PDF...'),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+
+      final String diagramName = currentDiagram?.name ?? 'diagrama';
+
+      final String filePath = await DiagramExportService.exportDiagramToPDF(
+        exportTheme: exportTheme,
+        isDarkMode: isDarkMode,
+        nodes: nodes,
+        connections: connections,
+        diagramName: diagramName,
+      );
+
+      _metricsService.trackUserAction(
+        action: 'exportacion_pdf',
+        category: 'export',
+        metadata: {
+          'nodes_count': nodes.length,
+          'connections_count': connections.length,
+          'format': 'pdf',
+        },
+      );
+
+      if (mounted) Navigator.of(context).pop();
+
+      _showFileSuccessDialog(
+        'PDF exportado exitosamente',
+        'El archivo PDF se guardó en:\n$filePath',
+      );
+    } catch (e) {
+      if (mounted) Navigator.of(context).pop();
+      _showSnackBar('Error al exportar PDF: $e');
+    }
+  }
+
+  /// Exporta el código C generado como archivo .c
+  Future<void> _exportCodeAsCFile() async {
+    try {
+      if (nodes.isEmpty) {
+        _showSnackBar('No hay nodos para exportar');
+        return;
+      }
+
+      final validationResult = DiagramValidator.validateDiagram(
+        nodes,
+        connections,
+      );
+
+      if (!validationResult.isValid) {
+        _showValidationDialog(validationResult);
+        return;
+      }
+
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(
+          child: Card(
+            child: Padding(
+              padding: EdgeInsets.all(20),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  CircularProgressIndicator(),
+                  SizedBox(height: 16),
+                  Text('Exportando código .c...'),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+
+      final String code = CodeGenerator.generateCode(
+        nodes,
+        connections,
+        ProgrammingLanguage.c,
+      );
+
+      if (code.trim().isEmpty || code.trim().startsWith('// Error:')) {
+        throw Exception('No se pudo generar código C válido para exportación');
+      }
+
+      final String diagramName = currentDiagram?.name ?? 'diagrama';
+      final String filePath = await DiagramExportService.exportCodeToCFile(
+        code: code,
+        diagramName: diagramName,
+      );
+
+      _metricsService.trackUserAction(
+        action: 'exportacion_codigo_c',
+        category: 'export',
+        metadata: {
+          'nodes_count': nodes.length,
+          'connections_count': connections.length,
+          'code_lines': code.split('\n').length,
+          'format': 'c',
+        },
+      );
+
+      if (mounted) Navigator.of(context).pop();
+
+      _showFileSuccessDialog(
+        'Código C exportado exitosamente',
+        'El archivo .c se guardó en:\n$filePath',
+      );
+    } catch (e) {
+      if (mounted) Navigator.of(context).pop();
+      _showSnackBar('Error al exportar código .c: $e');
+    }
+  }
+
+  /// Muestra un diálogo genérico para archivos exportados
+  void _showFileSuccessDialog(String title, String message) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        icon: const Icon(Icons.check_circle, color: Colors.green, size: 48),
+        title: Text(title),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
   }
 
   /// Muestra un diálogo de éxito con información detallada

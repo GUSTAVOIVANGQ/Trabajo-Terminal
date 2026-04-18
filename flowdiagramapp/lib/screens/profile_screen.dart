@@ -10,6 +10,7 @@ import '../services/auth_service.dart';
 import '../services/theme_service.dart';
 import '../services/sync_service.dart';
 import '../services/database_service.dart';
+import '../services/auto_save_settings_service.dart';
 import '../models/user_model.dart';
 import 'login_screen.dart';
 import 'metrics_screen.dart';
@@ -27,16 +28,219 @@ class _ProfileScreenState extends State<ProfileScreen> {
   final AuthService _authService = AuthService();
   final SyncService _syncService = SyncService();
   final DatabaseService _databaseService = DatabaseService();
+  final AutoSaveSettingsService _autoSaveSettingsService =
+      AutoSaveSettingsService();
   final ImagePicker _imagePicker = ImagePicker();
   bool _isSyncing = false;
   bool _isDeleting = false;
   bool _isPickingImage = false;
   String? _profileImagePath;
+  bool _autoSaveEnabled = false;
+  bool _updatingAutoSavePreference = false;
+  bool _telemetryConsent = false;
+  bool _updatingTelemetryConsent = false;
+  bool _crashReportsConsent = false;
+  bool _updatingCrashReportsConsent = false;
 
   @override
   void initState() {
     super.initState();
     _loadProfileImage();
+    _loadAutoSavePreference();
+    _loadTelemetryConsent();
+    _loadCrashReportsConsent();
+  }
+
+  Future<void> _loadAutoSavePreference() async {
+    final userId = _authService.currentUser?.uid;
+    final enabled =
+        await _autoSaveSettingsService.isAutoSaveEnabled(userId: userId);
+
+    if (!mounted) return;
+
+    setState(() {
+      _autoSaveEnabled = enabled;
+    });
+  }
+
+  Future<void> _updateAutoSavePreference(bool enabled) async {
+    if (_updatingAutoSavePreference) return;
+
+    final userId = _authService.currentUser?.uid;
+    final previousValue = _autoSaveEnabled;
+
+    setState(() {
+      _updatingAutoSavePreference = true;
+      _autoSaveEnabled = enabled;
+    });
+
+    try {
+      await _autoSaveSettingsService.setAutoSaveEnabled(
+        enabled,
+        userId: userId,
+      );
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              enabled
+                  ? 'Autoguardado activado (cada 2 segundos)'
+                  : 'Autoguardado desactivado',
+            ),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _autoSaveEnabled = previousValue;
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('No se pudo actualizar el autoguardado: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _updatingAutoSavePreference = false;
+        });
+      }
+    }
+  }
+
+  void _loadTelemetryConsent() {
+    final user = _authService.currentUser;
+    if (user == null || user.isGuest) {
+      _telemetryConsent = false;
+      return;
+    }
+
+    _telemetryConsent = user.metrics['telemetry_opt_in'] == true;
+  }
+
+  void _loadCrashReportsConsent() {
+    final user = _authService.currentUser;
+    if (user == null || user.isGuest) {
+      _crashReportsConsent = false;
+      return;
+    }
+
+    _crashReportsConsent = user.metrics['crash_reports_opt_in'] == true;
+  }
+
+  Future<void> _updateTelemetryConsent(bool enabled) async {
+    if (_updatingTelemetryConsent) return;
+
+    final user = _authService.currentUser;
+    if (user == null || user.isGuest) return;
+
+    final previousValue = _telemetryConsent;
+
+    setState(() {
+      _updatingTelemetryConsent = true;
+      _telemetryConsent = enabled;
+    });
+
+    try {
+      final updatedMetrics = Map<String, dynamic>.from(user.metrics);
+      updatedMetrics['telemetry_opt_in'] = enabled;
+      updatedMetrics['telemetry_updated_at'] = DateTime.now().toIso8601String();
+
+      await _authService.updateUserMetrics(user.uid, updatedMetrics);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              enabled
+                  ? 'Telemetría de uso activada'
+                  : 'Telemetría de uso desactivada',
+            ),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _telemetryConsent = previousValue;
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('No se pudo actualizar el consentimiento: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _updatingTelemetryConsent = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _updateCrashReportsConsent(bool enabled) async {
+    if (_updatingCrashReportsConsent) return;
+
+    final user = _authService.currentUser;
+    if (user == null || user.isGuest) return;
+
+    final previousValue = _crashReportsConsent;
+
+    setState(() {
+      _updatingCrashReportsConsent = true;
+      _crashReportsConsent = enabled;
+    });
+
+    try {
+      final updatedMetrics = Map<String, dynamic>.from(user.metrics);
+      updatedMetrics['crash_reports_opt_in'] = enabled;
+      updatedMetrics['crash_reports_updated_at'] =
+          DateTime.now().toIso8601String();
+
+      await _authService.updateUserMetrics(user.uid, updatedMetrics);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              enabled
+                  ? 'Reporte de fallos activado'
+                  : 'Reporte de fallos desactivado',
+            ),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _crashReportsConsent = previousValue;
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('No se pudo actualizar el consentimiento: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _updatingCrashReportsConsent = false;
+        });
+      }
+    }
   }
 
   String _getProfileImageStorageKey(UserModel user) {
@@ -960,6 +1164,54 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             ),
                           );
                         },
+                      ),
+                      const Divider(),
+                      SwitchListTile.adaptive(
+                        secondary: const Icon(Icons.save_as_outlined),
+                        title: const Text(
+                            'Autoguardado de diagramas (2 segundos)'),
+                        subtitle: Text(
+                          _updatingAutoSavePreference
+                              ? 'Guardando preferencia...'
+                              : 'Guarda automáticamente los cambios en el editor cada 2 segundos.',
+                        ),
+                        value: _autoSaveEnabled,
+                        onChanged: _updatingAutoSavePreference
+                            ? null
+                            : _updateAutoSavePreference,
+                      ),
+                      const Divider(),
+                      SwitchListTile.adaptive(
+                        secondary: const Icon(Icons.analytics_outlined),
+                        title: const Text('Permitir telemetría de uso'),
+                        subtitle: Text(
+                          user.isGuest
+                              ? 'No disponible en modo invitado'
+                              : (_updatingTelemetryConsent
+                                  ? 'Guardando cambios...'
+                                  : 'Puedes cambiar este consentimiento en cualquier momento'),
+                        ),
+                        value: user.isGuest ? false : _telemetryConsent,
+                        onChanged: user.isGuest || _updatingTelemetryConsent
+                            ? null
+                            : _updateTelemetryConsent,
+                      ),
+                      const Divider(),
+                      SwitchListTile.adaptive(
+                        secondary: const Icon(Icons.bug_report_outlined),
+                        title: const Text(
+                            'Permitir reportes de fallos (Crash Report)'),
+                        subtitle: Text(
+                          user.isGuest
+                              ? 'No disponible en modo invitado'
+                              : (_updatingCrashReportsConsent
+                                  ? 'Guardando cambios...'
+                                  : 'Envía errores técnicos para diagnóstico'),
+                        ),
+                        value: user.isGuest ? false : _crashReportsConsent,
+                        onChanged: user.isGuest || _updatingCrashReportsConsent
+                            ? null
+                            : _updateCrashReportsConsent,
                       ),
                     ],
                   ),

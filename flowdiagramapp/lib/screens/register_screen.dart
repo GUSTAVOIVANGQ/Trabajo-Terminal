@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
 import '../models/user_model.dart';
-import 'load_diagram_screen.dart';
+import 'login_screen.dart';
+import 'privacy_notice_screen.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -21,6 +22,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
   bool _isLoading = false;
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
+  bool _privacyAccepted = false;
+  bool _telemetryConsent = false;
+  bool _crashReportsConsent = false;
 
   @override
   void dispose() {
@@ -31,8 +35,27 @@ class _RegisterScreenState extends State<RegisterScreen> {
     super.dispose();
   }
 
+  void _openPrivacyNotice() {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => const PrivacyNoticeScreen(),
+      ),
+    );
+  }
+
   Future<void> _register() async {
     if (!_formKey.currentState!.validate()) return;
+
+    if (!_privacyAccepted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Debes aceptar el Aviso de Privacidad para continuar.'),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
 
     setState(() {
       _isLoading = true;
@@ -47,6 +70,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
         displayName: _nameController.text.trim(),
         // Rol forzado para registros desde Play Store.
         role: UserRole.user,
+        telemetryOptIn: _telemetryConsent,
+        crashReportsOptIn: _crashReportsConsent,
       );
 
       if (user != null && mounted) {
@@ -54,19 +79,25 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('¡Cuenta creada exitosamente! Bienvenido'),
+            content: Text(
+                '¡Cuenta creada exitosamente! Inicia sesión para continuar.'),
             backgroundColor: Colors.green,
             behavior: SnackBarBehavior.floating,
             duration: Duration(seconds: 2),
           ),
         );
 
-        // Pequeña pausa para que el usuario vea el mensaje de éxito
+        // Cerrar sesión inmediatamente para forzar login explícito tras registro.
+        await _authService.signOut();
+
+        // Pequeña pausa para que el usuario vea el mensaje de éxito.
         await Future.delayed(const Duration(milliseconds: 500));
+
+        if (!mounted) return;
 
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(
-            builder: (context) => const LoadDiagramScreen(),
+            builder: (context) => const LoginScreen(),
           ),
         );
       } else {
@@ -329,6 +360,82 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     },
                   ),
 
+                  const SizedBox(height: 20),
+
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.grey.withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(8),
+                      border:
+                          Border.all(color: Colors.grey.withValues(alpha: 0.2)),
+                    ),
+                    child: Column(
+                      children: [
+                        CheckboxListTile(
+                          contentPadding: EdgeInsets.zero,
+                          dense: true,
+                          controlAffinity: ListTileControlAffinity.leading,
+                          title: const Text('Acepto el Aviso de Privacidad'),
+                          subtitle:
+                              const Text('Obligatorio para crear cuenta.'),
+                          value: _privacyAccepted,
+                          onChanged: _isLoading
+                              ? null
+                              : (value) {
+                                  setState(() {
+                                    _privacyAccepted = value ?? false;
+                                  });
+                                },
+                        ),
+                        Align(
+                          alignment: Alignment.centerLeft,
+                          child: TextButton.icon(
+                            onPressed: _isLoading ? null : _openPrivacyNotice,
+                            icon: const Icon(Icons.privacy_tip_outlined),
+                            label: const Text('Leer Aviso de Privacidad'),
+                          ),
+                        ),
+                        CheckboxListTile(
+                          contentPadding: EdgeInsets.zero,
+                          dense: true,
+                          controlAffinity: ListTileControlAffinity.leading,
+                          title: const Text(
+                              'Permitir envío de datos de uso (Analytics)'),
+                          subtitle: const Text(
+                            'Opcional. Se usa para mejorar la app y no envía correo ni nombre.',
+                          ),
+                          value: _telemetryConsent,
+                          onChanged: _isLoading
+                              ? null
+                              : (value) {
+                                  setState(() {
+                                    _telemetryConsent = value ?? false;
+                                  });
+                                },
+                        ),
+                        CheckboxListTile(
+                          contentPadding: EdgeInsets.zero,
+                          dense: true,
+                          controlAffinity: ListTileControlAffinity.leading,
+                          title: const Text(
+                              'Permitir envío de reportes de fallos (Crash Report)'),
+                          subtitle: const Text(
+                            'Opcional. Envía errores técnicos para diagnóstico.',
+                          ),
+                          value: _crashReportsConsent,
+                          onChanged: _isLoading
+                              ? null
+                              : (value) {
+                                  setState(() {
+                                    _crashReportsConsent = value ?? false;
+                                  });
+                                },
+                        ),
+                      ],
+                    ),
+                  ),
+
                   const SizedBox(height: 32),
 
                   // Botón de registro
@@ -336,7 +443,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     width: double.infinity,
                     height: 50,
                     child: FilledButton(
-                      onPressed: _isLoading ? null : _register,
+                      onPressed:
+                          (_isLoading || !_privacyAccepted) ? null : _register,
                       child: _isLoading
                           ? const SizedBox(
                               height: 20,
@@ -357,9 +465,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: Colors.blue.withOpacity(0.1),
+                      color: Colors.blue.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.blue.withOpacity(0.3)),
+                      border:
+                          Border.all(color: Colors.blue.withValues(alpha: 0.3)),
                     ),
                     child: Row(
                       children: [

@@ -48,6 +48,13 @@ class _LoadDiagramScreenState extends State<LoadDiagramScreen>
     return user.isGuest ? 'guest_${user.uid}' : user.uid;
   }
 
+  /// Obtiene la clave para tutoriales de bienvenida (estable por usuario).
+  String _getTutorialUserKey() {
+    final user = _authService.currentUser;
+    if (user == null || user.isGuest) return 'guest';
+    return user.uid;
+  }
+
   Future<void> _loadData() async {
     setState(() {
       _isLoading = true;
@@ -77,8 +84,10 @@ class _LoadDiagramScreenState extends State<LoadDiagramScreen>
   }
 
   Future<void> _checkFirstTime() async {
+    final tutorialUserKey = _getTutorialUserKey();
     // Verificar si es la primera vez del usuario
-    final isFirstTime = await _tutorialService.isFirstTime();
+    final isFirstTime =
+        await _tutorialService.isFirstTime(userId: tutorialUserKey);
     if (isFirstTime && mounted && !_hasShownWelcome) {
       _hasShownWelcome = true;
       // Esperar a que se cargue la pantalla
@@ -87,6 +96,7 @@ class _LoadDiagramScreenState extends State<LoadDiagramScreen>
           Navigator.of(context).push(
             MaterialPageRoute(
               builder: (context) => WelcomeScreen(
+                userId: tutorialUserKey,
                 onComplete: () {
                   Navigator.of(context).pop();
                 },

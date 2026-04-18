@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="420" viewBox="0 0 900 420" role="img" aria-label="Figura 46. DFS para verificación de ruta entre nodos y detección de retorno.">
+  <defs>
+    <marker id="arrowGray" viewBox="0 0 10 10" refX="9.5" refY="5" markerWidth="8" markerHeight="8" orient="auto">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#666" />
+    </marker>
+    <marker id="arrowBlack" viewBox="0 0 10 10" refX="9.5" refY="5" markerWidth="8" markerHeight="8" orient="auto">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#000" />
+    </marker>
+  </defs>
+
+  <style>
+    .text { font: 13px Arial, Helvetica, sans-serif; fill: #000; }
+    .small { font: 12px Arial, Helvetica, sans-serif; fill: #000; }
+
+    .node { fill: #fff; stroke: #000; stroke-width: 2; }
+    .nodeKey { fill: #f2f2f2; stroke: #000; stroke-width: 3; }
+
+    .edge { fill: none; stroke: #666; stroke-width: 2.2; marker-end: url(#arrowGray); }
+    .dfs { fill: none; stroke: #000; stroke-width: 4; marker-end: url(#arrowBlack); }
+    .candidate { fill: none; stroke: #000; stroke-width: 3; stroke-dasharray: 8 6; marker-end: url(#arrowBlack); }
+
+    .panel { fill: #fff; stroke: #000; stroke-width: 1.6; }
+    .panelHeader { font: 600 13px Arial, Helvetica, sans-serif; fill: #000; }
+  </style>
+
+  <!-- Aristas existentes (E): trazos finos en gris -->
+  <line x1="146" y1="150" x2="234" y2="150" class="edge" />
+  <line x1="286" y1="150" x2="374" y2="150" class="edge" />
+  <line x1="426" y1="150" x2="494" y2="150" class="edge" />
+
+  <!-- Recorrido DFS (ejemplo): superposición gruesa en negro -->
+  <line x1="146" y1="150" x2="234" y2="150" class="dfs" />
+  <line x1="286" y1="150" x2="374" y2="150" class="dfs" />
+  <line x1="426" y1="150" x2="494" y2="150" class="dfs" />
+
+  <!-- Arista candidata u -> v (no incluida durante el DFS) -->
+  <path d="M 520 176 L 520 270 L 120 270 L 120 176" class="candidate" />
+
+  <!-- Nodos -->
+  <circle cx="120" cy="150" r="26" class="nodeKey" />
+  <circle cx="260" cy="150" r="26" class="node" />
+  <circle cx="400" cy="150" r="26" class="node" />
+  <circle cx="520" cy="150" r="26" class="nodeKey" />
+
+  <!-- Etiquetas de nodos -->
+  <text x="120" y="155" text-anchor="middle" class="text">v</text>
+  <text x="260" y="155" text-anchor="middle" class="text">x1</text>
+  <text x="400" y="155" text-anchor="middle" class="text">x2</text>
+  <text x="520" y="155" text-anchor="middle" class="text">u</text>
+
+  <text x="120" y="190" text-anchor="middle" class="small">Destino (decisión)</text>
+  <text x="520" y="190" text-anchor="middle" class="small">Origen</text>
+
+  <!-- Anotaciones -->
+  <text x="320" y="105" text-anchor="middle" class="text">Camino existente: v → ... → u (alcanzable en E)</text>
+  <text x="120" y="118" text-anchor="middle" class="small">Inicio DFS</text>
+
+  <text x="320" y="295" text-anchor="middle" class="text">Arista candidata: e = (u → v)</text>
+  <text x="320" y="316" text-anchor="middle" class="small">Si DFS(v) alcanza u, entonces e se marca como retorno</text>
+
+  <!-- Panel de procedimiento -->
+  <rect x="600" y="70" width="280" height="240" rx="8" class="panel" />
+  <text x="740" y="95" text-anchor="middle" class="panelHeader">Procedimiento (detección de retorno)</text>
+
+  <text x="614" y="125" class="text">Entrada: e = (u → v), G = (V,E)</text>
+  <text x="614" y="148" class="text">1) Ejecutar DFS desde v sobre E</text>
+  <text x="614" y="171" class="text">   (sin incluir la arista candidata e)</text>
+  <text x="614" y="198" class="text">2) Si u es alcanzable desde v:</text>
+  <text x="614" y="221" class="text">   marcar e como retorno (flecha cuadrada)</text>
+  <text x="614" y="244" class="text">   si no: e permanece como conexión normal</text>
+
+  <!-- Leyenda -->
+  <rect x="60" y="330" width="520" height="70" rx="8" class="panel" />
+  <text x="80" y="353" class="panelHeader">Leyenda</text>
+
+  <line x1="90" y1="372" x2="150" y2="372" class="edge" />
+  <text x="165" y="376" class="text">Arista existente (E)</text>
+
+  <line x1="330" y1="372" x2="390" y2="372" class="dfs" />
+  <text x="405" y="376" class="text">Recorrido DFS (ejemplo)</text>
+
+  <path d="M 90 392 C 110 392 130 392 150 392" class="candidate" />
+  <text x="165" y="396" class="text">Arista candidata u → v</text>
+</svg>

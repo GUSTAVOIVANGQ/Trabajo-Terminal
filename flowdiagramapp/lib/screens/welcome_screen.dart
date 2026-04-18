@@ -1,12 +1,16 @@
 import 'package:flutter/material.dart';
-import '../models/tutorial_step.dart';
 import '../services/tutorial_service.dart';
 
 /// Pantalla de bienvenida para usuarios nuevos
 class WelcomeScreen extends StatefulWidget {
+  final String userId;
   final VoidCallback onComplete;
 
-  const WelcomeScreen({super.key, required this.onComplete});
+  const WelcomeScreen({
+    super.key,
+    required this.userId,
+    required this.onComplete,
+  });
 
   @override
   State<WelcomeScreen> createState() => _WelcomeScreenState();
@@ -114,7 +118,7 @@ class _WelcomeScreenState extends State<WelcomeScreen>
   }
 
   void _complete() async {
-    await _tutorialService.markFirstTimeComplete();
+    await _tutorialService.markFirstTimeComplete(userId: widget.userId);
     widget.onComplete();
   }
 

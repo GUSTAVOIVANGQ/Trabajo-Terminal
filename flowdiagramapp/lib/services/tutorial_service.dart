@@ -3,19 +3,50 @@ import '../models/tutorial_step.dart';
 
 /// Servicio para gestionar el estado y progreso del tutorial
 class TutorialService {
-  static const String _keyFirstTime = 'tutorial_first_time';
+  static const String _legacyKeyFirstTime = 'tutorial_first_time';
+  static const String _keyFirstTimePrefix = 'tutorial_first_time_';
   static const String _keyCompletedTutorials = 'tutorial_completed_';
 
+  String _resolveTutorialUserKey(String? userId) {
+    if (userId == null || userId.trim().isEmpty) {
+      return 'guest';
+    }
+    return userId.trim();
+  }
+
+  String _buildFirstTimeKey(String? userId) {
+    final tutorialUserKey = _resolveTutorialUserKey(userId);
+    return '$_keyFirstTimePrefix$tutorialUserKey';
+  }
+
   /// Verifica si es la primera vez que el usuario usa la app
-  Future<bool> isFirstTime() async {
+  Future<bool> isFirstTime({String? userId}) async {
     final prefs = await SharedPreferences.getInstance();
-    return prefs.getBool(_keyFirstTime) ?? true;
+    final tutorialUserKey = _resolveTutorialUserKey(userId);
+    final firstTimeKey = _buildFirstTimeKey(tutorialUserKey);
+    final firstTimeValue = prefs.getBool(firstTimeKey);
+    if (firstTimeValue != null) {
+      return firstTimeValue;
+    }
+
+    // Compatibilidad con versiones anteriores solo para modo invitado.
+    if (tutorialUserKey == 'guest') {
+      final legacyValue = prefs.getBool(_legacyKeyFirstTime);
+      if (legacyValue != null) {
+        await prefs.setBool(firstTimeKey, legacyValue);
+        return legacyValue;
+      }
+    }
+
+    return true;
   }
 
   /// Marca que el usuario ya ha visto el tutorial inicial
-  Future<void> markFirstTimeComplete() async {
+  Future<void> markFirstTimeComplete({String? userId}) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(_keyFirstTime, false);
+    final firstTimeKey = _buildFirstTimeKey(userId);
+    await prefs.setBool(firstTimeKey, false);
+    await prefs.remove(_legacyKeyFirstTime);
   }
 
   /// Verifica si un tutorial específico ha sido completado
@@ -33,14 +64,15 @@ class TutorialService {
   /// Reinicia el progreso del tutorial (útil para testing)
   Future<void> resetTutorialProgress() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(_keyFirstTime, true);
     // Limpiar todos los tutoriales completados
     final keys = prefs.getKeys();
     for (var key in keys) {
-      if (key.startsWith(_keyCompletedTutorials)) {
+      if (key.startsWith(_keyCompletedTutorials) ||
+          key.startsWith(_keyFirstTimePrefix)) {
         await prefs.remove(key);
       }
     }
+    await prefs.setBool(_legacyKeyFirstTime, true);
   }
 
   /// Obtiene todos los tutoriales disponibles

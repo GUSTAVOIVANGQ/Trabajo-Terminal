@@ -84,6 +84,7 @@ class FlowDiagramCanvas extends StatefulWidget {
   final Function(DiagramNode?) onNodeTap;
   final Function(DiagramNode) onNodeLongPress;
   final Function(DiagramNode, Offset) onNodeDragUpdate;
+  final ValueChanged<bool>? onNodeDragEnd;
   final Function(Connection)? onConnectionTap;
   final GlobalKey? canvasKey; // Nuevo parámetro para exportación
 
@@ -100,6 +101,7 @@ class FlowDiagramCanvas extends StatefulWidget {
     required this.onNodeTap,
     required this.onNodeLongPress,
     required this.onNodeDragUpdate,
+    this.onNodeDragEnd,
     this.onConnectionTap,
     this.canvasKey, // Agregar el parámetro
   });
@@ -357,6 +359,10 @@ class _FlowDiagramCanvasState extends State<FlowDiagramCanvas>
 
       onScaleEnd: (details) {
         if (draggingNode != null) {
+          final bool didMove = currentDragPosition != null &&
+              nodeDragStart != null &&
+              (currentDragPosition! - nodeDragStart!).distance > 0.5;
+
           // Detener la animación
           _dragController.stop();
 
@@ -383,6 +389,9 @@ class _FlowDiagramCanvasState extends State<FlowDiagramCanvas>
 
           // Mantener el nodo seleccionado después del arrastre
           widget.onNodeTap(dragged);
+
+          // Notificar al padre para registrar historial al terminar el arrastre
+          widget.onNodeDragEnd?.call(didMove);
         }
       },
 
@@ -471,7 +480,9 @@ class FlowDiagramPainter extends CustomPainter {
   final Offset? currentDragPosition;
   final Offset panOffset;
   final double scale;
-  final BuildContext context;
+  final BuildContext? context;
+  final ThemeData? themeOverride;
+  final bool? isDarkModeOverride;
 
   static const gridSize = 20.0;
   static const arrowSize = 10.0;
@@ -494,14 +505,24 @@ class FlowDiagramPainter extends CustomPainter {
     this.currentDragPosition,
     required this.panOffset,
     required this.scale,
-    required this.context,
+    this.context,
+    this.themeOverride,
+    this.isDarkModeOverride,
   }) {
     // Inicializar colores y paints basados en el tema
-    final themeService = ThemeService();
-    isDarkMode = themeService.isDarkMode(context);
-    nodeColors = AppThemes.getNodeColors(isDarkMode);
+    final theme = themeOverride ??
+        (context != null ? Theme.of(context!) : ThemeData.light());
 
-    final theme = Theme.of(context);
+    if (isDarkModeOverride != null) {
+      isDarkMode = isDarkModeOverride!;
+    } else if (context != null) {
+      final themeService = ThemeService();
+      isDarkMode = themeService.isDarkMode(context!);
+    } else {
+      isDarkMode = theme.brightness == Brightness.dark;
+    }
+
+    nodeColors = AppThemes.getNodeColors(isDarkMode);
 
     gridPaint = Paint()
       ..color = theme.colorScheme.outline.withOpacity(0.3)

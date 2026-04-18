@@ -1,186 +1,208 @@
-# 10 Pantallas principales
+# 10. Pantallas principales
 
-Esta sección describe las pantallas y vistas modales implementadas en la aplicación FlowCode. La interfaz se organiza en dos grupos: pantallas de navegación principal, accesibles a través del flujo de la aplicación, y vistas modales, invocadas desde el editor para presentar resultados o capturar datos del usuario.
+Esta sección describe las pantallas implementadas en FlowCode y las vistas modales invocadas desde ellas. Las pantallas corresponden a destinos de navegación independientes dentro de la aplicación; las vistas modales se presentan como diálogos superpuestos sobre la pantalla activa y no forman parte del flujo de navegación principal.
 
 ---
 
-## 10.1 Pantalla de inicio de sesión
+## 10.1 Inicio de sesión
 
-**Propósito y función**
+**Propósito**
 
-La pantalla de inicio de sesión constituye el punto de entrada a la aplicación. Permitió al usuario autenticarse mediante correo electrónico y contraseña, o continuar sin cuenta en modo invitado. Cuando el acceso remoto no estuvo disponible, la pantalla presentó un indicador de modo sin conexión. Desde esta pantalla también se accedió a la pantalla de registro de cuenta.
+Pantalla de entrada a la aplicación. Gestiona la autenticación del usuario mediante credenciales de correo electrónico y contraseña, así como el acceso en modo invitado sin cuenta registrada.
 
-**Funciones implementadas:**
+**Funcionalidades**
 
-- Formulario de acceso con correo electrónico y contraseña.
-- Indicador de modo sin conexión cuando el acceso remoto no estuvo disponible.
+- Formulario de autenticación con campos de correo electrónico y contraseña.
+- Indicador de conectividad cuando el acceso remoto no está disponible.
 - Acceso a la pantalla de registro de cuenta.
-- Opción para continuar como invitado.
+- Opción para continuar como usuario invitado sin autenticación.
 
-Figura 1. Pantalla de inicio de sesión.
-
----
-
-## 10.2 Pantalla de registro de cuenta
-
-**Propósito y función**
-
-La pantalla de registro permitió crear una cuenta de usuario con datos básicos. Al finalizar el proceso, la navegación regresó a la pantalla de inicio de sesión.
-
-**Funciones implementadas:**
-
-- Formulario de creación de cuenta: nombre completo, correo electrónico y contraseña.
-- Validaciones de campos con mensajes de error en línea.
-- Navegación de regreso a la pantalla de inicio de sesión al finalizar o cancelar.
-
-Figura 2. Pantalla de registro de cuenta.
+_(Insertar captura de pantalla)_
 
 ---
 
-## 10.3 Recorrido inicial (primera ejecución)
+## 10.2 Registro de cuenta
 
-**Propósito y función**
+**Propósito**
 
-En la primera ejecución de la aplicación se presentó un recorrido de introducción de varias páginas. Al completarlo o saltarlo, el estado de primera ejecución quedó registrado de forma persistente para no mostrarse en ejecuciones posteriores.
+Permite la creación de una cuenta de usuario con datos básicos. Al completar el registro, la sesión se inicia automáticamente y el usuario es redirigido al flujo principal.
 
-**Funciones implementadas:**
+**Funcionalidades**
 
-- Navegación por páginas con controles de avance y retroceso.
-- Opción para saltar el recorrido y finalizar inmediatamente.
-- Persistencia del estado de primera ejecución mediante el servicio correspondiente.
+- Formulario de creación de cuenta con campos de nombre completo, correo electrónico y contraseña.
+- Validación de campos con mensajes de error en línea.
+- Navegación de regreso a la pantalla de inicio de sesión.
 
-Figura 3. Recorrido inicial de la aplicación.
+_(Insertar captura de pantalla)_
 
 ---
 
-## 10.4 Pantalla de gestión de diagramas y plantillas
+## 10.3 Recorrido inicial
 
-**Propósito y función**
+**Propósito**
 
-Esta pantalla centralizó la gestión de diagramas del usuario. Presentó dos pestañas: "Mis diagramas" y "Plantillas", permitiendo abrir diagramas existentes o plantillas predefinidas en el editor, eliminar diagramas del usuario y crear nuevos diagramas. Desde esta pantalla también se accedió al perfil del usuario, a la configuración y al módulo de guías internas.
+Se presenta únicamente en la primera ejecución de la aplicación. Introduce al usuario las funcionalidades principales mediante una secuencia de páginas informativas.
 
-**Funciones implementadas:**
+**Funcionalidades**
 
-- Pestañas para separar "Mis diagramas" y "Plantillas".
+- Navegación secuencial entre páginas mediante controles de avance y retroceso.
+- Opción para omitir el recorrido y acceder directamente a la aplicación.
+- Registro del estado de primera ejecución para suprimir el recorrido en usos posteriores.
+
+_(Insertar captura de pantalla)_
+
+---
+
+## 10.4 Gestión de diagramas y plantillas
+
+**Propósito**
+
+Centraliza la administración de los diagramas del usuario. Expone los diagramas propios y las plantillas disponibles, y sirve como punto de acceso al editor y a otras secciones de la aplicación.
+
+**Funcionalidades**
+
+- Pestañas diferenciadas para "Mis diagramas" y "Plantillas".
 - Apertura de un diagrama o plantilla en el editor.
 - Eliminación de diagramas del usuario.
-- Creación de un nuevo diagrama.
-- Acceso al perfil y configuración del usuario.
-- Acceso al módulo de guías internas mediante botón flotante.
+- Creación de un nuevo diagrama en blanco.
+- Acceso al perfil del usuario y a la configuración de la aplicación.
+- Acceso al catálogo de guías internas mediante botón flotante.
 
-Figura 4. Pantalla de gestión de diagramas y plantillas.
+_(Insertar captura de pantalla)_
 
 ---
 
-## 10.5 Pantalla del editor de diagramas
+## 10.5 Editor de diagramas
 
-**Propósito y función**
+**Propósito**
 
-La pantalla del editor de diagramas constituyó el componente central de la aplicación. En ella se construyeron y editaron diagramas de flujo sobre un canvas interactivo. Desde esta pantalla se invocaron las principales funciones de validación, guardado, exportación y generación de código, cuyos resultados se presentaron en vistas modales especializadas.
+Pantalla principal de trabajo. Permite construir y editar diagramas de flujo mediante un canvas interactivo, y ejecutar el pipeline de conversión para obtener código C a partir del diagrama.
 
-**Funciones implementadas:**
+**Funcionalidades**
 
-- Canvas interactivo para construcción del diagrama mediante nodos y conexiones.
-- Validación estructural del diagrama con reporte en vista modal.
-- Guardado del diagrama (nuevo o actualización existente) con indicador de cambios pendientes.
+- Canvas interactivo para la construcción del diagrama mediante nodos y conexiones.
+- Validación estructural del diagrama con presentación de resultados en vista modal.
+- Guardado del diagrama (nuevo o actualización) con indicador de cambios pendientes.
 - Carga de diagramas mediante navegación a la pantalla de gestión.
 - Exportación del diagrama a imagen.
-- Generación de código en dos modalidades: generación directa y compilación por pipeline, con resultados en vistas modales.
-- Edición de propiedades de nodos mediante diálogos especializados por tipo de nodo.
+- Generación de código en dos modalidades: generación directa y compilación por pipeline completo, con resultados presentados en vista modal.
+- Edición de propiedades de nodos mediante diálogos especializados por tipo.
 
-Figura 5. Pantalla del editor de diagramas.
-
----
-
-## 10.6 Pantalla de perfil
-
-**Propósito y función**
-
-La pantalla de perfil permitió gestionar la información de la cuenta, acceder a la configuración de tema y realizar operaciones de datos según el tipo de usuario (autenticado o invitado).
-
-**Funciones implementadas:**
-
-- Visualización de datos del usuario: nombre, correo y rol.
-- Acceso a la pantalla de configuración de tema.
-- Opciones de sincronización con la nube: sincronización inteligente, subir todo y bajar todo.
-- Eliminación de datos locales (modo invitado) o eliminación de cuenta y datos (usuario autenticado), con diálogo de confirmación.
-- Cierre de sesión con confirmación.
-
-Figura 6. Pantalla de perfil de usuario.
+_(Insertar captura de pantalla)_
 
 ---
 
-## 10.7 Pantalla de configuración de tema
+## 10.6 Perfil
 
-**Propósito y función**
+**Propósito**
 
-Esta pantalla permitió seleccionar el tema visual de la aplicación. La selección se persistió mediante el servicio de preferencias correspondiente.
+Permite al usuario gestionar los datos de su cuenta, las opciones de sincronización con la nube y las operaciones de eliminación de datos, según el tipo de usuario —autenticado o invitado.
 
-**Funciones implementadas:**
+**Funcionalidades**
+
+- Visualización de datos del usuario: nombre, correo electrónico y rol.
+- Acceso a la configuración de tema de la interfaz.
+- Opciones de sincronización con la nube: sincronización inteligente, subida total y descarga total.
+- Eliminación de datos locales (usuario invitado) o eliminación de cuenta y datos asociados (usuario autenticado).
+- Cierre de sesión con diálogo de confirmación.
+
+_(Insertar captura de pantalla)_
+
+---
+
+## 10.7 Configuración de tema
+
+**Propósito**
+
+Permite seleccionar el tema visual de la aplicación y persiste la preferencia entre sesiones.
+
+**Funcionalidades**
 
 - Selector de tema mediante widget especializado.
-- Vista previa de los elementos visuales afectados por el tema.
-- Persistencia de la selección de tema.
+- Vista previa de los elementos afectados por el tema seleccionado.
+- Persistencia de la selección mediante servicio de preferencias.
 
-Figura 7. Pantalla de configuración de tema.
+_(Insertar captura de pantalla)_
 
 ---
 
-## 10.8 Pantalla de guías internas
+## 10.8 Guías internas
 
-**Propósito y función**
+**Propósito**
 
-La pantalla de guías internas presentó un catálogo categorizado de guías sobre el uso de la aplicación. Cada guía se abrió en un diálogo modal. Desde el AppBar de esta pantalla se accedió a un diálogo informativo "Acerca de…".
+Provee un catálogo categorizado de guías de uso de la aplicación. Cada guía se abre en una vista modal desde esta pantalla.
 
-**Funciones implementadas:**
+**Funcionalidades**
 
 - Listado de guías organizado por categorías.
-- Registro y visualización del estado de finalización por guía.
-- Apertura de cada guía en un diálogo modal.
-- Diálogo informativo "Acerca de…" accesible desde el AppBar.
+- Indicador de estado de finalización por guía.
+- Apertura de la guía seleccionada en un diálogo.
+- Diálogo informativo "Acerca de" accesible desde la barra de navegación superior.
 
-Figura 8. Pantalla de guías internas.
+_(Insertar captura de pantalla)_
 
 ---
 
-## 10.9 Vistas modales (diálogos)
+## 10.9 Vistas modales
 
-Las siguientes vistas se presentaron como diálogos invocados principalmente desde el editor de diagramas.
+Las siguientes vistas se presentan como diálogos desde distintas pantallas, principalmente desde el editor. No constituyen destinos de navegación independientes.
 
 ### 10.9.1 Guardado de diagrama
 
-Permitió capturar el nombre y la descripción del diagrama para guardarlo como nuevo o actualizar uno existente. Incluyó validación del campo nombre y retornó los datos al editor al confirmar.
+**Propósito**
 
-Figura 9. Diálogo para guardar un diagrama.
+Captura el nombre y la descripción del diagrama para registrar o actualizar su entrada en la base de datos local.
+
+**Funcionalidades**
+
+- Campo de nombre con validación de contenido no vacío.
+- Campo opcional de descripción.
+- Retorno de los datos capturados al editor para completar la operación de guardado.
 
 ---
 
 ### 10.9.2 Resultados de validación estructural
 
-Presentó el resultado de la validación estructural del diagrama, mostrando el listado de errores y advertencias detectados, con mensajes de estado que indicaron si el diagrama estaba listo para generar código o requería correcciones.
+**Propósito**
 
-Figura 10. Diálogo de resultados de validación estructural.
+Presenta el resultado de la validación estructural del diagrama activo, con los errores y advertencias detectados por el analizador.
 
----
+**Funcionalidades**
 
-### 10.9.3 Resultados del compilador (pipeline)
-
-Presentó el reporte completo de compilación organizado en seis pestañas: resumen general, análisis léxico, árbol sintáctico (AST), análisis semántico, optimizaciones aplicadas y código C generado. Desde esta vista fue posible copiar el código generado y el reporte completo al portapapeles.
-
-Figura 11. Diálogo de resultados del compilador.
+- Listado de errores y advertencias clasificados por severidad.
+- Mensaje de estado que indica si el diagrama está listo para la generación de código o requiere correcciones.
 
 ---
 
-### 10.9.4 Edición de propiedades de nodos
+### 10.9.3 Resultados del compilador
 
-El diálogo `NodeEditorDialog` centralizó la edición de propiedades del nodo seleccionado. Según el tipo de nodo, enrutó a un diálogo especializado: proceso, decisión, datos, preparación, subproceso, conector o comentario. Cada diálogo especializado permitió editar el contenido textual del nodo con confirmación o cancelación.
+**Propósito**
 
-Figura 12. Diálogo de edición de propiedades de un nodo.
+Presenta el reporte completo de compilación por fases y el código C generado a partir del diagrama.
+
+**Funcionalidades**
+
+- Organización por pestañas correspondientes a cada fase del pipeline: resumen general, análisis léxico, análisis sintáctico, análisis semántico, optimización y código generado.
+- Visualización de tokens, árbol sintáctico (AST), tabla de símbolos, métricas de compilación y errores por fase.
+- Copiado del código generado y del reporte completo al portapapeles.
+
+---
+
+### 10.9.4 Edición de propiedades de nodo
+
+**Propósito**
+
+Permite editar el contenido y las propiedades del nodo seleccionado en el editor, enrutando a un diálogo especializado según el tipo de nodo.
+
+**Funcionalidades**
+
+- Enrutamiento a editores especializados por tipo de nodo: proceso, decisión, datos, preparación, subproceso, conector y comentario.
+- Confirmación o cancelación de la edición con restauración del estado previo en caso de cancelación.
 
 ---
 
 ## 10.10 Logo y marca
 
-El logotipo de FlowCode presenta un diseño geométrico y minimalista. Está compuesto por bloques sólidos en tono azul oscuro interconectados mediante líneas estructuradas, simbolizando el flujo de información, la lógica modular y la conectividad de los componentes del sistema. La configuración visual en forma de nodos refleja los conceptos de "flujo" (flow) y "código" (code) que dan nombre a la aplicación.
+El logotipo de FlowCode presenta un diseño geométrico y minimalista que sintetiza la esencia funcional del proyecto. Compuesto por bloques sólidos en tono azul oscuro interconectados mediante líneas estructuradas, el emblema representa el flujo de información, la lógica modular y la conectividad de los sistemas algorítmicos. La configuración en forma de nodos hace referencia directa al concepto de flujo (*flow*) y programación (*code*).
 
-Figura 13. Logotipo de FlowCode.
+_(Insertar figura: logotipo de FlowCode)_
