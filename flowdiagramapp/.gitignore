@@ -33,6 +33,9 @@ migrate_working_dir/
 .pub/
 /build/
 
+# Test report artifacts (generated locally)
+/test_reports/
+
 # Symbolication related
 app.*.symbols
 

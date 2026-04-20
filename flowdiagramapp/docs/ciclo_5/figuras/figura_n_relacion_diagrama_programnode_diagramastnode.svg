@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="520" viewBox="0 0 1000 520" role="img" aria-label="Relación entre el diagrama, ProgramNode y DiagramASTNode">
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L9,3 L0,6 Z" fill="#1f1f1f" />
+    </marker>
+  </defs>
+
+  <style>
+    .group { fill: #f3f3f3; stroke: #1f1f1f; stroke-width: 2; }
+    .box { fill: #ffffff; stroke: #1f1f1f; stroke-width: 2; }
+    .title { font-family: "Segoe UI", Arial, sans-serif; font-size: 16px; font-weight: 600; fill: #1f1f1f; }
+    .text { font-family: "Segoe UI", Arial, sans-serif; font-size: 13px; fill: #1f1f1f; }
+    .mono { font-family: Consolas, "Courier New", monospace; font-size: 12px; fill: #1f1f1f; }
+    .label { font-family: "Segoe UI", Arial, sans-serif; font-size: 12px; fill: #1f1f1f; }
+    .arrow { stroke: #1f1f1f; stroke-width: 2; fill: none; marker-end: url(#arrow); }
+    .arrow-dashed { stroke: #1f1f1f; stroke-width: 2; fill: none; stroke-dasharray: 6 4; marker-end: url(#arrow); }
+  </style>
+
+  <!-- Columna izquierda: diagrama -->
+  <rect x="40" y="130" width="260" height="320" rx="10" class="group" />
+  <text x="60" y="160" class="title">Diagrama (nodos visuales)</text>
+
+  <rect x="70" y="190" width="200" height="70" rx="8" class="box" />
+  <text x="90" y="215" class="text">Nodo de diagrama</text>
+  <text x="90" y="238" class="mono">nodeId = A</text>
+
+  <rect x="70" y="280" width="200" height="70" rx="8" class="box" />
+  <text x="90" y="305" class="text">Nodo de diagrama</text>
+  <text x="90" y="328" class="mono">nodeId = B</text>
+
+  <text x="165" y="375" class="title">…</text>
+
+  <!-- Columna central: ProgramNode y contenedores DiagramASTNode -->
+  <rect x="340" y="40" width="320" height="110" rx="10" class="group" />
+  <text x="360" y="70" class="title">ProgramNode</text>
+  <text x="360" y="95" class="mono">diagramNodes: [DiagramASTNode…]</text>
+  <text x="360" y="118" class="mono">globalDeclarations: …</text>
+
+  <rect x="340" y="200" width="320" height="90" rx="10" class="box" />
+  <text x="360" y="230" class="title">DiagramASTNode</text>
+  <text x="360" y="255" class="mono">nodeId = A</text>
+
+  <rect x="340" y="320" width="320" height="90" rx="10" class="box" />
+  <text x="360" y="350" class="title">DiagramASTNode</text>
+  <text x="360" y="375" class="mono">nodeId = B</text>
+
+  <!-- Columna derecha: subárbol AST -->
+  <rect x="700" y="200" width="260" height="210" rx="10" class="group" />
+  <text x="720" y="230" class="title">Subárbol AST del nodo</text>
+  <text x="720" y="260" class="text">Sentencias (bloques, control de flujo)</text>
+  <text x="720" y="283" class="text">Expresiones (binarias, unarias, asignación)</text>
+  <text x="720" y="306" class="text">Literales e identificadores</text>
+  <text x="720" y="337" class="mono">position (línea, columna)</text>
+  <text x="720" y="360" class="mono">nodeId (opcional)</text>
+
+  <rect x="700" y="430" width="260" height="70" rx="10" class="box" />
+  <text x="720" y="458" class="title">Trazabilidad</text>
+  <text x="720" y="482" class="text">nodeId vincula diagrama, contenedor y AST</text>
+  <text x="720" y="504" class="text">position permite ubicar el origen en el texto</text>
+
+  <!-- Flechas: correspondencia diagrama -> DiagramASTNode -->
+  <path d="M270 225 L340 245" class="arrow" />
+  <path d="M270 315 L340 365" class="arrow" />
+
+  <text x="285" y="210" class="label">correspondencia</text>
+  <text x="285" y="232" class="label">por nodeId</text>
+
+  <!-- Flechas: contención ProgramNode -> DiagramASTNode -->
+  <path d="M500 150 L500 200" class="arrow-dashed" />
+  <path d="M520 150 L520 320" class="arrow-dashed" />
+  <text x="540" y="185" class="label">diagramNodes[]</text>
+
+  <!-- Flechas: DiagramASTNode -> subárbol AST -->
+  <path d="M660 245 L700 245" class="arrow" />
+  <path d="M660 365 L700 320" class="arrow" />
+</svg>

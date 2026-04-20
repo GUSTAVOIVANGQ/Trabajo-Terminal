@@ -26,4 +26,12 @@ Cambiar "pruebas de usabilidad" por "pruebas funcionales" o "pruebas de funciona
 
 Agregar una columna "Estado" o una nota al final de cada hoja de riesgo indicando si fue Mitigado, Materializado (con consecuencias X) o No ocurrió. Esto da credibilidad al reporte técnico como documento de ingeniería real.
 
----
+Como se maneja apuntadores en la gramatica del analizador sintactico? se pueden usar apuntadores a funciones para manejar las acciones semanticas? o es mejor usar un switch case?
+
+se usa BFS o DFS para recorrer el AST durante la optimizacion?
+
+Agregar Figuras de la captura de pantalla de la app en el reporte técnico en cada dase de compilacion.
+
+realizar una lista de errores comunes que se pueden presentar durante la compilacion y como solucionarlos. Esto puede ser útil para los usuarios finales de la app.
+
+reemplazar seis simbolos simbolos

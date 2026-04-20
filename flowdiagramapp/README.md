@@ -376,6 +376,76 @@ flutter pub get
 flutter run
 ```
 
+## 🧪 Pruebas automatizadas (con reportes)
+
+### Resumen (suite base)
+
+- `test/compiler/` → 7 archivos → 282 pruebas
+- `test/code_generator_phase4_test.dart` → 1 archivo → 8 pruebas
+- **Total** → 8 archivos → 290 pruebas
+
+**Detalle por archivo** (ejemplo; generado en `test_reports/resumen_conteo_tests_suite_base.txt`):
+
+```text
+TOTAL 290
+  84  test/compiler/syntax_analyzer_test.dart
+  53  test/compiler/code_optimizer_test.dart
+  47  test/compiler/lexical_analyzer_test.dart
+  43  test/compiler/semantic_analyzer_test.dart
+  33  test/compiler/compiler_integration_test.dart
+  17  test/compiler/compiler_benchmark_test.dart
+   8  test/code_generator_phase4_test.dart
+   5  test/compiler/code_generator_advanced_test.dart
+```
+
+### Script de reportes (recomendado)
+
+```powershell
+# Desde la raíz del proyecto (carpeta flowdiagramapp/)
+powershell -ExecutionPolicy Bypass -File scripts/run_test_reports.ps1
+
+# Opcional: cambiar carpeta de salida
+powershell -ExecutionPolicy Bypass -File scripts/run_test_reports.ps1 -OutDir test_reports
+```
+
+**Archivos generados** (por defecto en `test_reports/`):
+
+- `flutter_test_compiler.txt` / `flutter_test_compiler.jsonl`
+- `flutter_test_phase4.txt` / `flutter_test_phase4.jsonl`
+- `resumen_conteo_tests_compiler.txt` *(si `python` está disponible)*
+- `resumen_conteo_tests_suite_base.txt` *(si `python` está disponible)*
+- `resumen_benchmark.txt`
+
+### Código (PowerShell) — equivalente al script
+
+```powershell
+New-Item -ItemType Directory -Force test_reports | Out-Null
+
+flutter test test/compiler --reporter expanded 2>&1 |
+  Tee-Object -FilePath test_reports/flutter_test_compiler.txt
+
+flutter test test/compiler --reporter json 2>&1 |
+  Out-File -Encoding utf8 test_reports/flutter_test_compiler.jsonl
+
+flutter test test/code_generator_phase4_test.dart --reporter expanded 2>&1 |
+  Tee-Object -FilePath test_reports/flutter_test_phase4.txt
+
+flutter test test/code_generator_phase4_test.dart --reporter json 2>&1 |
+  Out-File -Encoding utf8 test_reports/flutter_test_phase4.jsonl
+
+flutter test test/compiler/compiler_benchmark_test.dart --reporter expanded 2>&1 |
+  Select-String -Pattern 'BENCH-|BENCH-DEBUG|Todas exitosas|Todos exitosos|\[ERROR\]|\[FATAL\]|\[3001\]|Expected:|Actual:|Some tests failed|All tests passed|Large diagrams should compile' |
+  ForEach-Object { $_.Line } |
+  Out-File -Encoding utf8 test_reports/resumen_benchmark.txt
+```
+
+### Comandos rápidos
+
+```bash
+flutter test test/compiler
+flutter test test/code_generator_phase4_test.dart
+```
+
 ## 📂 Estructura del Proyecto
 
 ```
