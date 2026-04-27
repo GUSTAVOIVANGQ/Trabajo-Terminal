@@ -2,7 +2,7 @@
 
 ## 14.1 Arquitectura del Componente Editor
 
-El editor visual se implementó como un módulo que integró: (1) orquestación de estado y acciones (crear/editar, validar, generar/compilar, guardar y exportar), (2) un lienzo interactivo con gestos y selección, y (3) un módulo de dibujo 2D que trazó símbolos y conexiones. Esta separación mantuvo el diagrama como "fuente única de verdad" y redujo el acoplamiento entre la interfaz de usuario (IU), la interacción y el dibujo.
+El editor visual se implementó como un módulo que integró: (1) orquestación de estado y acciones (crear/editar, validar, generar/convertir, guardar y exportar), (2) un lienzo interactivo con gestos y selección, y (3) un módulo de dibujo 2D que trazó símbolos y conexiones. Esta separación mantuvo el diagrama como "fuente única de verdad" y redujo el acoplamiento entre la interfaz de usuario (IU), la interacción y el dibujo.
 
 El diagrama en ejecución se modeló como un grafo dirigido $G=(V,E)$:
 
@@ -38,7 +38,7 @@ El modelo de nodo consideró:
 
 - **Catálogo ISO 5807**: símbolos básicos (terminal, proceso, decisión, preparación, dato, proceso predefinido) y símbolos extendidos (almacenamientos, conectores, anotaciones, etc.).
 - **Geometría**: cada tipo definió tamaño y una ruta geométrica (`Path`) para dibujo y selección.
-- **Metadatos técnicos**: claves adicionales por nodo para distinguir estructuras de control y guiar la generación/compilación sin depender solo del texto visible.
+- **Metadatos técnicos**: claves adicionales por nodo para distinguir estructuras de control y guiar la generación/conversión sin depender solo del texto visible.
 
 Las conexiones incluyeron:
 

@@ -194,7 +194,7 @@ sequenceDiagram
 
 ## DS-CU04: Validar Estructura del Diagrama
 
-Describe el proceso de validación estructural del diagrama antes de que pueda ser compilado o exportado.
+Describe el proceso de validación estructural del diagrama antes de que pueda ser convertido o exportado.
 
 ```mermaid
 %%{init: {'theme': 'neutral'}}%%
@@ -255,7 +255,7 @@ sequenceDiagram
 
 ## DS-CU05: Realizar Análisis Semántico
 
-Describe la fase de análisis semántico del compilador fuente-a-fuente, que valida la consistencia de variables y tipos.
+Describe la fase de análisis semántico del conversor fuente-a-fuente, que valida la consistencia de variables y tipos.
 
 ```mermaid
 %%{init: {'theme': 'neutral'}}%%
@@ -269,7 +269,7 @@ sequenceDiagram
     participant ST as SymbolTable
     participant CRD as CompilerResultsDialog
 
-    Usuario->>ES: Presiona botón "Compilar"
+    Usuario->>ES: Presiona botón "convertir"
     ES->>CP: compile(nodes, connections)
 
     Note over CP,LA: Fase 1 — Análisis Léxico (prerrequisito)
@@ -309,7 +309,7 @@ sequenceDiagram
 
 ## DS-CU06: Generar Código C
 
-Describe el flujo completo del pipeline de compilación fuente-a-fuente, desde el diagrama de flujo hasta la generación de código funcional en lenguaje C.
+Describe el flujo completo del pipeline de conversión fuente-a-fuente, desde el diagrama de flujo hasta la generación de código funcional en lenguaje C.
 
 ```mermaid
 %%{init: {'theme': 'neutral'}}%%
@@ -324,7 +324,7 @@ sequenceDiagram
     participant Gen as AdvancedCodeGenerator
     participant CRD as CompilerResultsDialog
 
-    Usuario->>ES: Presiona botón "Compilar"
+    Usuario->>ES: Presiona botón "convertir"
     ES->>CP: compile(nodes, connections)
     CP->>CP: Inicializa errores y métricas
 
@@ -371,7 +371,7 @@ sequenceDiagram
     Gen->>Gen: Genera estructuras de control (if/else, while, for)
     Gen-->>CP: CodeGenerationResult(code, metrics)
 
-    CP->>CP: Calcula métricas finales de compilación
+    CP->>CP: Calcula métricas finales de conversión
     CP-->>ES: CompilationResult(success: true, generatedCode, symbolTable, metrics)
 
     ES->>ES: Actualiza panel lateral con código C generado
@@ -594,7 +594,7 @@ sequenceDiagram
 
 ## DE-CU06: Diagrama de Estados — Generar Código C
 
-Representa los estados y transiciones del sistema durante el ciclo de vida completo de la generación de código: desde el inicio de la aplicación, la construcción del diagrama, la ejecución del pipeline de compilación fuente-a-fuente con sus cinco fases, hasta la obtención del código C generado o la notificación de errores.
+Representa los estados y transiciones del sistema durante el ciclo de vida completo de la generación de código: desde el inicio de la aplicación, la construcción del diagrama, la ejecución del pipeline de conversión fuente-a-fuente con sus cinco fases, hasta la obtención del código C generado o la notificación de errores.
 
 ```mermaid
 %%{init: {'theme': 'neutral'}}%%
@@ -606,13 +606,13 @@ stateDiagram-v2
     state "Diagrama en Construccion" as Construccion
     state "Diagrama Listo" as Listo
     state "Validacion Estructural" as Validacion
-    state "Pipeline de Compilacion" as Pipeline {
+    state "Pipeline de conversión" as Pipeline {
         state "Fase 1: Analisis Lexico" as F1
         state "Fase 2: Analisis Sintactico" as F2
         state "Fase 3: Analisis Semantico" as F3
         state "Fase 4: Optimizacion AST" as F4
         state "Fase 5: Generacion de Codigo" as F5
-        state "Error de Compilacion" as ErrorComp
+        state "Error de conversión" as ErrorComp
 
         [*] --> F1
 
@@ -630,8 +630,8 @@ stateDiagram-v2
         F5 --> [*] : Codigo C generado
         F5 --> ErrorComp : Error en generacion
     }
-    state "Compilacion Exitosa" as Exito
-    state "Compilacion Fallida" as Fallida
+    state "conversión Exitosa" as Exito
+    state "conversión Fallida" as Fallida
     state "Codigo C Disponible" as CodigoC
 
     Inactivo --> Editor : Usuario abre la aplicacion<br/>y selecciona Nuevo Diagrama
@@ -646,7 +646,7 @@ stateDiagram-v2
     Construccion --> Listo : Diagrama contiene<br/>camino inicio a fin
 
     Listo --> Construccion : Usuario modifica<br/>el diagrama
-    Listo --> Validacion : Usuario solicita<br/>compilacion
+    Listo --> Validacion : Usuario solicita<br/>conversión
 
     Validacion --> Pipeline : Validacion estructural aprobada<br/>(nodo inicio, nodo fin,<br/>conexiones validas)
     Validacion --> Fallida : Validacion estructural falla<br/>(sin inicio/fin,<br/>nodos desconectados)
@@ -654,7 +654,7 @@ stateDiagram-v2
     Pipeline --> Exito : Las 5 fases completadas<br/>sin errores
     Pipeline --> Fallida : Error fatal en<br/>alguna fase
 
-    Exito --> CodigoC : Compilacion exitosa
+    Exito --> CodigoC : conversión exitosa
 
     CodigoC --> CodigoC : Visualiza codigo en<br/>panel lateral
     CodigoC --> CodigoC : Consulta tabla de simbolos<br/>y metricas
@@ -673,16 +673,16 @@ stateDiagram-v2
 | **Aplicacion Inactiva** | Estado inicial. La aplicacion se encuentra en la pantalla de bienvenida o seleccion de proyectos. |
 | **Editor Activo** | El `EditorScreen` se ha cargado con un canvas vacio o con un diagrama existente desde SQLite. |
 | **Diagrama en Construccion** | El usuario esta agregando nodos, conexiones y configurando propiedades. Estado iterativo. |
-| **Diagrama Listo** | El diagrama contiene al menos un camino completo de inicio a fin y puede ser compilado. |
+| **Diagrama Listo** | El diagrama contiene al menos un camino completo de inicio a fin y puede ser convertido. |
 | **Validacion Estructural** | `DiagramValidator` verifica la presencia de nodos inicio/fin, conexiones validas y conformidad ISO 5807. |
 | **Fase 1: Analisis Lexico** | `LexicalAnalyzer` recorre cada nodo, extrae tokens y construye la tabla de simbolos inicial. |
 | **Fase 2: Analisis Sintactico** | `SyntaxAnalyzer` parsea los tokens y construye el Arbol de Sintaxis Abstracta (`ProgramNode`). |
 | **Fase 3: Analisis Semantico** | `SemanticAnalyzer` valida tipos de datos, declaracion/uso de variables y compatibilidad de expresiones. |
 | **Fase 4: Optimizacion AST** | `CodeOptimizer` aplica plegado de constantes, eliminacion de codigo muerto y simplificacion de expresiones. |
 | **Fase 5: Generacion de Codigo** | `AdvancedCodeGenerator` traduce el AST optimizado a codigo fuente en lenguaje C. |
-| **Error de Compilacion** | Subestado dentro del pipeline. Se recopilan errores de la fase que fallo. |
-| **Compilacion Exitosa** | `CompilationResult(success: true)`. El pipeline completo las 5 fases sin errores criticos. |
-| **Compilacion Fallida** | `CompilationResult(success: false)`. Se presenta el reporte con los errores, la fase donde ocurrieron y las metricas parciales. |
+| **Error de conversión** | Subestado dentro del pipeline. Se recopilan errores de la fase que fallo. |
+| **conversión Exitosa** | `CompilationResult(success: true)`. El pipeline completo las 5 fases sin errores criticos. |
+| **conversión Fallida** | `CompilationResult(success: false)`. Se presenta el reporte con los errores, la fase donde ocurrieron y las metricas parciales. |
 | **Codigo C Disponible** | El codigo C generado esta disponible para visualizacion en el panel lateral, consulta de metricas y exportacion. |
 
 ### Transiciones Clave del Pipeline
@@ -711,18 +711,18 @@ stateDiagram-v2
 | `NodePalette` | `lib/widgets/node_palette.dart` | Paleta de selección de nodos |
 | `SaveDiagramDialog` | `lib/widgets/save_diagram_dialog.dart` | Diálogo para guardar proyectos |
 | `ValidationResultDialog` | `lib/widgets/validation_result_dialog.dart` | Diálogo de resultados de validación |
-| `CompilerResultsDialog` | `lib/widgets/compiler_results_dialog.dart` | Diálogo de resultados de compilación |
+| `CompilerResultsDialog` | `lib/widgets/compiler_results_dialog.dart` | Diálogo de resultados de conversión |
 | `DiagramValidator` | `lib/models/diagram_validator.dart` | Motor de validación estructural |
 | `ISO5807ConnectionRules` | `lib/models/diagram_validator.dart` | Reglas de conexión ISO 5807 |
 | `DiagramNode` | `lib/models/diagram_node.dart` | Modelo de datos de un nodo |
 | `CodeGenerator` | `lib/models/code_generator.dart` | Generador de código básico |
-| `CompilerPipeline` | `lib/compiler/compiler_pipeline.dart` | Orquestador del pipeline de compilación |
+| `CompilerPipeline` | `lib/compiler/compiler_pipeline.dart` | Orquestador del pipeline de conversión |
 | `LexicalAnalyzer` | `lib/compiler/lexical_analyzer.dart` | Fase 1: Análisis léxico |
 | `SyntaxAnalyzer` | `lib/compiler/syntax_analyzer.dart` | Fase 2: Análisis sintáctico |
 | `SemanticAnalyzer` | `lib/compiler/semantic_analyzer.dart` | Fase 3: Análisis semántico |
 | `CodeOptimizer` | `lib/compiler/code_optimizer.dart` | Fase 4: Optimización del AST |
 | `AdvancedCodeGenerator` | `lib/compiler/code_generator_advanced.dart` | Fase 5: Generación de código C |
-| `SymbolTable` | `lib/compiler/symbol_table.dart` | Tabla de símbolos del compilador |
+| `SymbolTable` | `lib/compiler/symbol_table.dart` | Tabla de símbolos del conversor |
 | `NodeEditorDialog` | `lib/widgets/node_editor_dialog.dart` | Router de diálogos de edición por tipo de nodo |
 | `ProcessNodeDialog` | `lib/widgets/process_node_dialog.dart` | Diálogo de edición para nodos de proceso y variable |
 | `DecisionNodeDialog` | `lib/widgets/decision_node_dialog.dart` | Diálogo de edición para nodos de decisión |

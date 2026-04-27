@@ -133,7 +133,7 @@ La optimización se ejecuta después del análisis semántico y produce el AST t
 
 # 20. Generación de Código C
 
-La generación de código constituye la fase final del canal de conversión [1]. A partir de la topología del diagrama, la tabla de símbolos y el AST optimizado, se emite un programa C completo y compilable conforme al estándar C99 [8]. El generador recibe los nodos del diagrama y sus conexiones para determinar el orden de emisión, consulta la tabla de símbolos para obtener el tipo de cada variable y seleccionar el especificador de formato correspondiente, y emplea el AST como soporte para expresiones y extensiones futuras.
+La generación de código constituye la fase final del canal de conversión [1]. A partir de la topología del diagrama, la tabla de símbolos y el AST optimizado, se emite un programa C completo y válido y funcional conforme al estándar C99 [8]. El generador recibe los nodos del diagrama y sus conexiones para determinar el orden de emisión, consulta la tabla de símbolos para obtener el tipo de cada variable y seleccionar el especificador de formato correspondiente, y emplea el AST como soporte para expresiones y extensiones futuras.
 
 ## 20.2 Opciones de Generación
 
@@ -231,4 +231,4 @@ Los nodos de proceso predefinido se traducen a llamadas a función [1]. Si el te
 
 ## 20.12 Resultado de Generación
 
-El resultado de compilación empaqueta el código C emitido junto con los mensajes de error y advertencias generados durante el proceso. El código producido es compilable en un entorno compatible con C99 [8] siempre que el contenido textual de los nodos se mantenga dentro del subconjunto soportado. El módulo generador queda preparado para la ejecución de las pruebas de integración y validación documentadas en el Ciclo 6 (sección 21).
+El resultado de conversión empaqueta el código C emitido junto con los mensajes de error y advertencias generados durante el proceso. El código producido es válido y funcional en un entorno compatible con C99 [8] siempre que el contenido textual de los nodos se mantenga dentro del subconjunto soportado. El módulo generador queda preparado para la ejecución de las pruebas de integración y validación documentadas en el Ciclo 6 (sección 21).

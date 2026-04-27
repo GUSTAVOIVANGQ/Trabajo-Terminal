@@ -1,6 +1,6 @@
 # 16. Arquitectura del Conversor de Diagramas de Flujo a Código C
 
-El conversor de FlowCode implementa la traducción de diagramas de flujo a código en lenguaje C mediante un pipeline de cinco fases secuenciales. A diferencia de un compilador tradicional que genera código objeto o ejecutable, este conversor produce código fuente legible y compilable en C estándar (C99) a partir del reconocimiento de lexemas visuales (nodos del diagrama de flujo).
+El conversor de FlowCode implementa la traducción de diagramas de flujo a código en lenguaje C mediante un pipeline de cinco fases secuenciales. A diferencia de un conversor tradicional que genera código objeto o ejecutable, este conversor produce código fuente legible y válido y funcional en C estándar (C99) a partir del reconocimiento de lexemas visuales (nodos del diagrama de flujo).
 
 ## 16.1 Pipeline de Conversión
 

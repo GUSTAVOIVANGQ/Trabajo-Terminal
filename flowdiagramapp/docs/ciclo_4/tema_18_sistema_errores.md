@@ -83,7 +83,7 @@ El sistema proporciona factory methods especializados para crear errores de cada
 
 La clase `CompilerErrorCollection` actúa como contenedor para múltiples errores y proporciona métodos de consulta y filtrado. El método `getBySeverity` retorna errores de una severidad específica, mientras `getByPhase` filtra por fase de conversión. Las propiedades `hasErrors` y `hasFatalErrors` permiten verificar rápidamente si la conversión fue exitosa. Las propiedades `errorCount` y `warningCount` proporcionan conteos separados.
 
-El método `summary` genera un resumen legible del estado de compilación, retornando "✅ Sin errores ni advertencias" cuando no hay problemas, o un conteo como "3 errores, 2 advertencias" cuando existen. Este resumen es ideal para mostrar en la interfaz de usuario como indicador rápido del resultado de la conversión.
+El método `summary` genera un resumen legible del estado de conversión, retornando "✅ Sin errores ni advertencias" cuando no hay problemas, o un conteo como "3 errores, 2 advertencias" cuando existen. Este resumen es ideal para mostrar en la interfaz de usuario como indicador rápido del resultado de la conversión.
 
 Los errores pueden serializarse a formato JSON mediante el método `toJson`, facilitando el almacenamiento de reportes, la comunicación con sistemas externos, o la implementación de análisis de patrones de errores comunes entre usuarios. La serialización incluye todos los atributos del error en un formato estructurado que puede reconstruirse posteriormente.
 

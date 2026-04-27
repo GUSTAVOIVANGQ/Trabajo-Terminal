@@ -8,16 +8,16 @@
 
 ### Objetivos del Ciclo 6
 
-Este ciclo integra todas las fases del conversor en un flujo completo y funcional, conectando el compilador fuente a fuente con el editor visual e implementando el recorrido de extremo a extremo desde la creación del diagrama hasta la obtención del código C compilable. La integración abarca el mapeo de los seis tipos de símbolos ISO 5807 soportados, la visualización interactiva de resultados y el desarrollo de la suite de pruebas que verifica el correcto funcionamiento del sistema completo [1], [3].
+Este ciclo integra todas las fases del conversor en un flujo completo y funcional, conectando el conversor fuente a fuente con el editor visual e implementando el recorrido de extremo a extremo desde la creación del diagrama hasta la obtención del código C válido y funcional. La integración abarca el mapeo de los seis tipos de símbolos ISO 5807 soportados, la visualización interactiva de resultados y el desarrollo de la suite de pruebas que verifica el correcto funcionamiento del sistema completo [1], [3].
 
 **Objetivos del Ciclo 6:**
 
 - Implementar el mapeo completo de los seis símbolos del estándar ISO 5807 a construcciones del lenguaje C, coordinado a través de la clase orquestadora del flujo de conversión.
-- Integrar el flujo de conversión con el editor visual mediante la barra de herramientas flotante, exponiendo la compilación como una acción accesible al usuario.
-- Desarrollar el diálogo de resultados del compilador con pestañas diferenciadas para cada fase del análisis: léxico, árbol sintáctico abstracto, semántico, optimización y código generado.
+- Integrar el flujo de conversión con el editor visual mediante la barra de herramientas flotante, exponiendo la conversión como una acción accesible al usuario.
+- Desarrollar el diálogo de resultados del conversor con pestañas diferenciadas para cada fase del análisis: léxico, árbol sintáctico abstracto, semántico, optimización y código generado.
 - Implementar el sistema de visualización de errores con codificación por color según severidad (fatal, error, advertencia, información).
-- Construir la suite completa de pruebas que valide cada fase del compilador de forma independiente y el flujo de extremo a extremo en conjunto.
-- Verificar que el código C producido compila sin errores en GCC con el estándar C99.
+- Construir la suite completa de pruebas que valide cada fase del conversor de forma independiente y el flujo de extremo a extremo en conjunto.
+- Verificar que el código C producido convierte sin errores en GCC con el estándar C99.
 
 ---
 
@@ -28,7 +28,7 @@ Este ciclo integra todas las fases del conversor en un flujo completo y funciona
 | Riesgo | Estrategia de Mitigación | Observaciones |
 |--------|--------------------------|---------------|
 | Incompatibilidades entre módulos al integrar las cinco fases del conversor | Ejecución continua de la suite de pruebas del ciclo anterior durante el desarrollo de la integración | |
-| Degradación del rendimiento al conectar todos los componentes en un solo flujo | Medición de tiempos por fase mediante métricas de compilación; optimización puntual con los resultados obtenidos | |
+| Degradación del rendimiento al conectar todos los componentes en un solo flujo | Medición de tiempos por fase mediante métricas de conversión; optimización puntual con los resultados obtenidos | |
 | Pérdida de información semántica entre la fase de análisis y la generación de código | Propagación explícita de la tabla de símbolos a través de todas las fases del flujo de conversión | |
 | Discrepancias entre el código generado y la sintaxis esperada por GCC | Validación de compilabilidad como criterio de aceptación en cada caso de prueba de integración | |
 
@@ -41,11 +41,11 @@ Este ciclo integra todas las fases del conversor en un flujo completo y funciona
 ### Productos generados
 
 - Flujo de conversión (`DiagramCompilerPipeline`) completamente integrado y funcional, que orquesta las cinco fases secuenciales del conversor.
-- Integración entre la interfaz de usuario y el compilador mediante la barra de herramientas flotante con botón de compilación.
-- Diálogo de resultados del compilador con seis pestañas: resumen de métricas, tokens léxicos, árbol sintáctico abstracto, análisis semántico, transformaciones de optimización y código C generado con resaltado de sintaxis.
-- Sistema de visualización de errores con colores según severidad: rojo oscuro (fatal, detiene la compilación), rojo (error, impide la generación de código), naranja (advertencia, código generado con observaciones) y azul (información adicional).
+- Integración entre la interfaz de usuario y el conversor mediante la barra de herramientas flotante con botón de conversión.
+- Diálogo de resultados del conversor con seis pestañas: resumen de métricas, tokens léxicos, árbol sintáctico abstracto, análisis semántico, transformaciones de optimización y código C generado con resaltado de sintaxis.
+- Sistema de visualización de errores con colores según severidad: rojo oscuro (fatal, detiene la conversión), rojo (error, impide la generación de código), naranja (advertencia, código generado con observaciones) y azul (información adicional).
 - Mapeo completo de los seis tipos de símbolos ISO 5807 implementado y verificado con casos de prueba específicos.
-- Suite de pruebas con 290 casos automatizados organizados en pruebas unitarias por fase del compilador y pruebas de integración de extremo a extremo.
+- Suite de pruebas con 290 casos automatizados organizados en pruebas unitarias por fase del conversor y pruebas de integración de extremo a extremo.
 
 ---
 
@@ -62,13 +62,13 @@ Este ciclo integra todas las fases del conversor en un flujo completo y funciona
 
 # 21. Pruebas de Integración
 
-Las pruebas de FlowCode se organizan en dos niveles: pruebas unitarias, que verifican cada fase del conversor fuente a fuente de forma independiente, y pruebas de integración, que validan el flujo completo desde el diagrama hasta el código C. Se empleó el marco de pruebas automatizadas incluido en el SDK de Flutter para construir una suite de 290 casos organizados por fase del compilador y por caso de uso del sistema [16]. Los resultados de cada prueba se comparan contra resultados esperados predefinidos, lo que permite verificar tanto la corrección funcional como la estabilidad ante entradas problemáticas. Las pruebas de autenticación y sincronización en la nube (Firebase) se ejecutan de forma separada por requerir configuración de servicios externos [22].
+Las pruebas de FlowCode se organizan en dos niveles: pruebas unitarias, que verifican cada fase del conversor fuente a fuente de forma independiente, y pruebas de integración, que validan el flujo completo desde el diagrama hasta el código C. Se empleó el marco de pruebas automatizadas incluido en el SDK de Flutter para construir una suite de 290 casos organizados por fase del conversor y por caso de uso del sistema [16]. Los resultados de cada prueba se comparan contra resultados esperados predefinidos, lo que permite verificar tanto la corrección funcional como la estabilidad ante entradas problemáticas. Las pruebas de autenticación y sincronización en la nube (Firebase) se ejecutan de forma separada por requerir configuración de servicios externos [22].
 
 ---
 
 ## 21.1 Estrategia de Pruebas
 
-Las pruebas unitarias verifican el comportamiento correcto de cada fase del compilador de forma aislada: el analizador léxico, el sintáctico, el semántico, el optimizador del AST y el generador de código. Las pruebas de integración verifican que las cinco fases operan de forma coordinada al procesar diagramas de flujo completos conformes al estándar ISO 5807:1985 [19], y establecen trazabilidad con los casos de uso CU01–CU07 del sistema. La funcionalidad de almacenamiento local (CU08) y la integración con Firebase (CU09, CU10) se verifican mediante pruebas funcionales ejecutadas manualmente sobre el dispositivo físico Samsung Galaxy A26 5G, dado que estas funciones dependen de servicios externos y de la capa de presentación de la aplicación.
+Las pruebas unitarias verifican el comportamiento correcto de cada fase del conversor de forma aislada: el analizador léxico, el sintáctico, el semántico, el optimizador del AST y el generador de código. Las pruebas de integración verifican que las cinco fases operan de forma coordinada al procesar diagramas de flujo completos conformes al estándar ISO 5807:1985 [19], y establecen trazabilidad con los casos de uso CU01–CU07 del sistema. La funcionalidad de almacenamiento local (CU08) y la integración con Firebase (CU09, CU10) se verifican mediante pruebas funcionales ejecutadas manualmente sobre el dispositivo físico Samsung Galaxy A26 5G, dado que estas funciones dependen de servicios externos y de la capa de presentación de la aplicación.
 
 | Componente | Tipo | Pruebas | Líneas de código de prueba | Casos de uso cubiertos |
 |------------|------|--------:|---------------------------:|------------------------|
@@ -204,10 +204,10 @@ Se valida la inicialización de un proyecto de diagrama y la ejecución completa
 
 | ID Prueba | Descripción | Resultado Esperado |
 |-----------|-------------|-------------------|
-| CU01-T01 | Diagrama con únicamente nodos Inicio y Fin se compila sin errores | Compilación exitosa; código C generado |
+| CU01-T01 | Diagrama con únicamente nodos Inicio y Fin se convierte sin errores | conversión exitosa; código C generado |
 | CU01-T02 | Los nodos terminales producen la función `main()` con retorno cero | Código contiene `int main()` y `return 0;` |
 | CU01-T03 | Las variantes en español («Inicio/Fin») y en inglés («Start/End») son aceptadas | Ambas variantes se compilan correctamente |
-| CU01-T04 | Las cinco fases del compilador se ejecutan en secuencia | Se registran métricas de tiempo para cada fase |
+| CU01-T04 | Las cinco fases del conversor se ejecutan en secuencia | Se registran métricas de tiempo para cada fase |
 
 **Tabla 106.** Pruebas de CU01 — Crear Nuevo Diagrama.
 
@@ -287,7 +287,7 @@ Se valida la producción de código C funcional a partir del diagrama validado, 
 | CU06-T01 | Código generado contiene directivas de inclusión, `main()` y sentencia de retorno | Elementos estructurales presentes |
 | CU06-T02 | Llaves balanceadas en todo el código generado | Cantidades iguales de apertura y cierre |
 | CU06-T03 | Todas las sentencias terminan con punto y coma | Sintaxis C válida |
-| CU06-T04 | Código generado para diagrama simple es compilable | El código es sintácticamente válido según GCC |
+| CU06-T04 | Código generado para diagrama simple es válido y funcional | El código es sintácticamente válido según GCC |
 | CU06-T05 | Diagrama con operaciones de lectura y escritura produce `printf`/`scanf` | Funciones de entrada/salida generadas |
 | CU06-T06 | Todas las variables utilizadas están declaradas antes de su uso | Sin errores semánticos en el código |
 | CU06-T07 | Instrucción de escritura con múltiples variables | `printf` con múltiples especificadores de formato |
@@ -302,17 +302,17 @@ Se valida la producción de código C funcional a partir del diagrama validado, 
 
 **Tabla 110.** Pruebas de CU06 — Generar Código C.
 
-> *[Figura X. Captura de pantalla del diálogo de resultados del compilador en FlowCode mostrando el código C generado con resaltado de sintaxis en la pestaña «Código».]*
+> *[Figura X. Captura de pantalla del diálogo de resultados del conversor en FlowCode mostrando el código C generado con resaltado de sintaxis en la pestaña «Código».]*
 
 ### 21.3.6 CU07 — Exportar Proyecto Completo
 
-Se valida la generación del código exportable, las métricas de compilación y el reporte completo del proceso. La corrección del código C producido se verifica en las pruebas de CU06; en este caso de uso se confirma únicamente que el artefacto de salida y las métricas están disponibles para su exportación.
+Se valida la generación del código exportable, las métricas de conversión y el reporte completo del proceso. La corrección del código C producido se verifica en las pruebas de CU06; en este caso de uso se confirma únicamente que el artefacto de salida y las métricas están disponibles para su exportación.
 
 | ID Prueba | Descripción | Resultado Esperado |
 |-----------|-------------|-------------------|
-| CU07-T01 | Compilación y obtención del código como cadena de texto | Código generado no nulo |
+| CU07-T01 | conversión y obtención del código como cadena de texto | Código generado no nulo |
 | CU07-T02 | Obtención de tiempos de ejecución por fase | Métricas con valores mayores a cero |
-| CU07-T03 | Generación del reporte completo de compilación | Reporte que incluye fases, errores y código generado |
+| CU07-T03 | Generación del reporte completo de conversión | Reporte que incluye fases, errores y código generado |
 
 **Tabla 111.** Pruebas de CU07 — Exportar Proyecto Completo.
 
@@ -391,12 +391,12 @@ La corrección estructural del código C producido por el generador se verificó
 
 | Tipo | Pruebas | Porcentaje |
 |------|--------:|-----------:|
-| Unitarias (fases del compilador) | 240 | 82.8 % |
+| Unitarias (fases del conversor) | 240 | 82.8 % |
 | Integración extremo a extremo | 33 | 11.4 % |
 | Rendimiento | 17 | 5.8 % |
 | **Total** | **290** | **100 %** |
 
-### Por fase del compilador
+### Por fase del conversor
 
 | Fase | Pruebas | Cobertura |
 |------|--------:|-----------|
@@ -438,7 +438,7 @@ La corrección estructural del código C producido por el generador se verificó
 | Total de pruebas automatizadas (suite base) | 290 |
 | Pruebas aprobadas | 290 (100 %) |
 | Pruebas de integración extremo a extremo | 33 |
-| Fases del compilador cubiertas | 5 de 5 |
+| Fases del conversor cubiertas | 5 de 5 |
 | Tipos de nodo ISO 5807 verificados | 6 directos + 2 indirectos |
 | Categorías de error detectadas | 4 |
 

@@ -3,7 +3,7 @@
 Este documento resume los **casos de prueba más representativos** implementados en la suite de pruebas de FlowCode. Se seleccionaron para cubrir:
 
 - **Integración end-to-end (pipeline completo)**
-- **Fases del compilador**: léxico, sintáctico, semántico, optimización y generación de código
+- **Fases del conversor**: léxico, sintáctico, semántico, optimización y generación de código
 - **Símbolos ISO 5807** (terminal, proceso, decisión, datos)
 - **Funcionalidades de app**: UI base y registro
 
@@ -17,12 +17,12 @@ Fuentes de trazabilidad: `docs/tema_23_pruebas_integracion.md` y `docs/tema_22_i
 
 | ID | Fase / CU | Tipo | Archivo | Caso (nombre) | ¿Qué valida? | Resultado esperado |
 |---|---|---|---|---|---|---|
-| CP-01 | Integración (E2E) | Integración | `test/compiler/compiler_integration_test.dart` | `E2E-01.1: Minimal valid diagram compiles successfully` | Diagrama mínimo (Inicio→Fin) compila y genera C básico | `success=true`, incluye `#include <stdio.h>`, `int main(` y `return 0;` |
+| CP-01 | Integración (E2E) | Integración | `test/compiler/compiler_integration_test.dart` | `E2E-01.1: Minimal valid diagram compiles successfully` | Diagrama mínimo (Inicio→Fin) convierte y genera C básico | `success=true`, incluye `#include <stdio.h>`, `int main(` y `return 0;` |
 | CP-02 | Integración (E2E) | Integración | `test/compiler/compiler_integration_test.dart` | `E2E-01.2: Complete pipeline phases execute in order` | Las 5 fases ejecutan y producen resultados no nulos | `lexicalResult/syntaxResult/semanticResult/ast/generatedCode` no nulos |
 | CP-03 | Tabla de símbolos | Integración | `test/compiler/compiler_integration_test.dart` | `E2E-01.3: Symbol table propagates through all phases` | Propagación de tabla de símbolos y tipado C | `lookup('contador')` existe y `cRepresentation == 'int'` |
-| CP-04 | Optimización (E2E) | Integración | `test/compiler/compiler_integration_test.dart` | `E2E-01.4: Optimization affects generated code` | Ejecución opcional de optimización según nivel | Compila con y sin optimización; si hay `optimizationResult`, reporta optimizaciones |
+| CP-04 | Optimización (E2E) | Integración | `test/compiler/compiler_integration_test.dart` | `E2E-01.4: Optimization affects generated code` | Ejecución opcional de optimización según nivel | convierte con y sin optimización; si hay `optimizationResult`, reporta optimizaciones |
 | CP-05 | CU01 / ISO 5807 Terminal | Integración | `test/compiler/compiler_integration_test.dart` | `ISO-01.1: Terminal nodes generate valid main() structure` | Nodos terminales producen estructura `main()` | Código contiene `int main(` y `return 0;` |
-| CP-06 | CU01 (ES/EN) | Integración | `test/compiler/compiler_integration_test.dart` | `ISO-01.2: Spanish and English variants work` | Soporta variantes `Inicio/Fin` y `Start/End` | Compilación exitosa con mezcla ES/EN |
+| CP-06 | CU01 (ES/EN) | Integración | `test/compiler/compiler_integration_test.dart` | `ISO-01.2: Spanish and English variants work` | Soporta variantes `Inicio/Fin` y `Start/End` | conversión exitosa con mezcla ES/EN |
 | CP-07 | CU02 Proceso (declaración) | Integración | `test/compiler/compiler_integration_test.dart` | `ISO-02.1: Variable declaration` | Traducción de declaración desde nodo proceso | Código generado contiene `int numero = 42` |
 | CP-08 | CU02 Proceso (asignación) | Integración | `test/compiler/compiler_integration_test.dart` | `ISO-02.2: Assignment expression` | Traducción de asignación/operación en nodo proceso | Código generado contiene `x = x + 1` |
 | CP-09 | CU02 Datos (salida) | Integración | `test/compiler/compiler_integration_test.dart` | `ISO-03.1: Output with printf` | Generación de `printf()` desde nodo de salida | Código contiene `printf(` |
@@ -42,7 +42,7 @@ Fuentes de trazabilidad: `docs/tema_23_pruebas_integracion.md` y `docs/tema_22_i
 | CP-23 | Fase 4 (CodeGen con metadata) | Unit test | `test/code_generator_phase4_test.dart` | `Switch con metadata genera código switch correcto` | Metadata produce `switch/case/break` y evita `if-else` anidados | Código contiene `switch (opcion)`, `case`, `break;` y NO contiene `if (opcion == 1)` |
 | CP-24 | Fase 4 (CodeGen con metadata) | Unit test | `test/code_generator_phase4_test.dart` | `Bucle for con metadata genera código for correcto` | Metadata produce `for(init;cond;inc)` y evita `while` | Contiene `for (...)` y NO contiene `while (i < 5)` |
 | CP-25 | Fase 4 (CodeGen con metadata) | Unit test | `test/code_generator_phase4_test.dart` | `Bucle while con metadata genera código while correcto` | Metadata produce `while(cond)` | Contiene `while (` |
-| CP-26 | Fase 5 (CodeGen avanzado) | Integración | `test/compiler/code_generator_advanced_test.dart` | `Plantilla 02 - Múltiples variables en printf` | `printf` incluye múltiples variables y respeta declaraciones | Compila; declara `x,y,z` y un `printf(...)` que incluye `x`, `y`, `z` |
+| CP-26 | Fase 5 (CodeGen avanzado) | Integración | `test/compiler/code_generator_advanced_test.dart` | `Plantilla 02 - Múltiples variables en printf` | `printf` incluye múltiples variables y respeta declaraciones | convierte; declara `x,y,z` y un `printf(...)` que incluye `x`, `y`, `z` |
 | CP-27 | Fase 5 (CodeGen avanzado) | Integración | `test/compiler/code_generator_advanced_test.dart` | `Generador avanzado usa tabla de símbolos para tipos` | El formato de salida usa `%f` para `float` | Código contiene `%f` |
 | CP-28 | App (UI base) | Widget test | `test/widget_test.dart` | `Counter increments smoke test` | Smoke test del árbol de widgets (app inicia y responde) | Contador pasa de `0` a `1` tras tap en `+` |
 | CP-29 | App (Registro) | Integración | `test/registration_test.dart` | `Registro exitoso con email nuevo` | Registro con `AuthService` retorna usuario con rol | `user != null`, email coincide, `role == UserRole.user` |

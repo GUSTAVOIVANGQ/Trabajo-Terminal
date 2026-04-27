@@ -83,4 +83,4 @@ El resultado de optimización incluye:
 
 La optimización requiere información semántica (tipos y declaraciones) y por ello se ejecuta después del análisis semántico.
 
-En la versión actual, el AST optimizado se conserva en el resultado de compilación para métricas y diagnóstico. La emisión de código C se realiza principalmente a partir del grafo del diagrama y de la tabla de símbolos, por lo que el AST optimizado no se utiliza todavía como fuente directa de emisión.
+En la versión actual, el AST optimizado se conserva en el resultado de conversión para métricas y diagnóstico. La emisión de código C se realiza principalmente a partir del grafo del diagrama y de la tabla de símbolos, por lo que el AST optimizado no se utiliza todavía como fuente directa de emisión.

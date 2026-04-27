@@ -10,7 +10,7 @@
 
 **Objetivos del ciclo:**
 
-- Realizar una investigación bibliográfica enfocada en los fundamentos técnicos del proyecto: compiladores, transpiladores, diagramas de flujo y desarrollo móvil.
+- Realizar una investigación bibliográfica enfocada en los fundamentos técnicos del proyecto: conversores, transpiladores, diagramas de flujo y desarrollo móvil.
 - Definir los requisitos funcionales principales del sistema, delimitando el alcance técnico viable para el Trabajo Terminal.
 - Establecer la arquitectura general del sistema, identificando los componentes principales y sus responsabilidades.
 - Seleccionar y justificar la tecnología de desarrollo definitiva para la plataforma móvil.
@@ -26,13 +26,13 @@
 | Alcance técnico demasiado amplio para el tiempo disponible | Delimitar el alcance desde el inicio, priorizando las funcionalidades esenciales del transpilador |
 | Tecnología de desarrollo inadecuada para los requerimientos del proyecto | Evaluar y comparar alternativas con prototipos mínimos antes de tomar la decisión definitiva |
 | Requisitos incompletos o ambiguos que generen rediseños posteriores | Revisar y validar los requisitos con los directores del TT antes de avanzar al siguiente ciclo |
-| Desconocimiento técnico en áreas clave (compiladores, grafos) | Dedicar tiempo de investigación bibliográfica focalizada al inicio del ciclo |
+| Desconocimiento técnico en áreas clave (conversores, grafos) | Dedicar tiempo de investigación bibliográfica focalizada al inicio del ciclo |
 
 ### Fase 3: Desarrollo y Verificación
 
 **Productos generados:**
 
-- Investigación bibliográfica con fuentes relevantes sobre compiladores, transpiladores y desarrollo móvil.
+- Investigación bibliográfica con fuentes relevantes sobre conversores, transpiladores y desarrollo móvil.
 - Lista de requisitos funcionales prioritarios del sistema.
 - Diagrama de arquitectura general del sistema con sus componentes principales.
 - Decisión técnica justificada sobre el framework de desarrollo móvil a utilizar.

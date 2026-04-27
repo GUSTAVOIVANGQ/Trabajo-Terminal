@@ -276,4 +276,4 @@ Los reportes adjuntaron contexto técnico acotado (p. ej., modo de autenticació
 
 ## 15.8 Pruebas de funcionamiento
 
-La cobertura existente se enfocó en pruebas unitarias e integración de componentes de edición/configuración y en el flujo de generación/compilación. No se incluyeron pruebas automatizadas dedicadas a gestos del lienzo (arrastre, desplazamiento y escalado) mediante instrumentación de interfaz.
+La cobertura existente se enfocó en pruebas unitarias e integración de componentes de edición/configuración y en el flujo de generación/conversión. No se incluyeron pruebas automatizadas dedicadas a gestos del lienzo (arrastre, desplazamiento y escalado) mediante instrumentación de interfaz.

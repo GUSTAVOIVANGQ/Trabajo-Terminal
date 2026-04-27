@@ -95,15 +95,15 @@ Desarrollar Fase 1 del transpilador: Análisis Estructural del Grafo
 
 Ciclo 4: Motor de Análisis (Enero - Febrero 2025)
 
-El cuarto ciclo implementa las primeras tres fases del transpilador fuente-a-fuente: análisis léxico, análisis sintáctico y análisis semántico. El pipeline de compilación se coordina mediante la clase DiagramCompilerPipeline, que orquesta las cinco fases secuenciales del conversor. Este ciclo también desarrolla la tabla de símbolos y el sistema de errores del compilador.
+El cuarto ciclo implementa las primeras tres fases del transpilador fuente-a-fuente: análisis léxico, análisis sintáctico y análisis semántico. El pipeline de conversión se coordina mediante la clase DiagramCompilerPipeline, que orquesta las cinco fases secuenciales del conversor. Este ciclo también desarrolla la tabla de símbolos y el sistema de errores del conversor.
 
 Objetivos del Ciclo 4:
 
-Arquitectura del Compilador (Tema 16):
+Arquitectura del Conversor (Tema 16):
 
-- Diseñar e implementar el pipeline de compilación con 5 fases secuenciales  
+- Diseñar e implementar el pipeline de conversión con 5 fases secuenciales  
 - Desarrollar la clase DiagramCompilerPipeline como orquestador central  
-- Implementar opciones de compilación configurables (CompilerOptions)  
+- Implementar opciones de conversión configurables (CompilerOptions)  
 
 Fase 1: Implementar análisis léxico (DiagramLexicalAnalyzer)
 
@@ -144,7 +144,7 @@ Sistema de Errores (Tema 18):
 - Definir errores sintácticos (códigos 2001-2010): tokens inesperados, paréntesis desbalanceados, etc.  
 - Definir errores semánticos (códigos 3001-3011): variables no declaradas, tipos incompatibles, etc.  
 - Implementar niveles de severidad (CompilerSeverity): info, warning, error, fatal  
-- Desarrollar identificación de fases de compilación (CompilerPhase)  
+- Desarrollar identificación de fases de conversión (CompilerPhase)  
 
 Entregables del Ciclo 4:
 
@@ -153,10 +153,10 @@ Entregables del Ciclo 4:
 - DiagramSemanticAnalyzer con verificación de tipos y alcances  
 - Tabla de símbolos (SymbolTable) con soporte para alcances anidados  
 - Sistema de errores estructurado con clasificación por tipo, severidad y fase  
-- Reportes de compilación (CompilationResult) con métricas de análisis  
+- Reportes de conversión (CompilationResult) con métricas de análisis  
 - Suite de pruebas unitarias para cada analizador (léxico, sintáctico, semántico)  
 - Integración completa con editor visual para feedback en tiempo real  
-- Informe técnico del Ciclo 4 documentando la arquitectura del compilador
+- Informe técnico del Ciclo 4 documentando la arquitectura del conversor
 
 Ciclo 5: Generador de Código (Febrero - Abril 2025)
 
@@ -200,7 +200,7 @@ Entregables del Ciclo 5:
 - Patrón Visitor (ASTVisitor, DefaultASTVisitor, TraversingASTVisitor) para procesamiento del AST  
 - DiagramCodeOptimizer con 4 niveles de optimización y múltiples pasadas iterativas  
 - Técnicas de optimización implementadas: constant folding, eliminación de código muerto, simplificación algebraica  
-- AdvancedCodeGenerator funcional que produce código C99 compilable  
+- AdvancedCodeGenerator funcional que produce código C99 válido y funcional  
 - Mapeo completo de símbolos ISO 5807 a construcciones C:  
   - Terminal (Inicio) → int main(void) {  
   - Terminal (Fin) → return 0; }  
@@ -221,7 +221,7 @@ Alcance del lenguaje objetivo:
 
 Ciclo 6: Integración (Abril - Mayo 2025)
 
-El sexto ciclo integra todas las fases del transpilador en un pipeline completo y funcional, conectando el compilador con el editor visual e implementando el flujo de inicio a fin desde la creación del diagrama hasta la generación de código C compilable. También se desarrolla la suite completa de pruebas de integración.
+El sexto ciclo integra todas las fases del transpilador en un pipeline completo y funcional, conectando el conversor con el editor visual e implementando el flujo de inicio a fin desde la creación del diagrama hasta la generación de código C válido y funcional. También se desarrolla la suite completa de pruebas de integración.
 
 Objetivos del Ciclo 6:
 
@@ -237,7 +237,7 @@ Objetivos del Ciclo 6:
 
 Pruebas de Integración (Tema 23):
 
-- Desarrollar suite completa de pruebas del compilador:  
+- Desarrollar suite completa de pruebas del conversor:  
   - lexical_analyzer_test.dart: 40+ tests para análisis léxico  
   - syntax_analyzer_test.dart: 84 tests para análisis sintáctico  
   - semantic_analyzer_test.dart: 43 tests para análisis semántico  
@@ -251,7 +251,7 @@ Pruebas de Integración (Tema 23):
 Entregables del Ciclo 6:
 
 - Pipeline DiagramCompilerPipeline completamente integrado y funcional  
-- Integración UI-Compilador mediante FloatingToolbar con botón de compilación  
+- Integración UI-Conversor mediante FloatingToolbar con botón de conversión  
 - CompilerResultsDialog con 6 pestañas para visualización de resultados:  
   - Resumen: métricas generales (nodos, tokens, símbolos, errores, tiempo)  
   - Léxico: tokens extraídos por nodo  
@@ -260,14 +260,14 @@ Entregables del Ciclo 6:
   - Optimización: transformaciones aplicadas  
   - Código: código C generado con syntax highlighting  
 - Sistema de visualización de errores con colores según severidad:  
-  - Fatal (rojo oscuro): detiene compilación  
+  - Fatal (rojo oscuro): detiene conversión  
   - Error (rojo): impide generar código  
   - Warning (naranja): código generado con advertencias  
   - Info (azul): información adicional  
 - Mapeo completo de símbolos ISO 5807 implementado con tabla de correspondencias  
 - Suite de pruebas de integración: 8 archivos, ~4,648 líneas, 240+ tests  
 - Cobertura de 10 casos de uso documentados con trazabilidad a pruebas  
-- Validación de código generado con compilación GCC exitosa  
+- Validación de código generado con conversión GCC exitosa  
 - Informe técnico del Ciclo 6 documentando la integración y pruebas
 
 Ciclo 7: Pruebas y Documentación (Mayo - Junio 2025)
@@ -277,7 +277,7 @@ El último ciclo muestra la validación del sistema completo, documenta los resu
 Objetivos del Ciclo 7:
 
 - Definir criterios de validación técnica objetivos y medibles
-- Ejecutar suite completa de pruebas funcionales del compilador
+- Ejecutar suite completa de pruebas funcionales del conversor
 - Medir métricas de rendimiento y escalabilidad
 - Validar robustez ante entradas problemáticas
 - Evaluar cumplimiento de criterios de éxito del proyecto

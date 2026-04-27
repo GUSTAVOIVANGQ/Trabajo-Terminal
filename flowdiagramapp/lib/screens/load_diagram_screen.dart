@@ -9,6 +9,7 @@ import 'editor_screen.dart';
 import 'help_screen.dart';
 import 'profile_screen.dart';
 import 'tutorial_list_screen.dart'; // Nueva importación para tutoriales
+import 'interactive_tutorials_screen.dart';
 import 'welcome_screen.dart'; // Nueva importación para pantalla de bienvenida
 // import 'exercises_screen.dart'; // Nueva importación para ejercicios
 import '../widgets/theme_selector_widget.dart';
@@ -198,6 +199,21 @@ class _LoadDiagramScreenState extends State<LoadDiagramScreen>
       floatingActionButton: Column(
         mainAxisAlignment: MainAxisAlignment.end,
         children: [
+          // Botón de tutoriales interactivos (nuevo)
+          FloatingActionButton(
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => const InteractiveTutorialsScreen(),
+                ),
+              );
+            },
+            heroTag: 'interactive_tutorials_fab',
+            tooltip: 'Tutoriales interactivos',
+            child: const Icon(Icons.play_lesson),
+            backgroundColor: Colors.teal,
+          ),
+          const SizedBox(height: 12),
           // Botón de tutoriales (nuevo)
           FloatingActionButton(
             onPressed: () {

@@ -21,6 +21,7 @@ import '../services/metrics_service.dart'; // Nueva importación
 import '../services/diagram_export_service.dart'; // Importación para exportación
 import '../services/auth_service.dart'; // Importación para autenticación
 import '../services/auto_save_settings_service.dart';
+import '../services/tutorial_event_service.dart';
 import '../compiler/compiler.dart'; // Compilador completo
 
 class _DiagramHistorySnapshot {
@@ -72,6 +73,7 @@ class _EditorScreenState extends State<EditorScreen> {
   final AuthService _authService = AuthService(); // Servicio de autenticación
   final AutoSaveSettingsService _autoSaveSettingsService =
       AutoSaveSettingsService();
+  final TutorialEventService _tutorialEventService = TutorialEventService();
   bool _hasUnsavedChanges = false;
   bool _autoSaveEnabled = false;
   bool _isAutoSaving = false;
@@ -406,6 +408,12 @@ class _EditorScreenState extends State<EditorScreen> {
                   tooltip:
                       isConnecting ? 'Cancelar conexión' : 'Crear conexión',
                   onPressed: () {
+                    if (!_isTutorialActionAllowed(
+                      TutorialEditorAction.connectNodes,
+                    )) {
+                      return;
+                    }
+
                     setState(() {
                       if (isConnecting) {
                         connectionStart = null;
@@ -515,6 +523,10 @@ class _EditorScreenState extends State<EditorScreen> {
                           }
                         });
 
+                        if (node != null && !isConnecting) {
+                          _emitTutorialNodeSelectionEvent(node);
+                        }
+
                         // Mostrar indicación visual de que el nodo fue seleccionado
                         // if (node != null && !isConnecting) {
                         //   String nodeName = "";
@@ -557,6 +569,12 @@ class _EditorScreenState extends State<EditorScreen> {
                         // }
                       },
                       onNodeLongPress: (node) {
+                        if (!_isTutorialActionAllowed(
+                          TutorialEditorAction.connectNodes,
+                        )) {
+                          return;
+                        }
+
                         setState(() {
                           // Solo iniciar conexión si no estamos ya en ese modo
                           if (!isConnecting) {
@@ -876,6 +894,10 @@ class _EditorScreenState extends State<EditorScreen> {
   }
 
   void _addNode(NodeType nodeType, {bool autoSelect = true}) {
+    if (!_isTutorialActionAllowed(TutorialEditorAction.addNode)) {
+      return;
+    }
+
     final node = DiagramNode(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
       type: nodeType,
@@ -906,6 +928,10 @@ class _EditorScreenState extends State<EditorScreen> {
   }
 
   void _addConcept(ProgrammingConceptType conceptType) {
+    if (!_isTutorialActionAllowed(TutorialEditorAction.addConcept)) {
+      return;
+    }
+
     // Calcular posición central para el nuevo nodo
     final centerPosition = Offset(
       (MediaQuery.of(context).size.width / 2 - panOffset.dx) / currentScale,
@@ -1612,6 +1638,10 @@ class _EditorScreenState extends State<EditorScreen> {
   }
 
   void _createConnection(DiagramNode source, DiagramNode target) {
+    if (!_isTutorialActionAllowed(TutorialEditorAction.connectNodes)) {
+      return;
+    }
+
     // No crear conexión si es el mismo nodo
     if (source == target) {
       connectionStart = null;
@@ -1646,6 +1676,7 @@ class _EditorScreenState extends State<EditorScreen> {
           isConnecting = false;
         });
         _recordHistoryState();
+        _tutorialEventService.emit(TutorialEditorEvent.nodesConnected);
 
         // if (shouldBeLoopBack) {
         //   _showSnackBar(
@@ -1778,6 +1809,7 @@ class _EditorScreenState extends State<EditorScreen> {
         isConnecting = false;
       });
       _recordHistoryState();
+      _tutorialEventService.emit(TutorialEditorEvent.nodesConnected);
 
       // if (isLoopBack) {
       //   _showSnackBar(
@@ -2023,6 +2055,69 @@ class _EditorScreenState extends State<EditorScreen> {
     }
   }
 
+  void _emitTutorialNodeSelectionEvent(DiagramNode node) {
+    final targetElementId = _resolveTutorialTargetElementId(node);
+    if (targetElementId == null) {
+      return;
+    }
+
+    if (targetElementId == 'node_start') {
+      _tutorialEventService.emit(
+        TutorialEditorEvent.nodeStartSelected,
+        targetElementId: targetElementId,
+      );
+      return;
+    }
+
+    if (targetElementId == 'node_end') {
+      _tutorialEventService.emit(
+        TutorialEditorEvent.nodeEndSelected,
+        targetElementId: targetElementId,
+      );
+    }
+  }
+
+  String? _resolveTutorialTargetElementId(DiagramNode? node) {
+    if (node == null) {
+      return null;
+    }
+
+    if (node.type == NodeType.terminal) {
+      final normalizedText = node.text.trim().toLowerCase();
+      final isStartNode = normalizedText.contains('inicio') ||
+          normalizedText.contains('start') ||
+          normalizedText.isEmpty;
+      final isEndNode = normalizedText.contains('fin') ||
+          normalizedText.contains('end') ||
+          normalizedText.contains('terminar');
+
+      if (isStartNode) {
+        return 'node_start';
+      }
+
+      if (isEndNode) {
+        return 'node_end';
+      }
+    }
+
+    if (node.type == NodeType.data && node.metadata['isOutput'] == true) {
+      return 'node_data_output';
+    }
+
+    return null;
+  }
+
+  bool _isTutorialActionAllowed(TutorialEditorAction action) {
+    if (_tutorialEventService.isActionAllowed(action)) {
+      return true;
+    }
+
+    final hint = _tutorialEventService.activeGate.hint ??
+        'Completa la accion requerida del tutorial para continuar.';
+    _showSnackBar('Accion bloqueada por tutorial activo. $hint');
+    return false;
+  }
+
   bool _isValidConnection(DiagramNode source, DiagramNode target) {
     // Un nodo terminal de fin no puede tener salidas
     final sourceIsEnd = source.type == NodeType.terminal &&
@@ -2061,6 +2156,10 @@ class _EditorScreenState extends State<EditorScreen> {
   }
 
   Future<void> _editSelectedNode() async {
+    if (!_isTutorialActionAllowed(TutorialEditorAction.editNode)) {
+      return;
+    }
+
     if (selectedNode == null) return;
 
     final dynamic result = await showDialog<dynamic>(
@@ -2100,6 +2199,10 @@ class _EditorScreenState extends State<EditorScreen> {
         _hasUnsavedChanges = true;
       });
       _recordHistoryState();
+      _tutorialEventService.emit(
+        TutorialEditorEvent.nodeEdited,
+        targetElementId: _resolveTutorialTargetElementId(selectedNode),
+      );
     }
   }
 
@@ -2287,6 +2390,10 @@ class _EditorScreenState extends State<EditorScreen> {
   }
 
   void _deleteSelectedNode() {
+    if (!_isTutorialActionAllowed(TutorialEditorAction.deleteNode)) {
+      return;
+    }
+
     if (selectedNode == null) return;
 
     // Eliminar también todas las conexiones relacionadas con este nodo
@@ -2312,6 +2419,10 @@ class _EditorScreenState extends State<EditorScreen> {
 
   // Método para validar el diagrama
   void _validateDiagram() {
+    if (!_isTutorialActionAllowed(TutorialEditorAction.runValidation)) {
+      return;
+    }
+
     final ValidationResult result = DiagramValidator.validateDiagram(
       nodes,
       connections,
@@ -2329,6 +2440,8 @@ class _EditorScreenState extends State<EditorScreen> {
       },
     );
 
+    _tutorialEventService.emit(TutorialEditorEvent.diagramValidated);
+
     _showValidationDialog(result);
   }
 
@@ -2342,6 +2455,10 @@ class _EditorScreenState extends State<EditorScreen> {
 
   // Método para generar código con el generador simple (original)
   void _generateCode() {
+    if (!_isTutorialActionAllowed(TutorialEditorAction.viewGeneratedCode)) {
+      return;
+    }
+
     // Primero validamos el diagrama
     final validationResult = DiagramValidator.validateDiagram(
       nodes,
@@ -2373,11 +2490,17 @@ class _EditorScreenState extends State<EditorScreen> {
       },
     );
 
+    _tutorialEventService.emit(TutorialEditorEvent.codeGenerated);
+
     _showCodeDialog(code);
   }
 
   // Método para compilar con el pipeline completo (todas las fases)
   void _compileWithFullPipeline() {
+    if (!_isTutorialActionAllowed(TutorialEditorAction.viewGeneratedCode)) {
+      return;
+    }
+
     // Verificar que hay nodos en el diagrama
     if (nodes.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -2409,6 +2532,7 @@ class _EditorScreenState extends State<EditorScreen> {
         connections,
         ProgrammingLanguage.c,
       );
+      _tutorialEventService.emit(TutorialEditorEvent.codeGenerated);
     }
 
     // Registrar métrica de compilación
@@ -2480,6 +2604,10 @@ class _EditorScreenState extends State<EditorScreen> {
 
   // Mostrar diálogo para guardar el diagrama
   Future<void> _showSaveDiagramDialog() async {
+    if (!_isTutorialActionAllowed(TutorialEditorAction.saveDiagram)) {
+      return;
+    }
+
     final Map<String, dynamic>? result = await showDialog<Map<String, dynamic>>(
       context: context,
       builder: (context) => SaveDiagramDialog(
@@ -2511,6 +2639,7 @@ class _EditorScreenState extends State<EditorScreen> {
             currentDiagram = newDiagram.copyWith(id: id);
             _markCurrentStateAsSavedInHistory();
           });
+          _tutorialEventService.emit(TutorialEditorEvent.diagramSaved);
           // _showSnackBar('Diagrama guardado correctamente');
         } else {
           // Actualizar diagrama existente (mantener userId original o asignar si no tiene)
@@ -2529,6 +2658,7 @@ class _EditorScreenState extends State<EditorScreen> {
             currentDiagram = updatedDiagram;
             _markCurrentStateAsSavedInHistory();
           });
+          _tutorialEventService.emit(TutorialEditorEvent.diagramSaved);
           // _showSnackBar('Diagrama actualizado correctamente');
         }
       } catch (e) {

@@ -12,7 +12,7 @@ La emisión se basa en:
 - la tabla de símbolos producida por el análisis semántico (tipos y declaraciones),
 - un AST opcional, utilizado como entrada de diagnóstico y para extensiones futuras.
 
-En la versión actual, la emisión de C se realiza principalmente a partir del grafo del diagrama y de la tabla de símbolos. El AST optimizado puede formar parte del resultado de compilación, pero no se utiliza todavía como fuente directa de emisión.
+En la versión actual, la emisión de C se realiza principalmente a partir del grafo del diagrama y de la tabla de símbolos. El AST optimizado puede formar parte del resultado de conversión, pero no se utiliza todavía como fuente directa de emisión.
 
 ---
 
@@ -24,7 +24,7 @@ Se contemplan opciones para:
 - insertar marca de tiempo en el encabezado,
 - configurar la cadena de indentación.
 
-Otras opciones permanecen definidas como parte de la configuración general del compilador, pero no alteran el texto emitido en esta versión.
+Otras opciones permanecen definidas como parte de la configuración general del conversor, pero no alteran el texto emitido en esta versión.
 
 ---
 

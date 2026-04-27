@@ -133,23 +133,23 @@ class CompilationResult {
     buffer.writeln(
         '╔════════════════════════════════════════════════════════════╗');
     buffer.writeln(
-        '║           REPORTE DE COMPILACIÓN - FLOWCODE                ║');
+        '║           REPORTE DE conversión - FLOWCODE                ║');
     buffer.writeln(
         '╚════════════════════════════════════════════════════════════╝');
     buffer.writeln('');
 
     // Status
     if (success) {
-      buffer.writeln('✅ COMPILACIÓN EXITOSA');
+      buffer.writeln('✅ conversión EXITOSA');
     } else {
-      buffer.writeln('❌ COMPILACIÓN FALLIDA');
+      buffer.writeln('❌ conversión FALLIDA');
     }
     buffer.writeln('');
 
     // Metrics
     buffer.writeln('📊 MÉTRICAS:');
     buffer
-        .writeln('   • Tiempo de compilación: ${metrics.compilationTimeMs} ms');
+        .writeln('   • Tiempo de conversión: ${metrics.compilationTimeMs} ms');
     buffer.writeln('   • Nodos procesados: ${metrics.nodesProcessed}');
     buffer.writeln('   • Tokens generados: ${metrics.tokensGenerated}');
     buffer.writeln('   • Símbolos en tabla: ${metrics.symbolsInTable}');
@@ -346,7 +346,7 @@ class DiagramCompilerPipeline {
     int lexicalTime = 0;
     int syntacticTime = 0;
 
-    _messages.add('Iniciando compilación...');
+    _messages.add('Iniciando conversión...');
     _messages.add(
         'Opciones: optimización=${options.optimizationLevel}, estricto=${options.strictTypeChecking}');
 
@@ -594,7 +594,7 @@ class DiagramCompilerPipeline {
     stopwatch.stop();
 
     _messages
-        .add('Compilación completada en ${stopwatch.elapsedMilliseconds}ms');
+        .add('conversión completada en ${stopwatch.elapsedMilliseconds}ms');
 
     return CompilationResult(
       success: !_errors.hasErrors && generatedCode != null,

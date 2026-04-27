@@ -298,7 +298,7 @@ class DiagramLexicalAnalyzer {
   String _normalizeText(String text, NodeType nodeType) {
     if (nodeType == NodeType.decision) {
       // Quitar signos de interrogación al inicio y al final
-      // Esto permite que el compilador acepte tanto "¿b > c?" como "b > c"
+      // Esto permite que el conversor acepte tanto "¿b > c?" como "b > c"
       return text.replaceAll('¿', '').replaceAll('?', '').trim();
     }
     return text;

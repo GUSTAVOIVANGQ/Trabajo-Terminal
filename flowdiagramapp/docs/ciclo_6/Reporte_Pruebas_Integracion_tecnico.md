@@ -6,9 +6,9 @@
 
 ---
 
-## 23.1 Casos de Prueba del Compilador
+## 23.1 Casos de Prueba del Conversor
 
-FlowCode implementa una suite de pruebas exhaustiva para validar cada fase del compilador. Las pruebas están organizadas por componente y utilizan el framework `flutter_test`.
+FlowCode implementa una suite de pruebas exhaustiva para validar cada fase del conversor. Las pruebas están organizadas por componente y utilizan el framework `flutter_test`.
 
 ### Resumen de la Suite de Pruebas
 
@@ -457,7 +457,7 @@ compiler_integration_test.dart
 ### Comandos de Ejecución
 
 ```bash
-# Ejecutar todas las pruebas del compilador
+# Ejecutar todas las pruebas del conversor
 flutter test test/compiler/
 
 # Ejecutar pruebas específicas
@@ -486,7 +486,7 @@ Time:        ~15s
 
 ## Matriz de Cobertura de Pruebas
 
-### Por Fase del Compilador
+### Por Fase del Conversor
 
 | Fase | Archivo de Test | Cobertura |
 |------|-----------------|-----------|

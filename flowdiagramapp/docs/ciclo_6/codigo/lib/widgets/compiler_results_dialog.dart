@@ -148,7 +148,7 @@ class _CompilerResultsDialogState extends State<CompilerResultsDialog>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  success ? 'Compilación Exitosa' : 'Compilación con Errores',
+                  success ? 'conversión Exitosa' : 'conversión con Errores',
                   style: theme.textTheme.titleLarge?.copyWith(
                     fontWeight: FontWeight.bold,
                     color: success ? Colors.green[700] : Colors.red[700],
@@ -182,7 +182,7 @@ class _CompilerResultsDialogState extends State<CompilerResultsDialog>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Metrics cards
-          _buildSectionTitle('📊 Métricas de Compilación', theme),
+          _buildSectionTitle('📊 Métricas de conversión', theme),
           const SizedBox(height: 12),
           Wrap(
             spacing: 12,
@@ -236,7 +236,7 @@ class _CompilerResultsDialogState extends State<CompilerResultsDialog>
           const SizedBox(height: 24),
 
           // Messages log
-          _buildSectionTitle('📋 Log de Compilación', theme),
+          _buildSectionTitle('📋 Log de conversión', theme),
           const SizedBox(height: 12),
           Container(
             padding: const EdgeInsets.all(12),

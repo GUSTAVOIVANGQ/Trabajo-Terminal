@@ -25,12 +25,16 @@ dependencies:
   connectivity_plus: ^5.0.2
   fl_chart: ^0.68.0  # Para gráficos y visualización de métricas
   confetti: ^0.7.0  # Para animaciones de celebración en ejercicios
-  
+  tutorial_coach_mark: ^1.2.11  # Tutorial guiado con foco por elemento
+  flutter_animate: ^4.5.0  # Animaciones fluidas para onboarding
+  lottie: ^3.1.2  # Animaciones vectoriales para experiencia de tutorial
+
   # Para generar archivos PDF, PNG y JPG
   pdf: ^3.10.7
   printing: ^5.12.0
   image: ^4.1.7
   permission_handler: ^11.3.0
+  
   device_info_plus: ^10.1.0  # Para detectar versión de Android
   package_info_plus: ^6.0.0
   saver_gallery: ^3.0.6  # Para guardar imágenes en la galería/descargas

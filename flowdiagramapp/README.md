@@ -529,8 +529,14 @@ lib/
 ## 🔄 En Desarrollo
 
 - [ ] Arreglar la sincronización de diagramas de flujo con Firebase Storage. Firebase console debe habilitar el almacenamiento en la nube.
+- [ ] Implementar un sistema de tutoriales interactivos dentro de la aplicación
 
 ### 🎯 Próximas Funcionalidades
+
+- [ ] Implementar validación semántica avanzada (tipos de datos, uso de variables, rutas no alcanzables)
+- [ ] Agregar optimizaciones específicas para diagramas de flujo (detección de bucles)
+- [ ] Extender el sistema de plantillas con más ejemplos y categorías
+- [ ] Agregar soporte para exportar a otros lenguajes (Python, Java)
 
 ## 📄 Licencia
 

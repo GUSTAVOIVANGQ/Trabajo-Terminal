@@ -91,7 +91,7 @@ class BenchmarkResult {
 ║   • Iteraciones: $iterations
 ║   • Todas exitosas: ${allSuccessful ? '✅' : '❌'}
 ╠══════════════════════════════════════════════════════════════════╣
-║ Tiempos de Compilación (ms):
+║ Tiempos de conversión (ms):
 ║   • Total:        ${avgTotalTime.toStringAsFixed(2)} ± ${stdDevTotalTime.toStringAsFixed(2)}
 ║   • Mínimo:       ${minTotalTime.toStringAsFixed(2)}
 ║   • Máximo:       ${maxTotalTime.toStringAsFixed(2)}
@@ -377,7 +377,7 @@ void main() {
       print('═' * 70);
       print(' PERFORMANCE CRITERIA VALIDATION');
       print('═' * 70);
-      print('\nCriterio: Tiempo de compilación < 5000 ms');
+      print('\nCriterio: Tiempo de conversión < 5000 ms');
       print('Resultado: ${result.avgTotalTime.toStringAsFixed(2)} ms');
       print(
           'Estado: ${result.avgTotalTime < 5000 ? '✅ CUMPLE' : '❌ NO CUMPLE'}');

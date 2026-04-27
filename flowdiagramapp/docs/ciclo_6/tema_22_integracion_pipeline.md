@@ -5,13 +5,13 @@
 
 ---
 
-## 22.1 Flujo de Compilación End-to-End
+## 22.1 Flujo de conversión End-to-End
 
-El pipeline de compilación de FlowCode transforma diagramas de flujo visuales en código C ejecutable a través de un proceso de 5 fases secuenciales. Esta sección documenta el flujo completo desde la entrada hasta la salida.
+El pipeline de conversión de FlowCode transforma diagramas de flujo visuales en código C ejecutable a través de un proceso de 5 fases secuenciales. Esta sección documenta el flujo completo desde la entrada hasta la salida.
 
 ### 22.1.1 Entrada: Diagramas de Flujo (Nodos y Conexiones)
 
-La entrada del compilador consiste en dos estructuras de datos fundamentales:
+La entrada del conversor consiste en dos estructuras de datos fundamentales:
 
 #### Estructura DiagramNode
 
@@ -62,16 +62,16 @@ final connections = [
 ];
 ```
 
-### 22.1.2 Salida: Código C Compilable
+### 22.1.2 Salida: Código C válido y funcional
 
-El compilador genera código C ANSI estándar que puede ser compilado directamente con GCC u otro compilador C compatible.
+El conversor genera código C ANSI estándar que puede ser convertido directamente con GCC u otro conversor C compatible.
 
 #### Estructura del Código Generado
 
 ```c
 /* ═══════════════════════════════════════════════════════════════════
  * Código generado por FlowCode
- * Trabajo Terminal 2026-A038 - Compilador de Diagramas de Flujo
+ * Trabajo Terminal 2026-A038 - Conversor de Diagramas de Flujo
  * 
  * Fecha: 2026-02-12
  * Nodos procesados: 4
@@ -107,15 +107,15 @@ int main(void) {
 
 ## 22.2 Integración con el Editor Visual
 
-### 22.2.1 Invocación del Compilador desde la UI
+### 22.2.1 Invocación del Conversor desde la UI
 
-La integración entre el editor visual y el compilador se realiza a través del método `_compileWithFullPipeline()` en `editor_screen.dart`:
+La integración entre el editor visual y el conversor se realiza a través del método `_compileWithFullPipeline()` en `editor_screen.dart`:
 
 #### Flujo de Invocación
 
 ```
 ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│  Botón Compilar │───>│ _compileWith    │───>│ DiagramCompiler │
+│  Botón convertir │───>│ _compileWith    │───>│ DiagramCompiler │
 │  (FloatingBtn)  │    │ FullPipeline()  │    │ Pipeline        │
 └─────────────────┘    └─────────────────┘    └─────────────────┘
                                 │                      │
@@ -129,7 +129,7 @@ La integración entre el editor visual y el compilador se realiza a través del 
 #### Implementación
 
 ```dart
-/// editor_screen.dart - Invocación del compilador
+/// editor_screen.dart - Invocación del conversor
 void _compileWithFullPipeline() {
   // 1. Verificar que hay nodos
   if (nodes.isEmpty) {
@@ -139,7 +139,7 @@ void _compileWithFullPipeline() {
     return;
   }
 
-  // 2. Crear el compilador con opciones
+  // 2. Crear el conversor con opciones
   final compiler = DiagramCompilerPipeline(
     options: const CompilerOptions(
       optimizationLevel: 2,      // Nivel estándar
@@ -148,7 +148,7 @@ void _compileWithFullPipeline() {
     ),
   );
 
-  // 3. Compilar el diagrama
+  // 3. convertir el diagrama
   final result = compiler.compile(nodes, connections);
 
   // 4. Registrar métricas
@@ -194,7 +194,7 @@ class CompilerResultsDialog extends StatefulWidget {
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│  📊 MÉTRICAS DE COMPILACIÓN                                 │
+│  📊 MÉTRICAS DE conversión                                 │
 ├─────────────────────────────────────────────────────────────┤
 │  Nodos:     [12]    Tokens:    [45]    Símbolos: [5]       │
 │  Errores:   [0 ✓]   Warnings:  [1 ⚠]  Tiempo:   [23ms]    │
@@ -214,7 +214,7 @@ Los errores se muestran con código de colores según severidad:
 
 | Severidad | Color | Icono | Descripción |
 |-----------|-------|-------|-------------|
-| **Fatal** | Rojo oscuro | ❌ | Error que detiene la compilación |
+| **Fatal** | Rojo oscuro | ❌ | Error que detiene la conversión |
 | **Error** | Rojo | ⛔ | Error que impide generar código |
 | **Warning** | Naranja | ⚠️ | Advertencia, código generado |
 | **Info** | Azul | ℹ️ | Información |
@@ -377,9 +377,9 @@ NodeType.parallelMode      // Modo paralelo
 │  └──────────────────────────────────────────────┼──────────────┘   │
 └─────────────────────────────────────────────────┼───────────────────┘
                                                   │ 
-                                                  ▼ onClick: Compilar
+                                                  ▼ onClick: convertir
 ┌─────────────────────────────────────────────────────────────────────┐
-│                       CAPA DE COMPILACIÓN                           │
+│                       CAPA DE conversión                           │
 │  ┌─────────────────────────────────────────────────────────────┐   │
 │  │              DiagramCompilerPipeline                         │   │
 │  │  ┌─────────┐ ┌─────────┐ ┌─────────┐ ┌─────────┐ ┌────────┐ │   │

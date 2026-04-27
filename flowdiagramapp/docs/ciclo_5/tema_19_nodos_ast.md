@@ -33,6 +33,6 @@ La clase `DiagramASTNode` preserva la relación diagrama↔AST, permitiendo asoc
 
 El AST se recorre mediante una interfaz `ASTVisitor<T>` con métodos `visit...` por tipo de nodo. Para recorridos genéricos se emplean visitantes base y utilidades como `NodeCollector` para recolectar nodos por tipo.
 
-La representación textual provista por `toTreeString()` facilita la inspección de subárboles durante la verificación del compilador.
+La representación textual provista por `toTreeString()` facilita la inspección de subárboles durante la verificación del conversor.
 
 *[Figura N. Ejemplo de salida de `toTreeString()` para un fragmento sencillo.]*

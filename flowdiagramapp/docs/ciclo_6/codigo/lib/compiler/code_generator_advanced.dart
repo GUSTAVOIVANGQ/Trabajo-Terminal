@@ -140,7 +140,7 @@ class AdvancedCodeGenerator {
       buffer.writeln('// Generado el ${DateTime.now()}');
     }
     buffer.writeln(
-        '// Compilador FlowCode - Generador Avanzado (FASE 5: Integración)');
+        '// Conversor FlowCode - Generador Avanzado (FASE 5: Integración)');
     buffer.writeln('');
   }
 

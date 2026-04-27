@@ -30,8 +30,8 @@ Como se maneja apuntadores en la gramatica del analizador sintactico? se pueden 
 
 se usa BFS o DFS para recorrer el AST durante la optimizacion?
 
-Agregar Figuras de la captura de pantalla de la app en el reporte técnico en cada dase de compilacion.
+Agregar Figuras de la captura de pantalla de la app en el reporte técnico en cada dase de conversión.
 
-realizar una lista de errores comunes que se pueden presentar durante la compilacion y como solucionarlos. Esto puede ser útil para los usuarios finales de la app.
+realizar una lista de errores comunes que se pueden presentar durante la conversión y como solucionarlos. Esto puede ser útil para los usuarios finales de la app.
 
 reemplazar seis simbolos simbolos

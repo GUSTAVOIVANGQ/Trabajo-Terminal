@@ -93,7 +93,7 @@ _(Inserte aquí la captura de la pantalla.)_
 - Guardado del diagrama (nuevo/actualización) con indicador de cambios pendientes.
 - Carga de diagramas mediante navegación a la pantalla de gestión.
 - Exportación del diagrama a imagen (según opciones disponibles en el editor).
-- Generación de código en dos modalidades: generación directa y compilación por pipeline, con resultados en vistas modales.
+- Generación de código en dos modalidades: generación directa y conversión por pipeline, con resultados en vistas modales.
 - Edición de propiedades de nodos mediante diálogos especializados.
 
 ---
@@ -306,11 +306,11 @@ Estas vistas se presentan como diálogos desde distintas pantallas (principalmen
 
 ---
 
-### C) Resultados del compilador (pipeline)
+### C) Resultados del conversor (pipeline)
 
 **Widget:** `CompilerResultsDialog`
 
-**Objetivo:** Presentar un reporte de compilación por fases y el código generado.
+**Objetivo:** Presentar un reporte de conversión por fases y el código generado.
 
 **Funciones:**
 - Pestañas por fase (incluye: general, léxico, sintáctico, semántico, optimización y código).

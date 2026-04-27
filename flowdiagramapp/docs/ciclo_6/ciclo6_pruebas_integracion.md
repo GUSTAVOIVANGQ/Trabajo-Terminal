@@ -6,16 +6,16 @@
 
 ### Objetivos del Ciclo 6
 
-Este ciclo integra todas las fases del conversor en un flujo completo y funcional, conectando el compilador fuente a fuente con el editor visual e implementando el recorrido de extremo a extremo desde la creación del diagrama hasta la obtención del código C compilable. La integración abarca el mapeo de los seis tipos de símbolos ISO 5807 soportados, la visualización interactiva de resultados y el desarrollo del conjunto de pruebas que verifica el correcto funcionamiento del sistema completo [1], [3].
+Este ciclo integra todas las fases del conversor en un flujo completo y funcional, conectando el conversor fuente a fuente con el editor visual e implementando el recorrido de extremo a extremo desde la creación del diagrama hasta la obtención del código C válido y funcional. La integración abarca el mapeo de los seis tipos de símbolos ISO 5807 soportados, la visualización interactiva de resultados y el desarrollo del conjunto de pruebas que verifica el correcto funcionamiento del sistema completo [1], [3].
 
 **Objetivos del Ciclo 6:**
 
 - Implementar el mapeo completo de los seis símbolos del estándar ISO 5807 a construcciones del lenguaje C, coordinado por el componente que orquesta el flujo de conversión.
-- Integrar el flujo de conversión con el editor visual mediante la barra de herramientas flotante, exponiendo la compilación como una acción accesible al usuario.
-- Desarrollar el diálogo de resultados del compilador con pestañas diferenciadas para cada fase del análisis: léxico, árbol sintáctico abstracto, semántico, optimización y código generado.
+- Integrar el flujo de conversión con el editor visual mediante la barra de herramientas flotante, exponiendo la conversión como una acción accesible al usuario.
+- Desarrollar el diálogo de resultados del conversor con pestañas diferenciadas para cada fase del análisis: léxico, árbol sintáctico abstracto, semántico, optimización y código generado.
 - Implementar el sistema de visualización de errores con codificación por color según severidad (fatal, error, advertencia, información).
-- Construir el conjunto de pruebas que valide cada fase del compilador de forma independiente y el flujo de extremo a extremo en conjunto.
-- Verificar que el código C producido es compilable bajo GCC con el estándar C99 (verificación externa complementaria a las pruebas automatizadas).
+- Construir el conjunto de pruebas que valide cada fase del conversor de forma independiente y el flujo de extremo a extremo en conjunto.
+- Verificar que el código C producido es válido y funcional bajo GCC con el estándar C99 (verificación externa complementaria a las pruebas automatizadas).
 
 ---
 
@@ -26,9 +26,9 @@ Este ciclo integra todas las fases del conversor en un flujo completo y funciona
 | Riesgo | Estrategia de Mitigación | Estado |
 |--------|--------------------------|--------|
 | Incompatibilidades entre módulos al integrar las cinco fases del conversor | Ejecución de pruebas unitarias del ciclo anterior durante el desarrollo de la integración | ✅ |
-| Degradación del rendimiento al conectar todos los componentes en un solo flujo | Medición de tiempos por fase mediante métricas de compilación; optimización puntual con los resultados obtenidos | ✅ |
+| Degradación del rendimiento al conectar todos los componentes en un solo flujo | Medición de tiempos por fase mediante métricas de conversión; optimización puntual con los resultados obtenidos | ✅ |
 | Pérdida de información semántica entre la fase de análisis y la generación de código | Propagación explícita de la tabla de símbolos a través de todas las fases del flujo de conversión | ✅ |
-| Discrepancias entre el código generado y la sintaxis esperada por GCC | Validación estructural del código C generado (estructura, llaves, terminadores) en pruebas automatizadas; compilación en GCC como verificación complementaria | ✅ |
+| Discrepancias entre el código generado y la sintaxis esperada por GCC | Validación estructural del código C generado (estructura, llaves, terminadores) en pruebas automatizadas; conversión en GCC como verificación complementaria | ✅ |
 
 **Tabla 103.** Riesgos identificados y mitigados.
 
@@ -38,10 +38,10 @@ Este ciclo integra todas las fases del conversor en un flujo completo y funciona
 
 ### Productos generados
 
-- Flujo de conversión del compilador completamente integrado y funcional, que orquesta las cinco fases secuenciales del conversor.
-- Integración entre la interfaz de usuario y el compilador mediante la barra de herramientas flotante con botón de compilación.
-- Diálogo de resultados del compilador con seis pestañas: resumen de métricas, unidades léxicas, árbol sintáctico abstracto, análisis semántico, transformaciones de optimización y código C generado con resaltado de sintaxis.
-- Sistema de visualización de errores con colores según severidad: rojo oscuro (fatal, detiene la compilación), rojo (error, impide la generación de código), naranja (advertencia, código generado con observaciones) y azul (información adicional).
+- Flujo de conversión del conversor completamente integrado y funcional, que orquesta las cinco fases secuenciales del conversor.
+- Integración entre la interfaz de usuario y el conversor mediante la barra de herramientas flotante con botón de conversión.
+- Diálogo de resultados del conversor con seis pestañas: resumen de métricas, unidades léxicas, árbol sintáctico abstracto, análisis semántico, transformaciones de optimización y código C generado con resaltado de sintaxis.
+- Sistema de visualización de errores con colores según severidad: rojo oscuro (fatal, detiene la conversión), rojo (error, impide la generación de código), naranja (advertencia, código generado con observaciones) y azul (información adicional).
 - Mapeo completo de los seis tipos de símbolos ISO 5807 implementado y verificado con casos de prueba específicos.
 
 ---
@@ -63,7 +63,7 @@ Las pruebas de FlowCode se organizan en dos niveles: pruebas unitarias, que veri
 
 ## 21.2 Estrategia de Pruebas
 
-Las pruebas unitarias verifican el comportamiento correcto de cada fase del compilador de forma aislada. Las pruebas de integración verifican que las cinco fases operan de forma coordinada al procesar diagramas de flujo completos conformes al estándar ISO 5807:1985 [19], y establecen trazabilidad con los casos de uso CU01–CU07. La funcionalidad de almacenamiento local (CU08) y la integración con Firebase (CU09, CU10) se verifican mediante pruebas funcionales ejecutadas manualmente sobre el dispositivo físico Samsung Galaxy A26 5G.
+Las pruebas unitarias verifican el comportamiento correcto de cada fase del conversor de forma aislada. Las pruebas de integración verifican que las cinco fases operan de forma coordinada al procesar diagramas de flujo completos conformes al estándar ISO 5807:1985 [19], y establecen trazabilidad con los casos de uso CU01–CU07. La funcionalidad de almacenamiento local (CU08) y la integración con Firebase (CU09, CU10) se verifican mediante pruebas funcionales ejecutadas manualmente sobre el dispositivo físico Samsung Galaxy A26 5G.
 
 ### Criterio de validación
 
@@ -163,7 +163,7 @@ El analizador semántico verifica la consistencia de variables y tipos de datos 
 
 El optimizador aplica cuatro técnicas sobre el árbol de sintaxis abstracta: plegado de constantes, eliminación de código inalcanzable, simplificación algebraica y propagación de variables. El generador de código recorre el árbol optimizado y produce el código C correspondiente a cada tipo de construcción. La generación de estructuras de control (ciclos y selección múltiple) se configura mediante metadatos del nodo del diagrama y se valida con pruebas automatizadas específicas [1], [3].
 
-**Criterio de validación para el optimizador:** Cuando una expresión es evaluable en tiempo de compilación, se reemplaza por el valor constante equivalente. En casos no válidos (p. ej., división entre cero), no se realizan sustituciones que introduzcan resultados incorrectos.
+**Criterio de validación para el optimizador:** Cuando una expresión es evaluable en tiempo de conversión, se reemplaza por el valor constante equivalente. En casos no válidos (p. ej., división entre cero), no se realizan sustituciones que introduzcan resultados incorrectos.
 
 **Criterio de validación para el generador:** El texto C generado debe reflejar la estructura esperada (programa completo, declaraciones, selección múltiple y ciclos) y mantenerse estable ante configuraciones incompletas.
 
@@ -188,16 +188,16 @@ El optimizador aplica cuatro técnicas sobre el árbol de sintaxis abstracta: pl
 
 Las pruebas de integración validan el flujo completo del conversor fuente a fuente: desde la estructura del diagrama hasta el código C generado. Se emplean casos de extremo a extremo que ejecutan todas las fases de forma coordinada y validan el resultado contra criterios definidos.
 
-**Criterio de validación general:** En entradas válidas, la compilación concluye correctamente y produce código C. En entradas inválidas, se detecta el problema, se informa y el flujo se mantiene estable.
+**Criterio de validación general:** En entradas válidas, la conversión concluye correctamente y produce código C. En entradas inválidas, se detecta el problema, se informa y el flujo se mantiene estable.
 
 ### 21.4.1 CU01 — Crear Nuevo Diagrama
 
 | ID | Referencia en pruebas automatizadas | Descripción | Resultado Esperado | Estado |
 |----|-------------------------------------|-------------|-------------------|--------|
-| CU01-T01 | E2E-01.1 | Diagrama mínimo (Inicio → Fin) | La compilación concluye sin errores y se obtiene un programa C completo | ✅ |
+| CU01-T01 | E2E-01.1 | Diagrama mínimo (Inicio → Fin) | La conversión concluye sin errores y se obtiene un programa C completo | ✅ |
 | CU01-T02 | E2E-01.2 | Ejecución coordinada de fases | Se generan resultados por fase y métricas de ejecución sin valores negativos | ✅ |
 | CU01-T03 | ISO-01.1 | Nodos terminales (Inicio/Fin) | Se genera una estructura base coherente del programa | ✅ |
-| CU01-T04 | ISO-01.2 | Variantes en español e inglés | Se aceptan variantes de etiquetas y la compilación concluye correctamente | ✅ |
+| CU01-T04 | ISO-01.2 | Variantes en español e inglés | Se aceptan variantes de etiquetas y la conversión concluye correctamente | ✅ |
 
 **Tabla 110.** Pruebas de CU01 — Crear Nuevo Diagrama.
 
@@ -214,12 +214,12 @@ Las pruebas de integración validan el flujo completo del conversor fuente a fue
 | CU02-T07 | ISO-03.3 | Entrada/salida: formato según tipo | El formato de entrada/salida corresponde al tipo de dato | ✅ |
 | CU02-T08 | ISO-04.1 | Decisión simple | Se genera una estructura condicional de una rama | ✅ |
 | CU02-T09 | ISO-04.2 | Decisión de dos ramas | Se genera una estructura condicional con alternativa | ✅ |
-| CU02-T10 | ISO-04.3 | Operadores lógicos en condiciones | Se procesan condiciones con operadores lógicos sin afectar la compilación | ✅ |
+| CU02-T10 | ISO-04.3 | Operadores lógicos en condiciones | Se procesan condiciones con operadores lógicos sin afectar la conversión | ✅ |
 | CU02-T11 | ISO-05.1 | Preparación: inicialización | El símbolo se procesa y el flujo continúa sin fallar | ✅ |
-| CU02-T12 | ISO-05.2 | Representación de ciclo | Las conexiones de retroceso se interpretan como ciclo y la compilación concluye correctamente | ✅ |
+| CU02-T12 | ISO-05.2 | Representación de ciclo | Las conexiones de retroceso se interpretan como ciclo y la conversión concluye correctamente | ✅ |
 | CU02-T13 | ISO-06.1 | Subproceso | El símbolo de subproceso se procesa sin fallar | ✅ |
-| CU02-T14 | ISO-07.1 | Diagrama sin comentarios | Un diagrama sin anotaciones compila correctamente | ✅ |
-| CU02-T15 | ISO-08.1 | Diagrama sin conectores | Un diagrama simple sin conectores compila correctamente | ✅ |
+| CU02-T14 | ISO-07.1 | Diagrama sin comentarios | Un diagrama sin anotaciones convierte correctamente | ✅ |
+| CU02-T15 | ISO-08.1 | Diagrama sin conectores | Un diagrama simple sin conectores convierte correctamente | ✅ |
 
 **Tabla 111.** Pruebas de CU02 — Agregar y Conectar Elementos.
 
@@ -258,14 +258,14 @@ Las pruebas de integración validan el flujo completo del conversor fuente a fue
 
 **Tabla 114.** Pruebas de CU06 — Generar Código C.
 
-> *[Figura X. Captura de pantalla del diálogo de resultados del compilador mostrando el código C generado con resaltado de sintaxis en la pestaña «Código».]*
+> *[Figura X. Captura de pantalla del diálogo de resultados del conversor mostrando el código C generado con resaltado de sintaxis en la pestaña «Código».]*
 
 ### 21.4.6 CU07 — Exportar Proyecto Completo
 
 | ID | Referencia en pruebas automatizadas | Descripción | Resultado Esperado | Estado |
 |----|-------------------------------------|-------------|-------------------|--------|
-| CU07-T01 | MET-01.1 | Recolección de métricas de compilación | Se registran métricas (nodos, unidades léxicas y tiempos) con valores no negativos | ✅ |
-| CU07-T02 | MET-01.2 | Generación del reporte de compilación | Se produce un reporte no vacío con sección de métricas | ✅ |
+| CU07-T01 | MET-01.1 | Recolección de métricas de conversión | Se registran métricas (nodos, unidades léxicas y tiempos) con valores no negativos | ✅ |
+| CU07-T02 | MET-01.2 | Generación del reporte de conversión | Se produce un reporte no vacío con sección de métricas | ✅ |
 
 **Tabla 115.** Pruebas de CU07 — Exportar Proyecto Completo.
 

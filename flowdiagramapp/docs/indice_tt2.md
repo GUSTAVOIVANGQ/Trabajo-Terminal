@@ -24,9 +24,9 @@
 
 ### 2. Marco teórico (Pág. 10)
 
-- 2.1 Compiladores (Pág. 10)
-  - 2.1.1 Fases de compilación (análisis léxico, sintáctico, semántico) (Pág. 11)
-  - 2.1.2 Manejo de Errores en Compiladores (Pág. 12)
+- 2.1 Conversores (Pág. 10)
+  - 2.1.1 Fases de conversión (análisis léxico, sintáctico, semántico) (Pág. 11)
+  - 2.1.2 Manejo de Errores en Conversores (Pág. 12)
 - 2.2 Transpiladores y DSLs Visuales (Pág. 12)
   - 2.2.1 Transpilador (Pág. 12)
   - 2.2.2 Lenguajes Específicos de Dominio Visuales (Visual DSL) (Pág. 12)
@@ -171,7 +171,7 @@
 - 10.9 UI — Vistas modales (Pág. 142)
   - 10.9.1 UI — Guardado de diagrama (Pág. 142)
   - 10.9.2 UI — Resultados de validación estructural (Pág. 143)
-  - 10.9.3 UI — Resultados del compilador (Pág. 144)
+  - 10.9.3 UI — Resultados del conversor (Pág. 144)
   - 10.9.4 UI — Edición de propiedades de nodo (Pág. 147)
 - 10.10 Logo y marca (Pág. 149)
 
@@ -365,7 +365,7 @@
 ## Índice de Figuras
 
 - Figura 1 Pipeline de conversión (Pág. 4)
-- Figura 2 Esquema general de un compilador tradicional mostrando el flujo desde programa fuente hasta programa objeto. Basado en [1]. (Pág. 10)
+- Figura 2 Esquema general de un conversor tradicional mostrando el flujo desde programa fuente hasta programa objeto. Basado en [1]. (Pág. 10)
 - Figura 3 Diagrama que muestra la división análisis-síntesis con las fases correspondientes. Basado en [1]. (Pág. 11)
 - Figura 4 Estructuras básicas de programación estructurada. Basado en [1]. (Pág. 16)
 - Figura 5 modelo canvas de FlowCode (Pág. 41)
@@ -416,7 +416,7 @@
 - Figura 50 Interfaz del catálogo de guías internas. (Pág. 141)
 - Figura 51 Vista modal de guardado de diagrama. (Pág. 143)
 - Figura 52 Vista modal de resultados de validación estructural. (Pág. 144)
-- Figura 53 Vista modal de resultados del compilador. (Pág. 146)
+- Figura 53 Vista modal de resultados del conversor. (Pág. 146)
 - Figura 54 Vista modal de edición de propiedades de nodo. (Pág. 148)
 - Figura 55 Logotipo de FlowCode. (Pág. 149)
 - Figura 56 Diagrama del editor visual (estado, interacción y renderizado). (Pág. 160)
@@ -561,7 +561,7 @@
 - Tabla 131 Matriz de Resultados de Robustez (Pág. 234)
 - Tabla 132 Matriz de Cumplimiento (Pág. 235)
 - Tabla 133 Resumen de Cumplimiento por Área (Pág. 235)
-- Tabla 134 indicadores clave de rendimiento (KPIs) del compilador (Pág. 236)
+- Tabla 134 indicadores clave de rendimiento (KPIs) del conversor (Pág. 236)
 - Tabla 135 Limitaciones Funcionales (Pág. 237)
 - Tabla 136 Limitaciones de Rendimiento (Pág. 237)
 - Tabla 137 Limitaciones de Plataforma (Pág. 237)

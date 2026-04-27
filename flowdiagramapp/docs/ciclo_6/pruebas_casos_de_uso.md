@@ -39,10 +39,10 @@ Este documento establece la trazabilidad entre los casos de uso documentados en 
 
 | ID Prueba | Nombre | Archivo | Descripción | Resultado Esperado |
 |-----------|--------|---------|-------------|-------------------|
-| CU01-T01 | Diagrama mínimo valido | compiler_integration_test.dart | Verificar que un diagrama con solo Inicio→Fin compila correctamente | Compilación exitosa, código C generado |
+| CU01-T01 | Diagrama mínimo valido | compiler_integration_test.dart | Verificar que un diagrama con solo Inicio→Fin convierte correctamente | conversión exitosa, código C generado |
 | CU01-T02 | Nodos terminales generan main() | compiler_integration_test.dart | Validar estructura main() en código generado | Código contiene `int main()` y `return 0` |
 | CU01-T03 | Variantes español/inglés | compiler_integration_test.dart | Aceptar "Inicio/Fin" y "Start/End" | Ambas variantes compilan correctamente |
-| CU01-T04 | Pipeline completo ejecuta | compiler_integration_test.dart | Las 5 fases del compilador se ejecutan | Métricas de tiempo registradas para cada fase |
+| CU01-T04 | Pipeline completo ejecuta | compiler_integration_test.dart | Las 5 fases del conversor se ejecutan | Métricas de tiempo registradas para cada fase |
 
 #### Código de Prueba Asociado
 
@@ -240,7 +240,7 @@ group('DiagramSyntaxAnalyzer - Node Analysis', () {
 | CU05-T16 | Condición bucle con variable declarada | semantic_analyzer_test.dart | Loop "while i < 5" con 'i' declarada | Sin errores |
 | CU05-T17 | Variable no declarada en bucle | semantic_analyzer_test.dart | Loop con variable inexistente | Error undeclaredVariable |
 | CU05-T18 | Generar reporte semántico | semantic_analyzer_test.dart | Diagrama válido | Reporte con estadísticas |
-| CU05-T19 | Pipeline ejecuta análisis | semantic_analyzer_test.dart | Compilar diagrama completo | semanticResult no nulo |
+| CU05-T19 | Pipeline ejecuta análisis | semantic_analyzer_test.dart | convertir diagrama completo | semanticResult no nulo |
 | CU05-T20 | Pipeline falla con errores | semantic_analyzer_test.dart | Diagrama con errores semánticos | success = false |
 
 #### Código de Prueba Asociado
@@ -284,12 +284,12 @@ group('DiagramSemanticAnalyzer - Unused Variables', () {
 | CU06-T01 | Estructura C válida | compiler_integration_test.dart | Código tiene #include, main(), return | Elementos presentes |
 | CU06-T02 | Llaves balanceadas | compiler_integration_test.dart | Contar { y } en código | Cantidades iguales |
 | CU06-T03 | Sentencias terminan en ; | compiler_integration_test.dart | Cada statement tiene semicolon | Sintaxis C válida |
-| CU06-T04 | Código sintácticamente válido | compiler_integration_test.dart | Compilar diagrama simple | Código compila con GCC |
+| CU06-T04 | Código sintácticamente válido | compiler_integration_test.dart | convertir diagrama simple | Código convierte con GCC |
 | CU06-T05 | Patrón I/O genera código | compiler_integration_test.dart | Diagrama con Leer/Escribir | printf/scanf generados |
 | CU06-T06 | Sin variables indefinidas | compiler_integration_test.dart | Todas variables declaradas antes de uso | Sin errores semánticos |
 | CU06-T07 | Printf múltiples variables | code_generator_advanced_test.dart | Escribir x, y, z | printf con 3 especificadores |
 | CU06-T08 | Tabla símbolos para tipos | code_generator_advanced_test.dart | Usar tipo correcto en printf | %d, %f, %c según tipo |
-| CU06-T09 | Pipeline completo funcional | code_generator_advanced_test.dart | Compilar plantilla completa | Código C ejecutable |
+| CU06-T09 | Pipeline completo funcional | code_generator_advanced_test.dart | convertir plantilla completa | Código C ejecutable |
 | CU06-T10 | Declaración múltiple variables | code_generator_advanced_test.dart | "int a, b, c" en nodo | Declaración correcta en C |
 | CU06-T11 | Switch con metadata | code_generator_phase4_test.dart | Nodo switch estructurado | switch/case/break generados |
 | CU06-T12 | Bucle for con metadata | code_generator_phase4_test.dart | Nodo for con límites | for(;;) generado |
@@ -342,9 +342,9 @@ group('FASE 4: Pruebas de Generación de Código con Metadata', () {
 
 | ID Prueba | Nombre | Archivo | Descripción | Resultado Esperado |
 |-----------|--------|---------|-------------|-------------------|
-| CU07-T01 | Generar código exportable | compiler_integration_test.dart | Compilar y obtener código string | generatedCode no nulo |
-| CU07-T02 | Métricas de compilación | compiler_integration_test.dart | Obtener tiempos de cada fase | metrics con valores > 0 |
-| CU07-T03 | Reporte completo generado | compiler_integration_test.dart | Generar reporte de compilación | Reporte incluye fases/errores/código |
+| CU07-T01 | Generar código exportable | compiler_integration_test.dart | convertir y obtener código string | generatedCode no nulo |
+| CU07-T02 | Métricas de conversión | compiler_integration_test.dart | Obtener tiempos de cada fase | metrics con valores > 0 |
+| CU07-T03 | Reporte completo generado | compiler_integration_test.dart | Generar reporte de conversión | Reporte incluye fases/errores/código |
 
 #### Código de Prueba Asociado
 
@@ -453,13 +453,13 @@ Verificaciones de servicios Firebase para sincronización
 
 ## Conclusión
 
-La suite de pruebas de FlowCode proporciona cobertura para los 10 casos de uso principales del sistema. Las pruebas del compilador (CU04-CU06) tienen la mayor cobertura con más de 150 tests unitarios y de integración. Los casos de uso relacionados con la interfaz de usuario y persistencia (CU01, CU07, CU08) se validan principalmente mediante pruebas de integración end-to-end y verificación manual.
+La suite de pruebas de FlowCode proporciona cobertura para los 10 casos de uso principales del sistema. Las pruebas del conversor (CU04-CU06) tienen la mayor cobertura con más de 150 tests unitarios y de integración. Los casos de uso relacionados con la interfaz de usuario y persistencia (CU01, CU07, CU08) se validan principalmente mediante pruebas de integración end-to-end y verificación manual.
 
 ### Estadísticas de Cobertura
 
 | Componente | Archivos | Tests | Líneas de código |
 |------------|----------|-------|------------------|
-| Compilador | 7 | 240+ | 5,232 |
+| Conversor | 7 | 240+ | 5,232 |
 | UI Dialogs | 4 | 12 | 850 |
 | Autenticación | 1 | 3 | 134 |
 | Widget | 1 | 1 | 32 |

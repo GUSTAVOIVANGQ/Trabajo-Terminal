@@ -10,7 +10,7 @@
 
 **Objetivos del ciclo:**
 
-- Diseñar e implementar el pipeline de compilación con fases secuenciales y un orquestador central.
+- Diseñar e implementar el pipeline de conversión con fases secuenciales y un orquestador central.
 - Desarrollar el análisis léxico: tokenización del contenido de cada nodo del diagrama, reconociendo identificadores, literales, palabras reservadas y operadores.
 - Implementar el análisis sintáctico mediante un parser de descenso recursivo que construya el Árbol de Sintaxis Abstracta (AST).
 - Implementar el análisis semántico con verificación de tipos, análisis de alcance y detección de variables no declaradas.
@@ -36,7 +36,7 @@
 - Analizador sintáctico con parser de descenso recursivo y generación del AST.
 - Analizador semántico con verificación de tipos y análisis de alcance.
 - Tabla de símbolos con soporte para ámbitos y resolución de nombres.
-- Sistema de errores estructurado con clasificación por tipo, severidad y fase de compilación.
+- Sistema de errores estructurado con clasificación por tipo, severidad y fase de conversión.
 - Suite de pruebas unitarias para cada componente del analizador.
 - Integración del motor de análisis con el editor visual para retroalimentación en tiempo real.
 
@@ -44,7 +44,7 @@
 
 **Entregables:**
 
-- Informe Ciclo 4: documentación de la arquitectura del compilador y decisiones de diseño.
+- Informe Ciclo 4: documentación de la arquitectura del conversor y decisiones de diseño.
 - Plan detallado para el Ciclo 5: Generador de Código.
 
 ---
@@ -70,7 +70,7 @@
 
 | Riesgo | Estrategia de Mitigación |
 |--------|--------------------------|
-| Código generado con errores de compilación | Pruebas automáticas de compilación cruzada con GCC tras cada caso de prueba |
+| Código generado con errores de conversión | Pruebas automáticas de conversión cruzada con GCC tras cada caso de prueba |
 | Código generado poco legible | Implementación de formateador automático con indentación y comentarios consistentes |
 | Cobertura incompleta de estructuras de control | Definir y validar el mapeo de cada símbolo ISO 5807 antes de la implementación |
 | Regresiones en el motor de análisis del Ciclo 4 | Mantener y ejecutar la suite de pruebas del ciclo anterior durante el desarrollo |
@@ -104,12 +104,12 @@
 
 **Objetivos del ciclo:**
 
-- Integrar todas las fases del transpilador en un pipeline de compilación completo y funcional.
-- Conectar el motor del compilador con el editor visual para un flujo continuo desde la creación del diagrama hasta la generación de código.
+- Integrar todas las fases del transpilador en un pipeline de conversión completo y funcional.
+- Conectar el motor del conversor con el editor visual para un flujo continuo desde la creación del diagrama hasta la generación de código.
 - Implementar el mapeo completo de los símbolos ISO 5807 a código C en el pipeline integrado.
 - Desarrollar la suite completa de pruebas de integración que valide el flujo end-to-end.
 - Optimizar el rendimiento global del sistema y resolver incompatibilidades entre módulos.
-- Implementar visualización estructurada de los resultados de compilación con indicadores de severidad.
+- Implementar visualización estructurada de los resultados de conversión con indicadores de severidad.
 
 ### Fase 2: Análisis de Riesgos
 
@@ -119,19 +119,19 @@
 |--------|--------------------------|
 | Incompatibilidades entre módulos desarrollados en ciclos anteriores | Pruebas de integración continua y definición de interfaces contractuales entre componentes |
 | Degradación de rendimiento al combinar todos los módulos | Perfilado del sistema y optimización dirigida a cuellos de botella identificados |
-| Errores difíciles de reproducir en el flujo completo | Registro detallado de logs de compilación y cobertura de pruebas end-to-end |
+| Errores difíciles de reproducir en el flujo completo | Registro detallado de logs de conversión y cobertura de pruebas end-to-end |
 | Problemas de usabilidad en la presentación de resultados | Revisión con usuarios objetivo y ajuste iterativo de la interfaz de resultados |
 
 ### Fase 3: Desarrollo y Verificación
 
 **Productos generados:**
 
-- Pipeline de compilación completamente integrado y funcional.
-- Integración UI–Compilador con control de compilación accesible desde el editor.
-- Diálogo de resultados de compilación con visualización por fases (léxico, AST, semántico, optimización, código).
+- Pipeline de conversión completamente integrado y funcional.
+- Integración UI–Conversor con control de conversión accesible desde el editor.
+- Diálogo de resultados de conversión con visualización por fases (léxico, AST, semántico, optimización, código).
 - Sistema de visualización de errores con colores según severidad (fatal, error, advertencia, información).
 - Suite de pruebas de integración con cobertura de los casos de uso principales del sistema.
-- Validación de código generado mediante compilación exitosa con GCC.
+- Validación de código generado mediante conversión exitosa con GCC.
 
 ### Fase 4: Planificación
 
@@ -163,7 +163,7 @@
 
 | Riesgo | Estrategia de Mitigación |
 |--------|--------------------------|
-| Métricas de compilación no alcanzadas al momento de las pruebas | Optimización del motor de conversión y ajuste de reglas semánticas según resultados |
+| Métricas de conversión no alcanzadas al momento de las pruebas | Optimización del motor de conversión y ajuste de reglas semánticas según resultados |
 | Documentación insuficiente o de baja calidad | Revisión periódica por parte del director del TT y uso de plantillas estandarizadas |
 | Tiempo insuficiente para cubrir todos los casos de prueba | Priorización de casos de prueba críticos y uso de la suite automatizada existente |
 | Defectos encontrados tardíamente que requieren correcciones mayores | Estrategia de corrección mínima para no comprometer la estabilidad del sistema |

@@ -1,6 +1,6 @@
 # 18.x Catálogo de Errores y Tablas (Resumen)
 
-Este documento resume el **catálogo de errores** y las **tablas** usadas por el sistema de errores del compilador (FlowCode), para referencia rápida.
+Este documento resume el **catálogo de errores** y las **tablas** usadas por el sistema de errores del conversor (FlowCode), para referencia rápida.
 
 
 

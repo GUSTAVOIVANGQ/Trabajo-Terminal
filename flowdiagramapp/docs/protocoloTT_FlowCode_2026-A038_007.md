@@ -1,4 +1,4 @@
-﻿**FlowCode: Aplicación para la conversión de diagramas de flujo a código C estructurado para dispositivos móviles Android** 
+**FlowCode: Aplicación para la conversión de diagramas de flujo a código C estructurado para dispositivos móviles Android** 
 
 ***Trabajo Terminal No.**  \
 Alumnos: García Quiroz Gustavo Iván Directores:*  
@@ -75,9 +75,9 @@ Desarrollar una aplicación móvil nativa para Android que permita crear diagram
 
 1. **Justificación**  
 
-Este trabajo terminal presenta una solución innovadora que integra conceptos fundamentales de ingeniería de software, compiladores, interfaces hombre-máquina y programación móvil. La implementación requiere aplicar conocimientos  avanzados  de  estructuras  de  datos,  análisis  sintáctico,  generación  de  código  y  diseño  de interfaces, demostrando así la capacidad para resolver problemas complejos de ingeniería. 
+Este trabajo terminal presenta una solución innovadora que integra conceptos fundamentales de ingeniería de software, conversores, interfaces hombre-máquina y programación móvil. La implementación requiere aplicar conocimientos  avanzados  de  estructuras  de  datos,  análisis  sintáctico,  generación  de  código  y  diseño  de interfaces, demostrando así la capacidad para resolver problemas complejos de ingeniería. 
 
-FlowCode se fundamenta en principios establecidos de construcción de compiladores y transpiladores [1], implementando las fases clásicas de traducción de lenguajes:  
+FlowCode se fundamenta en principios establecidos de construcción de conversores y transpiladores [1], implementando las fases clásicas de traducción de lenguajes:  
 
 - Análisis léxico: Tokenización de símbolos visuales ISO 5807 [13]  
 - Análisis sintáctico: Validación de grafos mediante BFS [3]  
@@ -100,7 +100,7 @@ El desarrollo de la aplicación es técnicamente viable considerando:
 
 - **Frameworks  multiplataforma**:  Flutter  con  soporte  nativo  para  Android  8.0+  (API  level  26+), garantizando renderizado a 60 FPS mediante CustomPaint y gestos táctiles optimizados [9].  
 - **Algoritmos de análisis**: Implementación de BFS/DFS para validación de topología de grafos dirigidos [3], con complejidad O(V+E) aceptable para diagramas de hasta 100 nodos.  
-- **Técnicas de compiladores**: Generación de código mediante traducción dirigida por sintaxis (Syntax- Directed Translation) con preservación de semántica [1].  
+- **Técnicas de conversores**: Generación de código mediante traducción dirigida por sintaxis (Syntax- Directed Translation) con preservación de semántica [1].  
 - **Capacidad de hardware**: Dispositivos Android actuales (2GB+ RAM) ejecutan análisis semántico y generación de código en <2 segundos para algoritmos de complejidad media (≤50 símbolos).  
 - **Plataforma objetivo Android** [14]: La viabilidad económica y la penetración de mercado de 73% del mercado móvil mexicano [14]. El costo de publicación contemplado es único $25 USD (Google Play) 
 
@@ -119,7 +119,7 @@ Las herramientas y tecnologías que vamos a usar son:
 - **Desarrollo móvil:** Flutter/Dart 
 - **Gestión de datos:** SQLite  
 - **Análisis de diagramas:** Implementación propia basada en teoría de grafos 
-- **Generación de código:** Técnicas de compiladores adaptadas al contexto 
+- **Generación de código:** Técnicas de conversores adaptadas al contexto 
 - **Control de versiones:** Git/GitHub 
 - **Gestión del proyecto:** ClickUp 
 
@@ -179,7 +179,7 @@ FlowCode genera código compatible con el subconjunto estructurado básico de C 
 
 **Justificación:** Estos  conceptos  exceden  las  capacidades  de  representación  del  estándar  ISO  5807  y  la complejidad de análisis semántico factible en el plazo del trabajo terminal. 
 
-El núcleo del sistema es el motor de conversión que implementa las fases clásicas de un compilador fuente a fuente adaptadas al contexto visual: 
+El núcleo del sistema es el motor de conversión que implementa las fases clásicas de un conversor fuente a fuente adaptadas al contexto visual: 
 
 ![](Aspose.Words.d4e1887e-54b5-40ec-8f0c-7302083c4cc8.002.jpeg)
 
@@ -288,14 +288,14 @@ El modelo en espiral se estructura en ciclos o iteraciones, donde cada ciclo con
 
 **Análisis de riesgos:** 
 
-- Riesgo: Código generado incorrecto → Pruebas de compilación automática 
+- Riesgo: Código generado incorrecto → Pruebas de conversión automática 
 - Riesgo: Código ilegible → Implementación de formateador 
 
 **Productos:** 
 
 - Generador de código C funcional 
 - Formateador de código 
-- Pruebas de compilación cruzada 
+- Pruebas de conversión cruzada 
 
 **CICLO 6: Integración** 
 
@@ -333,7 +333,7 @@ El modelo en espiral se estructura en ciclos o iteraciones, donde cada ciclo con
 
 - Aplicación final validada 
 - Documentación completa 
-- Informe de pruebas de compilación (GCC/Clang) 
+- Informe de pruebas de conversión (GCC/Clang) 
 2. **Métricas de Evaluación por Ciclo** 
 
 Cada ciclo incluirá métricas específicas: 
@@ -433,7 +433,7 @@ Título del trabajo terminal: “FlowCode: Aplicación para la conversión de di
 1. E. Knuth, The Art of Computer Programming, Volume 1: Fundamental Algorithms, 3rd ed. Reading, MA: Addison-Wesley, 1997.  
 1. R. C. Martin, Clean Architecture: A Craftsman's Guide to Software Structure and Design. Upper Saddle River, NJ: Prentice Hall, 2017.  
 1. M. Fowler, Domain-Specific Languages. Upper Saddle River, NJ: Addison-Wesley, 2010.  
-1. J. L. Hendrix Valdelamar and J. Palma Suárez, Compiladores: teoría e implementación.  México: Alfaomega, 2018.  
+1. J. L. Hendrix Valdelamar and J. Palma Suárez, Conversores: teoría e implementación.  México: Alfaomega, 2018.  
 1. J. Nielsen, Mobile Usability, 2nd ed. Berkeley, CA: New Riders, 2019.  
 1. T. Barr and M. Marron, "Code generation from visual flowcharts," Journal of Software Engineering, vol. 42, no. 3, pp. 210-225, 2018.  
 1. C. González Morcillo and A. García Fernández, "Herramientas para la enseñanza de programación en educación superior: un enfoque visual," Revista Iberoamericana de Tecnologías del Aprendizaje, vol. 5, no. 2, pp. 112-119, 2017.  

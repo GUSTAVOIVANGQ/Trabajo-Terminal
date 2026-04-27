@@ -78,6 +78,7 @@ class CodeGenMetrics {
 class AdvancedCodeGenerator {
   final CodeGenOptions options;
   final List<CompilerError> _errors = [];
+  final Set<String> _emittedNodeIds = <String>{};
 
   AdvancedCodeGenerator({this.options = CodeGenOptions.defaults});
 
@@ -90,6 +91,7 @@ class AdvancedCodeGenerator {
   }) {
     final stopwatch = Stopwatch()..start();
     _errors.clear();
+    _emittedNodeIds.clear();
 
     final buffer = StringBuffer();
 
@@ -239,6 +241,11 @@ class AdvancedCodeGenerator {
     SymbolTable symbolTable,
     StringBuffer buffer,
   ) {
+    if (_emittedNodeIds.contains(node.id)) {
+      return;
+    }
+    _emittedNodeIds.add(node.id);
+
     final indent = options.indentation;
 
     switch (node.type) {
@@ -771,21 +778,39 @@ class AdvancedCodeGenerator {
       }
     }
 
-    // Generate loop body - ONLY follow body connections, NOT isLoopBack
-    // Body connections are typically labeled "Verdadero" or "true" or empty (first connection)
-    final bodyConnections = connections.where((c) =>
-        c.source.id == node.id &&
-        !c.isLoopBack &&
-        (c.label.isEmpty ||
-            c.label.toLowerCase() == 'verdadero' ||
-            c.label.toLowerCase() == 'true'));
+    final outgoing =
+        connections.where((c) => c.source.id == node.id && !c.isLoopBack);
+
+    final hasExplicitLoopLabels = outgoing.any((c) {
+      final label = c.label.toLowerCase();
+      return label == 'verdadero' ||
+          label == 'true' ||
+          label == 'sí' ||
+          label == 'si' ||
+          label == 'falso' ||
+          label == 'false' ||
+          label == 'no';
+    });
+
+    final bodyConnections = hasExplicitLoopLabels
+        ? outgoing.where((c) {
+            final label = c.label.toLowerCase();
+            return label == 'verdadero' ||
+                label == 'true' ||
+                label == 'sí' ||
+                label == 'si';
+          })
+        : outgoing.take(1);
+
+    final followNextConnectionsInBody = hasExplicitLoopLabels;
 
     // Track visited nodes within the loop body to prevent cycles
     final visitedInBody = <String>{};
 
     for (final conn in bodyConnections) {
       _generateLoopBodyCode(conn.target, allNodes, connections, symbolTable,
-          buffer, indent + options.indentation, visitedInBody, node.id);
+          buffer, indent + options.indentation, visitedInBody, node.id,
+          followNextConnections: followNextConnectionsInBody);
     }
 
     if (loopType == 'do-while') {
@@ -804,11 +829,16 @@ class AdvancedCodeGenerator {
     StringBuffer buffer,
     String indent,
     Set<String> visitedInBody,
-    String loopNodeId,
-  ) {
+    String loopNodeId, {
+    bool followNextConnections = true,
+  }) {
     // Skip if already visited in this loop body
     if (visitedInBody.contains(node.id)) return;
     visitedInBody.add(node.id);
+
+    // Avoid emitting the same node many times across nested traversals.
+    if (_emittedNodeIds.contains(node.id)) return;
+    _emittedNodeIds.add(node.id);
 
     // Skip terminal end nodes
     if (node.type == NodeType.terminal &&
@@ -820,6 +850,8 @@ class AdvancedCodeGenerator {
     // Skip if this is the loop node itself (loopback)
     if (node.id == loopNodeId) return;
 
+    var handledBranchTraversal = false;
+
     // Generate code for this node based on its type
     switch (node.type) {
       case NodeType.process:
@@ -829,8 +861,10 @@ class AdvancedCodeGenerator {
         _generateDataCode(node, symbolTable, buffer, indent);
         break;
       case NodeType.decision:
+        handledBranchTraversal = true;
         _generateDecisionCodeInLoop(node, allNodes, connections, symbolTable,
-            buffer, indent, visitedInBody, loopNodeId);
+            buffer, indent, visitedInBody, loopNodeId,
+            followNextConnections: followNextConnections);
         break;
       case NodeType.preparation:
         // Nested loop
@@ -844,15 +878,18 @@ class AdvancedCodeGenerator {
         break;
     }
 
-    // Follow non-loopback connections within the body
-    final nextConnections =
-        connections.where((c) => c.source.id == node.id && !c.isLoopBack);
+    if (followNextConnections && !handledBranchTraversal) {
+      // Follow non-loopback connections within the body
+      final nextConnections =
+          connections.where((c) => c.source.id == node.id && !c.isLoopBack);
 
-    for (final conn in nextConnections) {
-      // Don't follow back to the original loop node
-      if (conn.target.id != loopNodeId) {
-        _generateLoopBodyCode(conn.target, allNodes, connections, symbolTable,
-            buffer, indent, visitedInBody, loopNodeId);
+      for (final conn in nextConnections) {
+        // Don't follow back to the original loop node
+        if (conn.target.id != loopNodeId) {
+          _generateLoopBodyCode(conn.target, allNodes, connections, symbolTable,
+              buffer, indent, visitedInBody, loopNodeId,
+              followNextConnections: followNextConnections);
+        }
       }
     }
   }
@@ -866,8 +903,9 @@ class AdvancedCodeGenerator {
     StringBuffer buffer,
     String indent,
     Set<String> visitedInBody,
-    String loopNodeId,
-  ) {
+    String loopNodeId, {
+    bool followNextConnections = true,
+  }) {
     // Normalizar la condición (quitar signos de interrogación y formatear)
     final condition = _formatCondition(node.text);
 
@@ -889,7 +927,8 @@ class AdvancedCodeGenerator {
     for (final conn in yesBranch) {
       if (conn.target.id != loopNodeId) {
         _generateLoopBodyCode(conn.target, allNodes, connections, symbolTable,
-            buffer, indent + options.indentation, visitedInBody, loopNodeId);
+            buffer, indent + options.indentation, visitedInBody, loopNodeId,
+            followNextConnections: followNextConnections);
       }
     }
 
@@ -906,7 +945,8 @@ class AdvancedCodeGenerator {
       for (final conn in noBranch) {
         if (conn.target.id != loopNodeId) {
           _generateLoopBodyCode(conn.target, allNodes, connections, symbolTable,
-              buffer, indent + options.indentation, visitedInBody, loopNodeId);
+              buffer, indent + options.indentation, visitedInBody, loopNodeId,
+              followNextConnections: followNextConnections);
         }
       }
       buffer.writeln('$indent}');

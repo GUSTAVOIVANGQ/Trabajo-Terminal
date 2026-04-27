@@ -92,7 +92,7 @@ void main() {
         Connection(source: outputNode, target: endNode, label: ""),
       ];
 
-      // Compilar con el pipeline avanzado
+      // convertir con el pipeline avanzado
       final compiler = DiagramCompilerPipeline(
         options: const CompilerOptions(
           optimizationLevel: 0, // Sin optimización para este test
@@ -102,8 +102,8 @@ void main() {
 
       final result = compiler.compile(nodes, connections);
 
-      // Verificar que la compilación fue exitosa
-      expect(result.success, isTrue, reason: 'La compilación debe ser exitosa');
+      // Verificar que la conversión fue exitosa
+      expect(result.success, isTrue, reason: 'La conversión debe ser exitosa');
 
       // Verificar que se generó código
       expect(result.generatedCode, isNotNull,
@@ -303,7 +303,7 @@ void main() {
       final compiler = DiagramCompilerPipeline();
       final result = compiler.compile(nodes, connections);
 
-      expect(result.success, isTrue, reason: 'La compilación debe ser exitosa');
+      expect(result.success, isTrue, reason: 'La conversión debe ser exitosa');
       expect(result.generatedCode, isNotNull,
           reason: 'Debe generarse código C');
 
@@ -424,7 +424,7 @@ void main() {
 
       // Mostrar errores si los hay
       if (!result.success) {
-        print('Errores de compilación:');
+        print('Errores de conversión:');
         print('  ${result.errors}');
       }
 

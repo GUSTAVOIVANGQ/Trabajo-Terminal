@@ -80,11 +80,11 @@ graph TB
             TS["TutorialStep"]
         end
 
-        subgraph COMPILER["Compilador Fuente-a-Fuente"]
+        subgraph COMPILER["Conversor Fuente-a-Fuente"]
             direction TB
             CP["CompilerPipeline"]
 
-            subgraph PHASES["Fases del Compilador"]
+            subgraph PHASES["Fases del Conversor"]
                 direction TB
                 P1["Fase 1: LexicalAnalyzer<br/>(Token, SymbolTable)"]
                 P2["Fase 2: SyntaxAnalyzer<br/>(ASTNodes)"]
@@ -156,7 +156,7 @@ graph TB
     TUT --> TUTSRV
     MAIN --> THSRV
 
-    %% --- Editor a Compilador ---
+    %% --- Editor a Conversor ---
     EDITOR --> CP
     CP --> P1
     P1 --> P2
@@ -199,9 +199,9 @@ graph TB
 
 ---
 
-## DC-02: Diagrama de Componentes del Compilador (detalle)
+## DC-02: Diagrama de Componentes del Conversor (detalle)
 
-Detalla la estructura interna del compilador fuente-a-fuente y las interfaces entre cada fase del pipeline.
+Detalla la estructura interna del conversor fuente-a-fuente y las interfaces entre cada fase del pipeline.
 
 ```mermaid
 %%{init: {'theme': 'neutral'}}%%
@@ -300,7 +300,7 @@ graph TB
         GEN["Generación Básica<br/>(CodeGenerator)"]
     end
 
-    subgraph L3["Compilador Fuente-a-Fuente"]
+    subgraph L3["Conversor Fuente-a-Fuente"]
         direction LR
         PIPE["CompilerPipeline"]
         ANALYSIS["Análisis<br/>(Léxico + Sintáctico<br/>+ Semántico)"]
@@ -344,7 +344,7 @@ graph TB
 |---|---|---|
 | `FlowDiagramApp` | `lib/main.dart` | Punto de entrada de la aplicación. Inicializa Firebase y configura MaterialApp con temas |
 | `AuthGuard` | `lib/widgets/auth_guard.dart` | Componente de control de acceso que redirige a login o pantalla principal |
-| `EditorScreen` | `lib/screens/editor_screen.dart` | Pantalla principal del editor visual. Orquesta canvas, paleta, compilador y exportación |
+| `EditorScreen` | `lib/screens/editor_screen.dart` | Pantalla principal del editor visual. Orquesta canvas, paleta, conversor y exportación |
 | `LoadDiagramScreen` | `lib/screens/load_diagram_screen.dart` | Gestor de proyectos con pestañas para diagramas del usuario y plantillas |
 | `FlowDiagramCanvas` | `lib/widgets/flow_diagram_canvas_final.dart` | Canvas interactivo con soporte para gestos (arrastrar, zoom, pan) |
 | `NodeEditorDialog` | `lib/widgets/node_editor_dialog.dart` | Router que delega a diálogos especializados según el tipo de nodo |
@@ -363,7 +363,7 @@ graph TB
 | `UserModel` | `lib/models/user_model.dart` | Modelo de usuario con uid, email, rol y timestamps |
 | `MetricModel` | `lib/models/metric_model.dart` | Modelo de métricas técnicas globales y por usuario |
 
-### Compilador Fuente-a-Fuente
+### Conversor Fuente-a-Fuente
 
 | Componente | Archivo | Descripción |
 |---|---|---|

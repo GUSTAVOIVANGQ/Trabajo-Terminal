@@ -8,7 +8,7 @@ import '../widgets/programming_concepts_palette.dart';
 import '../widgets/editor_side_panel.dart';
 import '../widgets/node_editor_dialog.dart';
 import '../widgets/validation_result_dialog.dart';
-import '../widgets/compiler_results_dialog.dart'; // Dialog del compilador
+import '../widgets/compiler_results_dialog.dart'; // Dialog del conversor
 import 'load_diagram_screen.dart';
 import '../widgets/save_diagram_dialog.dart';
 import '../models/diagram_node.dart';
@@ -21,7 +21,7 @@ import '../services/metrics_service.dart'; // Nueva importación
 import '../services/diagram_export_service.dart'; // Importación para exportación
 import '../services/auth_service.dart'; // Importación para autenticación
 import '../services/auto_save_settings_service.dart';
-import '../compiler/compiler.dart'; // Compilador completo
+import '../compiler/compiler.dart'; // Conversor completo
 
 class _DiagramHistorySnapshot {
   final List<DiagramNode> nodes;
@@ -314,7 +314,7 @@ class _EditorScreenState extends State<EditorScreen> {
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text('Compilador Avanzado'),
+                            Text('Conversor Avanzado'),
                             Text(
                               'Análisis completo + Optimización',
                               style:
@@ -2376,7 +2376,7 @@ class _EditorScreenState extends State<EditorScreen> {
     _showCodeDialog(code);
   }
 
-  // Método para compilar con el pipeline completo (todas las fases)
+  // Método para convertir con el pipeline completo (todas las fases)
   void _compileWithFullPipeline() {
     // Verificar que hay nodos en el diagrama
     if (nodes.isEmpty) {
@@ -2389,7 +2389,7 @@ class _EditorScreenState extends State<EditorScreen> {
       return;
     }
 
-    // Crear el compilador con opciones
+    // Crear el conversor con opciones
     final compiler = DiagramCompilerPipeline(
       options: const CompilerOptions(
         optimizationLevel: 2, // Nivel estándar de optimización
@@ -2398,7 +2398,7 @@ class _EditorScreenState extends State<EditorScreen> {
       ),
     );
 
-    // Compilar el diagrama
+    // convertir el diagrama
     final result = compiler.compile(nodes, connections);
 
     // También generar código con el generador legacy para mostrar en la pestaña de código
@@ -2411,7 +2411,7 @@ class _EditorScreenState extends State<EditorScreen> {
       );
     }
 
-    // Registrar métrica de compilación
+    // Registrar métrica de conversión
     _metricsService.trackUserAction(
       action: 'compilacion_completa',
       category: 'code_generation',
@@ -2428,7 +2428,7 @@ class _EditorScreenState extends State<EditorScreen> {
       },
     );
 
-    // Mostrar el diálogo de resultados del compilador
+    // Mostrar el diálogo de resultados del conversor
     showDialog(
       context: context,
       builder: (context) => CompilerResultsDialog(

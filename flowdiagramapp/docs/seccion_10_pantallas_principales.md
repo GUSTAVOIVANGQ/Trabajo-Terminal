@@ -85,7 +85,7 @@ Pantalla principal de trabajo. Permite construir y editar diagramas de flujo med
 - Guardado del diagrama (nuevo o actualización) con indicador de cambios pendientes.
 - Carga de diagramas mediante navegación a la pantalla de gestión.
 - Exportación del diagrama a imagen.
-- Generación de código en dos modalidades: generación directa y compilación por pipeline completo, con resultados presentados en vista modal.
+- Generación de código en dos modalidades: generación directa y conversión por pipeline completo, con resultados presentados en vista modal.
 - Edición de propiedades de nodos mediante diálogos especializados por tipo.
 
 _(Insertar captura de pantalla)_
@@ -174,16 +174,16 @@ Presenta el resultado de la validación estructural del diagrama activo, con los
 
 ---
 
-### 10.9.3 Resultados del compilador
+### 10.9.3 Resultados del conversor
 
 **Propósito**
 
-Presenta el reporte completo de compilación por fases y el código C generado a partir del diagrama.
+Presenta el reporte completo de conversión por fases y el código C generado a partir del diagrama.
 
 **Funcionalidades**
 
 - Organización por pestañas correspondientes a cada fase del pipeline: resumen general, análisis léxico, análisis sintáctico, análisis semántico, optimización y código generado.
-- Visualización de tokens, árbol sintáctico (AST), tabla de símbolos, métricas de compilación y errores por fase.
+- Visualización de tokens, árbol sintáctico (AST), tabla de símbolos, métricas de conversión y errores por fase.
 - Copiado del código generado y del reporte completo al portapapeles.
 
 ---
