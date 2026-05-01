@@ -46,18 +46,8 @@ class InteractiveTutorialProvider extends ChangeNotifier {
     return _expectedEventForStep(step) != null;
   }
 
-  bool get isCurrentStepStrictControl {
-    final step = currentStep;
-    if (step == null) {
-      return false;
-    }
-
-    return step.lockPolicy == InteractiveTutorialLockPolicy.strict;
-  }
-
   Future<void> initialize() async {
     _tutorials = _catalog.getAllTutorials();
-    TutorialEventService().clearStepGate();
     _initialized = true;
     notifyListeners();
   }
@@ -78,7 +68,6 @@ class InteractiveTutorialProvider extends ChangeNotifier {
           updatedAt: DateTime.now(),
         );
 
-    _syncStepGate();
     notifyListeners();
     return true;
   }
@@ -101,7 +90,6 @@ class InteractiveTutorialProvider extends ChangeNotifier {
       updatedAt: DateTime.now(),
     );
     await _storage.saveProgress(_progress!);
-    _syncStepGate();
     notifyListeners();
   }
 
@@ -117,7 +105,6 @@ class InteractiveTutorialProvider extends ChangeNotifier {
       updatedAt: DateTime.now(),
     );
     await _storage.saveProgress(_progress!);
-    _syncStepGate();
     notifyListeners();
   }
 
@@ -134,7 +121,6 @@ class InteractiveTutorialProvider extends ChangeNotifier {
       updatedAt: DateTime.now(),
     );
     await _storage.saveProgress(_progress!);
-    _syncStepGate();
     notifyListeners();
   }
 
@@ -152,110 +138,28 @@ class InteractiveTutorialProvider extends ChangeNotifier {
     );
 
     await _storage.saveProgress(_progress!);
-    _syncStepGate();
     notifyListeners();
   }
 
   Future<void> closeTutorial() async {
     _activeTutorial = null;
     _progress = null;
-    TutorialEventService().clearStepGate();
     notifyListeners();
   }
 
-  Future<bool> tryAdvanceForSignal(TutorialEditorSignal signal) async {
+  Future<bool> tryAdvanceForEvent(TutorialEditorEvent event) async {
     final step = currentStep;
     if (step == null) {
       return false;
     }
 
     final expectedEvent = _expectedEventForStep(step);
-    if (expectedEvent == null || expectedEvent != signal.event) {
-      return false;
-    }
-
-    if (step.requireTargetMatch &&
-        step.targetElementId != null &&
-        signal.targetElementId != step.targetElementId) {
+    if (expectedEvent == null || expectedEvent != event) {
       return false;
     }
 
     await nextStep();
     return true;
-  }
-
-  void _syncStepGate() {
-    final step = currentStep;
-    if (step == null ||
-        step.lockPolicy != InteractiveTutorialLockPolicy.strict) {
-      TutorialEventService().clearStepGate();
-      return;
-    }
-
-    final mappedActions = <TutorialEditorAction>[];
-    for (final action in step.allowedActions) {
-      final mapped = _mapTutorialActionToEditorAction(action);
-      if (mapped != null && !mappedActions.contains(mapped)) {
-        mappedActions.add(mapped);
-      }
-    }
-
-    if (mappedActions.isEmpty && step.requiredAction != null) {
-      final fallback = _mapTutorialActionToEditorAction(step.requiredAction!);
-      if (fallback != null) {
-        mappedActions.add(fallback);
-      }
-    }
-
-    TutorialEventService().configureStepGate(
-      TutorialStepGate(
-        strictControl: true,
-        allowedActions: mappedActions,
-        stepId: step.id,
-        hint: _buildGateHint(step.requiredAction),
-      ),
-    );
-  }
-
-  String _buildGateHint(InteractiveTutorialActionType? requiredAction) {
-    switch (requiredAction) {
-      case InteractiveTutorialActionType.inspectNode:
-        return 'Selecciona el nodo solicitado para continuar.';
-      case InteractiveTutorialActionType.editNode:
-        return 'Edita el nodo indicado para continuar.';
-      case InteractiveTutorialActionType.connectNodes:
-        return 'Realiza la conexion solicitada para continuar.';
-      case InteractiveTutorialActionType.runValidation:
-        return 'Ejecuta la validacion del diagrama para continuar.';
-      case InteractiveTutorialActionType.viewGeneratedCode:
-        return 'Genera la salida C para continuar.';
-      case InteractiveTutorialActionType.saveDiagram:
-        return 'Guarda el diagrama para continuar.';
-      case InteractiveTutorialActionType.openTemplate:
-      case null:
-        return 'Completa la accion requerida del paso actual.';
-    }
-  }
-
-  TutorialEditorAction? _mapTutorialActionToEditorAction(
-    InteractiveTutorialActionType action,
-  ) {
-    switch (action) {
-      case InteractiveTutorialActionType.inspectNode:
-        return TutorialEditorAction.inspectNode;
-      case InteractiveTutorialActionType.editNode:
-        return TutorialEditorAction.editNode;
-      case InteractiveTutorialActionType.connectNodes:
-        return TutorialEditorAction.connectNodes;
-      case InteractiveTutorialActionType.runValidation:
-        return TutorialEditorAction.runValidation;
-      case InteractiveTutorialActionType.viewGeneratedCode:
-        return TutorialEditorAction.viewGeneratedCode;
-      case InteractiveTutorialActionType.saveDiagram:
-        return TutorialEditorAction.saveDiagram;
-      case InteractiveTutorialActionType.openTemplate:
-        return null;
-    }
   }
 
   TutorialEditorEvent? _expectedEventForStep(InteractiveTutorialStep step) {
@@ -284,8 +188,6 @@ class InteractiveTutorialProvider extends ChangeNotifier {
     switch (action) {
       case InteractiveTutorialActionType.editNode:
         return TutorialEditorEvent.nodeEdited;
-      case InteractiveTutorialActionType.connectNodes:
-        return TutorialEditorEvent.nodesConnected;
       case InteractiveTutorialActionType.runValidation:
         return TutorialEditorEvent.diagramValidated;
       case InteractiveTutorialActionType.viewGeneratedCode:
@@ -294,6 +196,7 @@ class InteractiveTutorialProvider extends ChangeNotifier {
         return TutorialEditorEvent.diagramSaved;
       case InteractiveTutorialActionType.openTemplate:
       case InteractiveTutorialActionType.inspectNode:
+      case InteractiveTutorialActionType.connectNodes:
       case null:
         return null;
     }

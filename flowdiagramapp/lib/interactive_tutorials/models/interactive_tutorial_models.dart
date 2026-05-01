@@ -16,17 +16,6 @@ enum InteractiveTutorialActionType {
   saveDiagram,
 }
 
-enum InteractiveTutorialLockPolicy {
-  none,
-  strict,
-}
-
-enum InteractiveTutorialLevel {
-  basic,
-  intermediate,
-  advanced,
-}
-
 class InteractiveTutorialStep {
   final String id;
   final String title;
@@ -35,9 +24,6 @@ class InteractiveTutorialStep {
   final InteractiveTutorialActionType? requiredAction;
   final String? targetElementId;
   final bool canSkip;
-  final InteractiveTutorialLockPolicy lockPolicy;
-  final List<InteractiveTutorialActionType> allowedActions;
-  final bool requireTargetMatch;
 
   const InteractiveTutorialStep({
     required this.id,
@@ -47,9 +33,6 @@ class InteractiveTutorialStep {
     this.requiredAction,
     this.targetElementId,
     this.canSkip = false,
-    this.lockPolicy = InteractiveTutorialLockPolicy.none,
-    this.allowedActions = const [],
-    this.requireTargetMatch = false,
   });
 }
 
@@ -58,7 +41,6 @@ class InteractiveTutorialDefinition {
   final String title;
   final String summary;
   final String templateName;
-  final InteractiveTutorialLevel level;
   final int estimatedMinutes;
   final bool enabled;
   final List<InteractiveTutorialStep> steps;
@@ -68,24 +50,10 @@ class InteractiveTutorialDefinition {
     required this.title,
     required this.summary,
     required this.templateName,
-    required this.level,
     required this.estimatedMinutes,
     required this.steps,
     this.enabled = true,
   });
-}
-
-extension InteractiveTutorialLevelUi on InteractiveTutorialLevel {
-  String get label {
-    switch (this) {
-      case InteractiveTutorialLevel.basic:
-        return 'Basico';
-      case InteractiveTutorialLevel.intermediate:
-        return 'Intermedio';
-      case InteractiveTutorialLevel.advanced:
-        return 'Avanzado';
-    }
-  }
 }
 
 class InteractiveTutorialProgress {
@@ -127,8 +95,7 @@ class InteractiveTutorialProgress {
     Map<String, String> values,
   ) {
     final rawStep = int.tryParse(values['currentStepIndex'] ?? '0') ?? 0;
-    final rawCompleted =
-        (values['completed'] ?? 'false').toLowerCase() == 'true';
+    final rawCompleted = (values['completed'] ?? 'false').toLowerCase() == 'true';
     final rawUpdatedAt =
         DateTime.tryParse(values['updatedAt'] ?? '') ?? DateTime.now();
 

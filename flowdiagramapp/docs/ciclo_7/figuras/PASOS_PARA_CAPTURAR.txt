@@ -1,0 +1,154 @@
+# 📸 CAPTURAS REQUERIDAS — CICLO 7
+
+## ✅ Paso 1: FIGURA A — Tests del Compilador
+
+**Comando a ejecutar:**
+```bash
+flutter test test/compiler/ -v
+```
+
+**Espera a ver:**
+```
++282: All tests passed!
+```
+
+**Qué capturar:**
+- Las últimas 20 líneas de la salida que muestren el resumen
+- Debe verse claro: `+282: All tests passed!`
+- Incluye el timestamp de ejecución
+
+**Guardar como:** `docs/ciclo_7/figuras/FiguraA_compiler_tests.png`
+
+---
+
+## ✅ Paso 2: FIGURA 1 — Resumen Ciclo 7 (84 tests)
+
+**Comando a ejecutar:**
+```bash
+flutter test test/ciclo7_reports/ 2>&1 | tail -15
+```
+
+**Espera a ver:**
+```
++84: All tests passed!
+```
+
+**Qué capturar:**
+- La salida que muestre los últimos tests ejecutándose
+- La línea final: `+84: All tests passed!`
+
+**Guardar como:** `docs/ciclo_7/figuras/Figura1_ciclo7_resumen.png`
+
+---
+
+## ✅ Paso 3: FIGURA 2 — Desglose por Componente
+
+**Comando a ejecutar:**
+```bash
+flutter test test/ciclo7_reports/ -v
+```
+
+**Espera a ver (ejemplo):**
+```
++01: ...lexical_analyzer_ciclo7_test.dart: LE-01...
++02: ...lexical_analyzer_ciclo7_test.dart: LE-02...
+...
++08: ...syntax_analyzer_ciclo7_test.dart: SN-01...
+...
++84: All tests passed!
+```
+
+**Qué capturar:**
+- Captura durante la ejecución mostrando múltiples tests en progreso
+- Debe verse el nombre del archivo y el test ID (LE-01, SN-01, etc.)
+
+**Guardar como:** `docs/ciclo_7/figuras/Figura2_ciclo7_desglose.png`
+
+---
+
+## 📱 Figuras B-E: Requieren la App FlowCode
+
+Estas figuras requieren que la aplicación FlowCode esté compilada y ejecutándose en el emulador Android o dispositivo.
+
+### FIGURA B: Editor FlowCode con Factorial
+- Dibuja el diagrama del Factorial en FlowCode
+- Captura el editor visual completo
+- Guarda: `docs/ciclo_7/figuras/FiguraB_editor_factorial.png`
+
+### FIGURA C: Código Generado (Factorial)
+- Convierte el diagrama
+- Abre la pestaña "Código" del resultado
+- Captura el código C completo
+- Guarda: `docs/ciclo_7/figuras/FiguraC_codigo_factorial.png`
+
+### FIGURA D: Editor FlowCode con Búsqueda
+- Dibuja el diagrama de búsqueda lineal
+- Captura el editor visual completo
+- Guarda: `docs/ciclo_7/figuras/FiguraD_editor_busqueda.png`
+
+### FIGURA E: Tabla de Símbolos (Primo)
+- Convierte el diagrama del primo
+- Abre la pestaña "Semántico" del resultado
+- Captura la tabla de símbolos
+- Guarda: `docs/ciclo_7/figuras/FiguraE_tabla_simbolos_primo.png`
+
+---
+
+## 💻 Figuras F-G: Compilación con GCC
+
+### FIGURA F: Compilación GCC sin errores
+```bash
+# Primero, crea el archivo factorial.c con el código de Figura C
+gcc factorial.c -o factorial
+```
+
+**Qué capturar:**
+- La terminal mostrando el comando sin mensajes de error
+- Debe estar claro que se ejecutó sin problemas
+
+**Guardar como:** `docs/ciclo_7/figuras/FiguraF_gcc_compilacion.png`
+
+### FIGURA G: Ejecución del ejecutable
+```bash
+.\factorial
+# Ingresa: 5
+```
+
+**Qué capturar:**
+- La salida completa mostrando entrada del usuario y resultado
+- Ejemplo: `"Ingresa: 5"` → `"Factorial: 120"`
+
+**Guardar como:** `docs/ciclo_7/figuras/FiguraG_ejecucion_binario.png`
+
+---
+
+## 📝 Instrucciones de Captura
+
+### En Windows:
+- **Captura rápida:** `Win + Shift + S` → dibuja rectángulo → se copia automáticamente
+- **Guardar:** `Ctrl + V` en Paint o directamente `Ctrl + S`
+
+### En VS Code Terminal:
+- Click derecho en la terminal → "Select All"
+- Click derecho → "Copy"
+- Pega en Paint y guarda como PNG
+
+### En Android Emulator:
+- Usa el botón de captura en el panel lateral del emulador
+- O presiona `Ctrl + S` en el emulador
+
+---
+
+## 📋 Checklist Final
+
+- [ ] Figura A: Tests compilador (282)
+- [ ] Figura 1: Ciclo 7 — resumen final
+- [ ] Figura 2: Ciclo 7 — desglose por componente
+- [ ] Figura B: Editor factorial
+- [ ] Figura C: Código generado factorial
+- [ ] Figura D: Editor búsqueda lineal
+- [ ] Figura E: Tabla de símbolos primo
+- [ ] Figura F: Compilación con GCC
+- [ ] Figura G: Ejecución ejecutable
+
+Todas las imágenes deben ir en: `docs/ciclo_7/figuras/`

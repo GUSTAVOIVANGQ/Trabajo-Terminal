@@ -86,6 +86,7 @@ class FlowDiagramCanvas extends StatefulWidget {
   final Function(DiagramNode, Offset) onNodeDragUpdate;
   final ValueChanged<bool>? onNodeDragEnd;
   final Function(Connection)? onConnectionTap;
+  final Function(DiagramNode, String)? onConnectionPointTap; // Callback para tocar puntos de conexión (nodo, dirección)
   final GlobalKey? canvasKey; // Nuevo parámetro para exportación
 
   const FlowDiagramCanvas({
@@ -103,6 +104,7 @@ class FlowDiagramCanvas extends StatefulWidget {
     required this.onNodeDragUpdate,
     this.onNodeDragEnd,
     this.onConnectionTap,
+    this.onConnectionPointTap,
     this.canvasKey, // Agregar el parámetro
   });
 
@@ -138,12 +140,50 @@ class _FlowDiagramCanvasState extends State<FlowDiagramCanvas>
     super.dispose();
   }
 
+  // Radio visual de los puntos de conexión
+  static const double _connectionPointRadius = 7.0;
+  // Radio de hit-test ampliado para facilitar el toque en móvil
+  static const double _connectionPointHitRadius = 18.0;
+
   Offset _applySnapping(Offset position) {
     final snappedX = (position.dx / FlowDiagramPainter.gridSize).round() *
         FlowDiagramPainter.gridSize;
     final snappedY = (position.dy / FlowDiagramPainter.gridSize).round() *
         FlowDiagramPainter.gridSize;
     return Offset(snappedX, snappedY);
+  }
+
+  /// Detecta si el toque fue sobre uno de los 4 puntos de conexión del nodo seleccionado.
+  /// Retorna la dirección ('top', 'bottom', 'left', 'right') o null si no fue en un punto.
+  String? _findConnectionPointAtPosition(Offset position) {
+    final selectedNode = widget.selectedNode;
+    if (selectedNode == null) return null;
+
+    final localPosition = position - widget.panOffset;
+    final scaledPosition = Offset(
+      localPosition.dx / widget.scale,
+      localPosition.dy / widget.scale,
+    );
+
+    // Los 4 puntos de conexión con su dirección
+    final Map<String, Offset> connectionPoints = {
+      'top': selectedNode.getInputPoint(),
+      'bottom': selectedNode.getOutputPoint(),
+      'left': selectedNode.getLeftPoint(),
+      'right': selectedNode.getRightPoint(),
+    };
+
+    // Ajustar el radio de hit-test según la escala actual
+    final adjustedHitRadius = _connectionPointHitRadius / widget.scale;
+
+    for (final entry in connectionPoints.entries) {
+      final distance = (scaledPosition - entry.value).distance;
+      if (distance <= adjustedHitRadius) {
+        return entry.key;
+      }
+    }
+
+    return null;
   }
 
   DiagramNode? _findNodeAtPosition(Offset position) {
@@ -417,6 +457,15 @@ class _FlowDiagramCanvasState extends State<FlowDiagramCanvas>
       onTap: () {
         // Para seleccionar un nodo o conexión, o deseleccionar si se toca en un espacio vacío
         if (!isLongPressing && dragStart != null && !isDragging) {
+          // Primero verificar si se tocó un punto de conexión del nodo seleccionado
+          final connectionPointDir = _findConnectionPointAtPosition(dragStart!);
+          if (connectionPointDir != null && widget.selectedNode != null) {
+            print('Punto de conexión tocado: $connectionPointDir');
+            widget.onConnectionPointTap?.call(widget.selectedNode!, connectionPointDir);
+            setState(() { isDragging = false; });
+            return;
+          }
+
           // Solo procesamos el tap si no estamos arrastrando
           final node = _findNodeAtPosition(dragStart!);
           print('Tap detectado. Nodo encontrado: ${node?.type}');
@@ -652,6 +701,11 @@ class FlowDiagramPainter extends CustomPainter {
       ..style = PaintingStyle.stroke
       ..strokeWidth = 2.0;
 
+    // ─── Rectángulo azul de selección (overlay) ───
+    if (node == selectedNode) {
+      _drawSelectionOverlay(canvas, node);
+    }
+
     // Dibujar el fondo del nodo con color específico
     canvas.drawPath(path, nodeFillPaintCustom);
 
@@ -701,7 +755,99 @@ class FlowDiagramPainter extends CustomPainter {
     // Dibujar texto del nodo
     _drawNodeText(canvas, node);
 
+    // ─── Puntos de conexión del nodo seleccionado ───
+    if (node == selectedNode) {
+      _drawConnectionPoints(canvas, node);
+    }
+
     canvas.restore();
+  }
+
+  /// Dibuja un rectángulo redondeado azul semi-transparente alrededor del nodo seleccionado
+  void _drawSelectionOverlay(Canvas canvas, DiagramNode node) {
+    const double margin = 8.0;
+    const double borderRadius = 6.0;
+
+    // Color azul de selección basado en el tema
+    final Color selectionColor = isDarkMode
+        ? const Color(0xFF3B82F6) // Azul para modo oscuro
+        : const Color(0xFF2563EB); // Azul para modo claro
+
+    final selectionRect = RRect.fromRectAndRadius(
+      Rect.fromLTWH(
+        -margin,
+        -margin,
+        node.size.width + margin * 2,
+        node.size.height + margin * 2,
+      ),
+      const Radius.circular(borderRadius),
+    );
+
+    // Relleno semi-transparente azul
+    final fillPaint = Paint()
+      ..color = selectionColor.withOpacity(0.10)
+      ..style = PaintingStyle.fill;
+    canvas.drawRRect(selectionRect, fillPaint);
+
+    // Borde azul semi-transparente con patrón de línea discontinua sutil
+    final borderPaint = Paint()
+      ..color = selectionColor.withOpacity(0.50)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.5;
+    canvas.drawRRect(selectionRect, borderPaint);
+  }
+
+  /// Dibuja los 4 puntos de conexión interactivos (top, bottom, left, right)
+  void _drawConnectionPoints(Canvas canvas, DiagramNode node) {
+    const double pointRadius = 7.0;
+    const double outerRingRadius = 10.0;
+
+    // Color azul del tema
+    final Color pointColor = isDarkMode
+        ? const Color(0xFF3B82F6)
+        : const Color(0xFF2563EB);
+
+    // Los 4 puntos de conexión en coordenadas locales del nodo
+    final List<Offset> points = [
+      Offset(node.size.width / 2, 0),           // Top
+      Offset(node.size.width / 2, node.size.height), // Bottom
+      Offset(0, node.size.height / 2),           // Left
+      Offset(node.size.width, node.size.height / 2), // Right
+    ];
+
+    for (final point in points) {
+      // Anillo exterior tenue (amplía área visual de toque)
+      final outerRingPaint = Paint()
+        ..color = pointColor.withOpacity(0.15)
+        ..style = PaintingStyle.fill;
+      canvas.drawCircle(point, outerRingRadius, outerRingPaint);
+
+      // Sombra sutil detrás del punto
+      final shadowPaint = Paint()
+        ..color = Colors.black.withOpacity(0.12)
+        ..style = PaintingStyle.fill
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2.0);
+      canvas.drawCircle(point + const Offset(0.5, 0.5), pointRadius, shadowPaint);
+
+      // Relleno blanco del punto
+      final fillPaint = Paint()
+        ..color = isDarkMode ? const Color(0xFF1E293B) : Colors.white
+        ..style = PaintingStyle.fill;
+      canvas.drawCircle(point, pointRadius, fillPaint);
+
+      // Borde azul del punto
+      final borderPaint = Paint()
+        ..color = pointColor
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2.0;
+      canvas.drawCircle(point, pointRadius, borderPaint);
+
+      // Indicador interno (pequeño círculo azul sólido al centro)
+      final innerDotPaint = Paint()
+        ..color = pointColor.withOpacity(0.4)
+        ..style = PaintingStyle.fill;
+      canvas.drawCircle(point, 3.0, innerDotPaint);
+    }
   }
 
   Color _getNodeColorByType(NodeType type) {

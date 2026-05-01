@@ -26,7 +26,7 @@ class InteractiveTutorialSessionScreen extends StatefulWidget {
 
 class _InteractiveTutorialSessionScreenState
     extends State<InteractiveTutorialSessionScreen> {
-  StreamSubscription<TutorialEditorSignal>? _eventSubscription;
+  StreamSubscription<TutorialEditorEvent>? _eventSubscription;
 
   @override
   void initState() {
@@ -40,9 +40,9 @@ class _InteractiveTutorialSessionScreenState
     super.dispose();
   }
 
-  Future<void> _onEditorEvent(TutorialEditorSignal signal) async {
+  Future<void> _onEditorEvent(TutorialEditorEvent event) async {
     final provider = widget.provider;
-    final advanced = await provider.tryAdvanceForSignal(signal);
+    final advanced = await provider.tryAdvanceForEvent(event);
     if (!advanced || !mounted) {
       return;
     }
@@ -135,22 +135,7 @@ class _InteractiveTutorialHeader extends StatelessWidget {
                 children: [
                   Row(
                     children: [
-                      SizedBox(
-                        width: 34,
-                        height: 34,
-                        child: Stack(
-                          fit: StackFit.expand,
-                          children: [
-                            CircularProgressIndicator(
-                              value: progress,
-                              strokeWidth: 3,
-                            ),
-                            const Center(
-                              child: Icon(Icons.play_lesson, size: 16),
-                            ),
-                          ],
-                        ),
-                      ),
+                      const Icon(Icons.play_lesson),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
@@ -168,16 +153,6 @@ class _InteractiveTutorialHeader extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 8),
-                  Text(
-                    'Progreso ${(progress * 100).round()}%',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Theme.of(context).colorScheme.onSurface.withValues(
-                            alpha: 0.72,
-                          ),
-                    ),
-                  ),
-                  const SizedBox(height: 4),
                   LinearProgressIndicator(value: progress),
                 ],
               ),
@@ -194,6 +169,31 @@ class _InteractiveTutorialHeader extends StatelessWidget {
 
 class _InteractiveTutorialMissionPanel extends StatelessWidget {
   const _InteractiveTutorialMissionPanel();
+
+  bool _requiresEvent(InteractiveTutorialStep? step) {
+    if (step == null) {
+      return false;
+    }
+
+    if (step.requiredAction == InteractiveTutorialActionType.inspectNode) {
+      return step.targetElementId == 'node_start' ||
+          step.targetElementId == 'node_end';
+    }
+
+    if (step.type == InteractiveTutorialStepType.validation) {
+      return true;
+    }
+
+    if (step.type != InteractiveTutorialStepType.action) {
+      return false;
+    }
+
+    return step.requiredAction == InteractiveTutorialActionType.editNode ||
+        step.requiredAction == InteractiveTutorialActionType.runValidation ||
+        step.requiredAction ==
+            InteractiveTutorialActionType.viewGeneratedCode ||
+        step.requiredAction == InteractiveTutorialActionType.saveDiagram;
+  }
 
   IconData _iconForStepType(InteractiveTutorialStepType type) {
     switch (type) {
@@ -245,73 +245,6 @@ class _InteractiveTutorialMissionPanel extends StatelessWidget {
     }
   }
 
-  String _requiredActionLabel(InteractiveTutorialActionType? action) {
-    switch (action) {
-      case InteractiveTutorialActionType.inspectNode:
-        return 'Inspeccionar nodo objetivo';
-      case InteractiveTutorialActionType.editNode:
-        return 'Editar nodo seleccionado';
-      case InteractiveTutorialActionType.connectNodes:
-        return 'Conectar nodos';
-      case InteractiveTutorialActionType.runValidation:
-        return 'Ejecutar validacion';
-      case InteractiveTutorialActionType.viewGeneratedCode:
-        return 'Generar y revisar C';
-      case InteractiveTutorialActionType.saveDiagram:
-        return 'Guardar diagrama';
-      case InteractiveTutorialActionType.openTemplate:
-      case null:
-        return 'Navegacion guiada';
-    }
-  }
-
-  Widget _buildStepTrack(
-    BuildContext context,
-    InteractiveTutorialDefinition tutorial,
-    int currentStepIndex,
-  ) {
-    final colorScheme = Theme.of(context).colorScheme;
-    return Wrap(
-      spacing: 6,
-      runSpacing: 6,
-      children: List.generate(tutorial.steps.length, (index) {
-        final isCurrent = index == currentStepIndex;
-        final isCompleted = index < currentStepIndex;
-
-        final backgroundColor = isCurrent
-            ? colorScheme.primaryContainer
-            : isCompleted
-                ? colorScheme.secondaryContainer
-                : colorScheme.surfaceContainerHighest;
-
-        final foregroundColor = isCurrent
-            ? colorScheme.onPrimaryContainer
-            : isCompleted
-                ? colorScheme.onSecondaryContainer
-                : colorScheme.onSurfaceVariant;
-
-        return Container(
-          width: 30,
-          height: 30,
-          decoration: BoxDecoration(
-            color: backgroundColor,
-            borderRadius: BorderRadius.circular(10),
-          ),
-          alignment: Alignment.center,
-          child: isCompleted
-              ? Icon(Icons.check, size: 16, color: foregroundColor)
-              : Text(
-                  '${index + 1}',
-                  style: TextStyle(
-                    fontWeight: FontWeight.w700,
-                    color: foregroundColor,
-                  ),
-                ),
-        );
-      }),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Consumer<InteractiveTutorialProvider>(
@@ -323,11 +256,9 @@ class _InteractiveTutorialMissionPanel extends StatelessWidget {
           return const SizedBox.shrink();
         }
 
-        final waitingEvent = provider.isCurrentStepEventDriven;
-        final strictControl = provider.isCurrentStepStrictControl;
+        final waitingEvent = _requiresEvent(step);
         final isLastStep =
             provider.currentStepIndex == tutorial.steps.length - 1;
-        final actionLabel = _requiredActionLabel(step.requiredAction);
 
         return Container(
           width: 760,
@@ -381,39 +312,6 @@ class _InteractiveTutorialMissionPanel extends StatelessWidget {
                     style: const TextStyle(height: 1.4),
                   ),
                   const SizedBox(height: 10),
-                  _buildStepTrack(
-                    context,
-                    tutorial,
-                    provider.currentStepIndex,
-                  ),
-                  const SizedBox(height: 10),
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 8,
-                    ),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(10),
-                      color: Theme.of(context)
-                          .colorScheme
-                          .surfaceContainerHighest
-                          .withValues(alpha: 0.55),
-                    ),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.flag_outlined, size: 16),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            'Accion esperada: $actionLabel',
-                            style: const TextStyle(fontSize: 12),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 10),
                   Container(
                     width: double.infinity,
                     padding: const EdgeInsets.symmetric(
@@ -433,32 +331,6 @@ class _InteractiveTutorialMissionPanel extends StatelessWidget {
                       style: const TextStyle(fontSize: 12),
                     ),
                   ),
-                  if (strictControl)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 8),
-                      child: Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 8,
-                        ),
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(10),
-                          color: Theme.of(context)
-                              .colorScheme
-                              .primaryContainer
-                              .withValues(alpha: 0.44),
-                        ),
-                        child: Text(
-                          'Control estricto activo: solo la accion requerida habilita el avance.',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Theme.of(context).colorScheme.primary,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                    ),
                   const SizedBox(height: 10),
                   Row(
                     children: [
