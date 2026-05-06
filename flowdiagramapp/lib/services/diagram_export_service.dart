@@ -102,8 +102,8 @@ class DiagramExportService {
   }) async {
     try {
       if (nodes.isEmpty) {
-        throw Exception('No hay nodos para exportar');
-      }
+      throw Exception('No hay nodos para exportar');
+    }
 
       // Solicitar permisos de almacenamiento
       bool hasPermission = await _requestStoragePermission();

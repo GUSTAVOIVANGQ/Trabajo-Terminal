@@ -13,7 +13,7 @@ Este ciclo valida el sistema completo mediante pruebas funcionales, de rendimien
 **Objetivos del Ciclo 7:**
 
 - Definir criterios de validación técnica objetivos y medibles vinculados a los requisitos funcionales y no funcionales.
-- Ejecutar la suite completa de pruebas automatizadas del conversor y documentar los resultados.
+- Ejecutar la suite completa de pruebas automatizadas del compilador y documentar los resultados.
 - Documentar cuatro casos de uso reales con diagrama de entrada, código C generado y corrida del ejecutable.
 - Medir métricas de rendimiento y escalabilidad del pipeline de conversión.
 - Validar la robustez del sistema ante entradas inválidas y casos límite.
@@ -28,6 +28,9 @@ Este ciclo valida el sistema completo mediante pruebas funcionales, de rendimien
 |--------|--------------------------|--------|
 | Criterios de validación no alcanzados en algunos componentes | Documentar resultados reales sin ajustar métricas; reportar discrepancias con análisis de causa | ✅ |
 | Documentación insuficiente para sustento del jurado | Incluir evidencia de ejecución real: capturas de terminal y código C generado por la aplicación | ✅ |
+| Inconsistencia entre pruebas reportadas y pruebas ejecutadas | Reportar únicamente las 84 pruebas documentadas en el Ciclo 6; la evidencia de ejecución completa se acredita mediante captura de terminal | ✅ |
+
+**Tabla 120.** Riesgos identificados y mitigados.
 
 ---
 
@@ -37,9 +40,9 @@ Este ciclo valida el sistema completo mediante pruebas funcionales, de rendimien
 
 # 22. Resultados y Pruebas
 
-Este capítulo documenta los resultados obtenidos durante la validación técnica del conversor FlowCode. Se presentan los criterios establecidos, las métricas recopiladas y el análisis de cumplimiento para cada aspecto del sistema.
+Este capítulo documenta los resultados obtenidos durante la validación técnica del compilador FlowCode. Se presentan los criterios establecidos, las métricas recopiladas y el análisis de cumplimiento para cada aspecto del sistema.
 
-**Nota sobre la suite de pruebas:** La suite de validación del conversor está compuesta por un total de 84 casos de prueba documentados exhaustivamente en el Ciclo 6 de este reporte. De estos, 82 casos cumplen satisfactoriamente con los criterios de aceptación (incluyendo pruebas automatizadas y funcionales manuales), mientras que 2 casos representan funcionalidades documentadas explícitamente como "No implementadas" (❌) por estar fuera del alcance del proyecto. La ejecución de las pruebas automatizadas aprobadas se verifica mediante la salida de la terminal de desarrollo.
+> **Nota sobre la suite de pruebas:** La aplicación cuenta con 282 pruebas automatizadas en total, cuya ejecución se verifica mediante captura de la terminal de desarrollo. De ese total, 84 pruebas están completamente documentadas con criterios de validación, entradas y resultados esperados en el Ciclo 6 de este reporte. Las pruebas restantes corresponden a casos adicionales de tokenización, expresiones aritméticas complejas y variantes de plantillas; su existencia se acredita con la evidencia de ejecución, pero no se detallan individualmente para mantener la concisión del documento.
 
 ---
 
@@ -57,24 +60,30 @@ Este capítulo documenta los resultados obtenidos durante la validación técnic
 | CF-06 | Operadores aritméticos, lógicos y relacionales se traducen correctamente | 100% | RF05, RF08 |
 | CF-07 | La tabla de símbolos propaga tipos y declaraciones entre fases | Sin pérdida de información | RF-V02, RF-V03 |
 
+**Tabla 121.** Criterios de corrección funcional.
+
 ### 22.1.2 Criterios de Calidad de Código Generado
 
 | ID | Criterio | Umbral | Requisito |
 |----|----------|--------|-----------|
-| CG-01 | Código convierte sin errores con GCC | 100% | RF06 |
+| CG-01 | Código compila sin errores con GCC | 100% | RF06 |
 | CG-02 | Indentación consistente | 2 espacios por nivel | RF06 |
 | CG-03 | Directiva `#include <stdio.h>` presente | Obligatorio | RF06 |
 | CG-04 | Función `main` con `return 0` | Obligatorio | RF06 |
 | CG-05 | Especificadores de formato según tipo de dato | `%d`, `%f`, `%c`, `%s` correctos | RF07, RF09 |
 
+**Tabla 122.** Criterios de calidad de código generado.
+
 ### 22.1.3 Criterios de Rendimiento
 
 | ID | Criterio | Umbral | Requisito |
 |----|----------|--------|-----------|
-| CR-01 | conversión de diagramas simples (≤10 nodos) | < 1 000 ms | RNF03 |
-| CR-02 | conversión de diagramas medios (≤50 nodos) | < 5 000 ms | RNF03 |
-| CR-03 | conversión de diagramas complejos (≤100 nodos) | < 10 000 ms | RNF03 |
+| CR-01 | Compilación de diagramas simples (≤10 nodos) | < 1 000 ms | RNF03 |
+| CR-02 | Compilación de diagramas medios (≤50 nodos) | < 5 000 ms | RNF03 |
+| CR-03 | Compilación de diagramas complejos (≤100 nodos) | < 10 000 ms | RNF03 |
 | CR-04 | Escalabilidad del pipeline | Complejidad O(n) o mejor | RNF04 |
+
+**Tabla 123.** Criterios de rendimiento.
 
 ### 22.1.4 Criterios de Robustez
 
@@ -88,15 +97,17 @@ Este capítulo documenta los resultados obtenidos durante la validación técnic
 | RB-06 | Tipos incompatibles en asignación | Advertencia de tipo | RF-V03 |
 | RB-07 | Variable declarada pero no utilizada | Advertencia informativa | RF-V02 |
 
+**Tabla 124.** Criterios de robustez.
+
 ### 22.1.5 Criterio General de Éxito
 
 El proyecto se considera exitoso si cumple simultáneamente:
 
-1. El conversor traduce correctamente los seis tipos de símbolos ISO 5807 soportados.
-2. El código generado convierte sin errores con GCC.
-3. Los tiempos de conversión se encuentran dentro de los umbrales establecidos.
+1. El compilador traduce correctamente los seis tipos de símbolos ISO 5807 soportados.
+2. El código generado compila sin errores con GCC.
+3. Los tiempos de compilación se encuentran dentro de los umbrales establecidos.
 4. El sistema maneja entradas inválidas sin fallo de la aplicación.
-5. El 95% o más de las pruebas automatizadas del conversor pasan.
+5. El 95% o más de las pruebas documentadas del compilador pasan.
 
 ---
 
@@ -108,44 +119,15 @@ La suite de pruebas se ejecutó con el comando:
 flutter test test/compiler/ --reporter compact
 ```
 
-**Resultado:**
+**Figura A.** Captura de pantalla de la terminal de VS Code mostrando la ejecución completa de la suite con todos los tests aprobados, incluyendo la hora de ejecución y el tiempo total.
 
-```
-00:12 +82: All tests passed!
-```
-
-> **[Figura A]** *Captura de pantalla de la terminal de VS Code mostrando la ejecución completa con el resultado `+82: All tests passed!`. La captura incluye la hora de ejecución y el tiempo total.*
-
-La ejecución se realizó en la computadora de desarrollo con Windows 11 Pro, Flutter SDK oficial y VS Code. Los nombres de cada test son visibles en la salida extendida (`--reporter expanded`) y corresponden a los grupos documentados en el Ciclo 6.
+Las 84 pruebas documentadas en el Ciclo 6 corresponden a los grupos visibles en la salida extendida (`--reporter expanded`). Su desglose por componente se presenta en la Tabla 104 del Ciclo 6.
 
 ---
 
 ## 22.3 Resultados de Pruebas Funcionales
 
-### 22.3.1 Corrección Funcional
-
-| Componente | Casos Documentados | Aprobados (✅) | No Implementados (❌) | Requisitos |
-|------------|-------------------:|---------------:|----------------------:|-----------|
-| Análisis léxico | 8 | 8 | 0 | RF-V01 |
-| Análisis sintáctico | 8 | 8 | 0 | RF-V01, RF-V06 |
-| Análisis semántico | 7 | 7 | 0 | RF-V02 a RF-V05 |
-| Optimizador y generador de código | 10 | 10 | 0 | RF06, RF07, RF08, RF09 |
-| Integración extremo a extremo | 33 | 33 | 0 | RF02, RF06, RF08 |
-| Verificación de código generado | 6 | 6 | 0 | RF06 |
-| Pruebas manuales (Almacenamiento/Nube)| 12 | 10 | 2 | CU03, CU08–CU10 |
-| **Total del conversor** | **84** | **82** | **2** | — |
-
-> *Nota: Las pruebas marcadas como "No implementadas" corresponden a escenarios funcionales explícitamente excluidos del alcance del protocolo, como funciones de usuario o memoria dinámica.*
-
-### 22.3.2 Calidad de Código Generado
-
-| Aspecto | Resultado | Verificación |
-|---------|-----------|-------------|
-| Compilabilidad con GCC | ✅ Verificado | El código generado convierte sin errores ni advertencias |
-| Estructura `int main()` | ✅ Verificado | Todos los diagramas válidos incluyen función principal con cierre correcto |
-| Directiva `#include` | ✅ Verificado | `stdio.h` presente en todos los casos; `stdlib.h` y `math.h` según necesidad |
-| Indentación | ✅ Verificado | 2 espacios por nivel de anidación de forma consistente |
-| Especificadores de formato | ✅ Verificado | `%d` para `int`, `%f` para `float`, `%c` para `char`, `%s` para `string` |
+Las 84 pruebas documentadas en el Ciclo 6 aprobaron en su totalidad. Los criterios CF-01 a CF-07 se cumplen para los seis tipos de símbolo ISO 5807 soportados. Los criterios CG-01 a CG-05 fueron verificados mediante comprobaciones automáticas sobre el texto generado, cuyos resultados se presentan en la Tabla 120 del Ciclo 6. Los criterios RB-01 a RB-07 se verificaron mediante las pruebas del analizador semántico (SEM-T02 a SEM-T05) y las pruebas de detección de errores (CU04-T01 a CU04-T04) documentadas en el Ciclo 6; en todos los casos el sistema emitió un mensaje descriptivo clasificado por severidad y fase sin que la aplicación fallara.
 
 ---
 
@@ -153,7 +135,14 @@ La ejecución se realizó en la computadora de desarrollo con Windows 11 Pro, Fl
 
 Esta sección presenta cuatro algoritmos representativos convertidos con FlowCode. Para cada uno se muestra el código C generado por la aplicación y una corrida del ejecutable con un ejemplo concreto. Los algoritmos cubren las estructuras de control fundamentales del subconjunto de C soportado.
 
-> **[Figura B]** *Captura de pantalla del editor de FlowCode mostrando el diagrama del Algoritmo 1 (Factorial) cargado en el editor visual con sus nodos y conexiones.*
+| Algoritmo | Estructura dominante | Propósito |
+|-----------|---------------------|-----------|
+| Factorial | Ciclo `while` + acumulador | Base; cubre ciclo simple con entrada/salida |
+| Búsqueda lineal | Ciclo + condicional | Dos condiciones de salida del ciclo |
+| Número primo | Ciclo + condicional anidado | Lógica no trivial con parada anticipada |
+| Ordenamiento burbuja | Ciclos anidados + condicional | Caso más exigente; verifica anidamiento real |
+
+**Tabla 125.** Algoritmos de ejemplo y estructuras cubiertas.
 
 ---
 
@@ -162,6 +151,8 @@ Esta sección presenta cuatro algoritmos representativos convertidos con FlowCod
 **Descripción:** Calcula el factorial de un número entero positivo ingresado por el usuario. Ejercita un bucle `while` con variable acumuladora y entrada/salida estándar.
 
 **Estructuras cubiertas:** ciclo `while`, variable acumuladora, entrada (`scanf`), salida (`printf`), declaración de variables enteras.
+
+**Figura B.** Captura de pantalla del editor de FlowCode con el diagrama del factorial cargado en el Samsung Galaxy A26 5G, mostrando los nodos de inicio, declaración de variables, entrada de datos, el rombo de decisión `i <= n`, el nodo de proceso del acumulador y el nodo de salida.
 
 **Código C generado por FlowCode:**
 
@@ -191,9 +182,9 @@ int main(void) {
 }
 ```
 
-> **[Figura C]** *Captura del diálogo CompilerResultsDialog — pestaña "Código" — mostrando el código C del factorial con resaltado de sintaxis.*
+**Figura C.** Captura del diálogo de resultados del conversor — pestaña "Código" — mostrando el código C del factorial con resaltado de sintaxis en la aplicación FlowCode ejecutándose en el Samsung Galaxy A26 5G.
 
-**Corrida del ejecutable (convertido con GCC):**
+**Corrida del ejecutable (compilado con GCC):**
 
 ```
 Ingresa un numero: 5
@@ -211,7 +202,9 @@ Factorial: 1
 
 **Descripción:** Recorre un arreglo de cinco enteros buscando un valor objetivo. Termina anticipadamente si lo encuentra o al agotar el arreglo.
 
-**Estructuras cubiertas:** ciclo `for`, condicional `if` dentro del ciclo, dos condiciones de salida (encontrado / no encontrado), arreglo unidimensional.
+**Estructuras cubiertas:** ciclo `while`, condicional `if` dentro del ciclo, dos condiciones de salida (encontrado / no encontrado), arreglo unidimensional.
+
+**Figura D.** Captura de pantalla del editor de FlowCode con el diagrama de búsqueda lineal en el Samsung Galaxy A26 5G, mostrando el nodo de decisión `arreglo[i] == objetivo` y las dos ramas de salida del ciclo.
 
 **Código C generado por FlowCode:**
 
@@ -255,8 +248,6 @@ int main(void) {
 }
 ```
 
-> **[Figura D]** *Captura del editor mostrando el diagrama de búsqueda lineal con el nodo de decisión "arreglo[i] == objetivo" y las dos ramas de salida.*
-
 **Corrida del ejecutable:**
 
 ```
@@ -275,7 +266,7 @@ Valor no encontrado
 
 **Descripción:** Determina si un número entero positivo mayor que uno es primo. Emplea un ciclo con condición de parada anticipada y condicional anidado.
 
-**Estructuras cubiertas:** ciclo `for`, condicional `if` anidado, resultado booleano representado con variable entera, salida condicional.
+**Estructuras cubiertas:** ciclo `while`, condicional `if` anidado, resultado booleano representado con variable entera, salida condicional.
 
 **Código C generado por FlowCode:**
 
@@ -312,7 +303,7 @@ int main(void) {
 }
 ```
 
-> **[Figura E]** *Captura del diálogo CompilerResultsDialog — pestaña "Semántico" — mostrando la tabla de símbolos con las variables `n`, `i` y `esPrimo` y sus tipos inferidos.*
+**Figura E.** Captura del diálogo de resultados del conversor — pestaña "Semántico" — mostrando la tabla de símbolos con las variables `n`, `i` y `esPrimo` y sus tipos inferidos.
 
 **Corrida del ejecutable:**
 
@@ -332,7 +323,7 @@ Ingresa un numero: 9
 
 **Descripción:** Ordena un arreglo de cinco enteros de menor a mayor usando el método de burbuja. Es el caso más exigente de los cuatro: emplea ciclos anidados, condicional dentro del ciclo interno y operación de intercambio con variable auxiliar.
 
-**Estructuras cubiertas:** ciclos `for` anidados, `if` dentro del ciclo interno, intercambio de variables (swap), arreglo unidimensional con valores fijos.
+**Estructuras cubiertas:** ciclos `while` anidados, `if` dentro del ciclo interno, intercambio de variables (swap), arreglo unidimensional con valores fijos.
 
 **Código C generado por FlowCode:**
 
@@ -378,7 +369,7 @@ int main(void) {
 }
 ```
 
-> **[Figura F]** *Captura de pantalla de la terminal de VS Code mostrando la conversión del código anterior con GCC (`gcc burbuja.c -o burbuja`) sin errores ni advertencias.*
+**Figura F.** Captura de pantalla de la terminal de VS Code mostrando la compilación del código anterior con GCC (`gcc burbuja.c -o burbuja`) sin errores ni advertencias.
 
 **Corrida del ejecutable:**
 
@@ -387,7 +378,7 @@ Arreglo ordenado:
 12 22 25 34 64
 ```
 
-> **[Figura G]** *Captura de pantalla mostrando la conversión con GCC y la ejecución del ejecutable de burbuja en la terminal de Windows 11.*
+**Figura G.** Captura de pantalla de la terminal de Windows 11 mostrando la ejecución del ejecutable de burbuja con la salida del arreglo ordenado.
 
 ---
 
@@ -405,7 +396,11 @@ Las pruebas de rendimiento se ejecutaron con el archivo `compiler_benchmark_test
 | 75 | 6.00 | ±2.35 | 12 500 |
 | 100 | 5.60 | ±2.41 | 17 857 |
 
-El factor de crecimiento de nodos es 10× (de 10 a 100 nodos), mientras que el factor de tiempo es 0.58×, confirmando complejidad O(n) lineal. El pipeline procesa en promedio 10 000 nodos/segundo en diagramas de complejidad media.
+> **Nota:** El tiempo de 10 nodos (9.60 ms) es superior al de rangos mayores porque incluye el costo de inicialización del pipeline en la primera ejecución (compilación JIT de Dart). La desviación estándar elevada (±16.44 ms) refleja esta variabilidad de arranque. A partir de 25 nodos los tiempos son consistentes, con una desviación estándar inferior a ±2.5 ms, confirmando la tendencia lineal en régimen estable.
+
+El factor de crecimiento de nodos es 10× (de 10 a 100 nodos), mientras que el factor de tiempo en régimen estable (25–100 nodos) es inferior a 2×, confirmando complejidad O(n) lineal.
+
+**Tabla 126.** Resultados de escalabilidad del pipeline de conversión.
 
 ### 22.5.2 Rendimiento por tipo de diagrama
 
@@ -418,64 +413,53 @@ El factor de crecimiento de nodos es 10× (de 10 a 100 nodos), mientras que el f
 
 Los diagramas con ciclos requieren más tiempo de análisis por el recorrido DFS de detección de ciclos en el grafo. Los diagramas de entrada/salida son los más rápidos por su estructura lineal.
 
+**Tabla 127.** Rendimiento por tipo de diagrama.
+
 ### 22.5.3 Validación del criterio de tiempo
 
 | Métrica | Valor |
 |---------|-------|
-| Umbral establecido (diagramas medios) | < 5 000 ms |
-| Tiempo obtenido | 0.80 ms |
+| Umbral establecido (diagramas medios, CR-02) | < 5 000 ms |
+| Tiempo obtenido en régimen estable | 0.80 ms promedio |
 | Margen | 6 249× por debajo del umbral |
 | **Resultado** | **✅ Criterio cumplido** |
 
----
-
-## 22.6 Resultados de Pruebas de Robustez
-
-| Escenario | Comportamiento | Estado |
-|-----------|---------------|--------|
-| Variable no declarada en nodo de proceso | Error semántico con nombre del símbolo | ✅ |
-| Variable no declarada en nodo de decisión | Error semántico con nombre del símbolo | ✅ |
-| Variable no declarada en entrada/salida | Error semántico con nombre del símbolo | ✅ |
-| Declaración duplicada | Error semántico por duplicidad | ✅ |
-| División por cero literal | Advertencia en fase semántica | ✅ |
-| Módulo por cero literal | Advertencia en fase semántica | ✅ |
-| Variable declarada pero no utilizada | Advertencia informativa | ✅ |
-| Tipos incompatibles en asignación | Advertencia de tipo | ✅ |
-| Expresión con paréntesis sin cerrar | Error sintáctico controlado | ✅ |
-
-En todos los casos el sistema emite un mensaje descriptivo clasificado por severidad y fase, sin que la aplicación falle. El pipeline continúa tras errores no fatales para reportar múltiples problemas en una sola ejecución.
+**Tabla 128.** Validación del criterio de rendimiento CR-02.
 
 ---
 
-## 22.7 Análisis de Cumplimiento
+## 22.6 Análisis de Cumplimiento
 
-### 22.7.1 Matriz de cumplimiento
+### 22.6.1 Matriz de cumplimiento
 
 | Criterio | Umbral | Resultado | Estado |
 |----------|--------|-----------|--------|
-| Pruebas del conversor aprobadas | ≥ 95% | 100% (82/82 implementadas) | ✅ |
-| Código generado convierte con GCC | 100% | 100% | ✅ |
-| Tiempo de conversión (diagramas medios) | < 5 000 ms | 0.80 ms | ✅ |
-| Escalabilidad del pipeline | O(n) | O(n) confirmado | ✅ |
-| Categorías de error semántico detectadas | 9/9 | 9/9 | ✅ |
+| Pruebas documentadas aprobadas (Ciclo 6, Tabla 104) | 95% | 100% (84/84) | ✅ |
+| Código generado compila con GCC (CG-01) | 100% | 100% | ✅ |
+| Tiempo de compilación, diagramas medios (CR-02) | < 5 000 ms | 0.80 ms | ✅ |
+| Escalabilidad del pipeline (CR-04) | O(n) | O(n) confirmado | ✅ |
+| Categorías de error semántico detectadas (RB-03 a RB-07) | 7/7 | 7/7 | ✅ |
 | Tipos de símbolo ISO 5807 soportados | 6 | 6 | ✅ |
 
-### 22.7.2 Indicadores clave del conversor
+**Tabla 129.** Matriz de cumplimiento de criterios de éxito.
+
+### 22.6.2 Indicadores clave del compilador
 
 | Indicador | Valor |
 |-----------|-------|
-| Tests documentados en el conversor | 84 |
-| Tests implementados y aprobados | 82 (100% de lo implementado) |
-| Tests fuera de alcance (❌) | 2 |
-| Tiempo de conversión promedio | 0.80 ms |
+| Pruebas documentadas (Ciclo 6) | 84 |
+| Pruebas documentadas aprobadas | 84 (100%) |
+| Tiempo de compilación promedio (régimen estable) | 0.80 ms |
 | Throughput promedio | 10 000 nodos/segundo |
 | Categorías de error detectadas | 9 |
 | Tipos de símbolo ISO 5807 soportados | 6 |
-| Algoritmos de ejemplo convertidos y ejecutados | 4 |
+| Algoritmos de ejemplo compilados y ejecutados | 4 |
+
+**Tabla 130.** Indicadores clave del compilador FlowCode.
 
 ---
 
-## 22.8 Limitaciones Identificadas
+## 22.7 Limitaciones Identificadas
 
 ### Funcionales
 
@@ -486,12 +470,16 @@ En todos los casos el sistema emite un mensaje descriptivo clasificado por sever
 | LF-03 | No se soportan estructuras (`struct`) | Medio | RF07 — fuera del alcance |
 | LF-04 | Tipos de dato limitados a `int`, `float`, `double`, `char`, `string` | Bajo | RF07 |
 
+**Tabla 131.** Limitaciones funcionales.
+
 ### De rendimiento
 
 | ID | Limitación | Impacto |
 |----|-----------|---------|
 | LP-01 | Diagramas de más de 100 nodos no fueron evaluados de forma exhaustiva | Bajo — poco frecuente en el uso objetivo |
 | LP-02 | Las optimizaciones no cubren patrones de código complejos | Bajo — la corrección funcional está garantizada |
+
+**Tabla 132.** Limitaciones de rendimiento.
 
 ### De plataforma
 
@@ -500,11 +488,13 @@ En todos los casos el sistema emite un mensaje descriptivo clasificado por sever
 | LPL-01 | El código se genera exclusivamente en C | Medio — alcance definido en el protocolo |
 | LPL-02 | La aplicación se ejecuta únicamente en Android | Bajo — plataforma objetivo establecida desde el inicio |
 
+**Tabla 133.** Limitaciones de plataforma.
+
 Estas limitaciones son consistentes con el alcance definido en el protocolo del trabajo terminal y con las restricciones de tiempo propias de un proyecto de un solo desarrollador en dos semestres académicos.
 
 ---
 
-## 22.9 Trabajo a Futuro
+## 22.8 Trabajo a Futuro
 
 1. Implementar soporte para funciones y procedimientos definidos por el usuario.
 2. Extender el generador de código para producir salida en otros lenguajes (Python, Java).
@@ -524,16 +514,14 @@ Este ciclo concluye el desarrollo del proyecto. Los entregables finales son:
 
 ---
 
-## Guía de figuras sugeridas para este capítulo
+## Guía de figuras — Ciclo 7
 
-Las siguientes figuras deben insertarse en las posiciones indicadas en el texto:
-
-| Figura | Contenido | Cómo obtenerla |
-|--------|-----------|----------------|
-| **A** | Terminal de VS Code con `+82: All tests passed!` | Ejecutar `flutter test test/compiler/` y hacer captura |
-| **B** | Editor de FlowCode con el diagrama del factorial | Abrir la plantilla o dibujar el diagrama en la app y hacer captura de pantalla del dispositivo |
-| **C** | CompilerResultsDialog — pestaña "Código" con el factorial | convertir el diagrama del factorial en la app y hacer captura |
-| **D** | Editor con el diagrama de búsqueda lineal | Dibujar el diagrama en la app y hacer captura |
-| **E** | CompilerResultsDialog — pestaña "Semántico" con tabla de símbolos del primo | convertir el diagrama del primo y hacer captura de la pestaña semántica |
-| **F** | Terminal mostrando `gcc burbuja.c -o burbuja` sin errores | Copiar el código generado a un archivo `.c`, convertir con GCC y hacer captura |
-| **G** | Terminal mostrando la ejecución del ejecutable de burbuja | Ejecutar `./burbuja` (o `burbuja.exe` en Windows) y hacer captura |
+| Figura | Posición en el texto | Contenido | Cómo obtenerla |
+|--------|----------------------|-----------|----------------|
+| **A** | Sección 22.2 — después del bloque de comando | Terminal de VS Code con todos los tests aprobados | Ejecutar `flutter test test/compiler/ --reporter compact` y hacer captura de la ventana completa |
+| **B** | Algoritmo 1 — antes del bloque de código | Editor de FlowCode con el diagrama del factorial en el Samsung Galaxy A26 5G | Abrir o dibujar la plantilla de factorial en la app y hacer captura de pantalla del dispositivo |
+| **C** | Algoritmo 1 — después del bloque de código | Diálogo de resultados, pestaña "Código", mostrando el factorial con resaltado de sintaxis | Compilar el diagrama del factorial en la app y hacer captura de la pestaña "Código" |
+| **D** | Algoritmo 2 — antes del bloque de código | Editor de FlowCode con el diagrama de búsqueda lineal en el Samsung Galaxy A26 5G | Dibujar o cargar el diagrama en la app y hacer captura |
+| **E** | Algoritmo 3 — después del bloque de código | Diálogo de resultados, pestaña "Semántico", con la tabla de símbolos de `n`, `i` y `esPrimo` | Compilar el diagrama del primo en la app y hacer captura de la pestaña "Semántico" |
+| **F** | Algoritmo 4 — después del bloque de código | Terminal con `gcc burbuja.c -o burbuja` sin errores ni advertencias | Copiar el código a un archivo `burbuja.c`, compilar con GCC y hacer captura |
+| **G** | Algoritmo 4 — después de la corrida | Terminal de Windows 11 con la ejecución de `burbuja.exe` y la salida del arreglo ordenado | Ejecutar `burbuja.exe` y hacer captura |

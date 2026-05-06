@@ -12,51 +12,31 @@ class ProcessNodeDialog extends StatefulWidget {
 }
 
 class _ProcessNodeDialogState extends State<ProcessNodeDialog> {
-  String selectedOperationType = 'assignment'; // Por defecto asignación
+  final _formKey = GlobalKey<FormState>();
+
+  String selectedOperationType = 'assignment';
   late TextEditingController _variable1Controller;
   late TextEditingController _variable2Controller;
   late TextEditingController _resultController;
   late TextEditingController _valueController;
   late TextEditingController _customTextController;
-  late TextEditingController _variableNameController;
   String selectedOperator = '+';
-  String selectedDataType = 'int';
   bool useCustomText = false;
 
-  // Tipos de operaciones disponibles (proceso + variable)
   final Map<String, String> operationTypes = {
-    // Operaciones de PROCESO
-    'assignment': '📝 Asignación Simple',
-    'arithmetic': '🔢 Operación Matemática',
-    'increment': '➕ Incrementar Variable',
-    'decrement': '➖ Decrementar Variable',
-
-    // Operaciones de VARIABLE (declaración)
-    'declaration': '🏷️ Declarar Variable',
-    'initialization': '🎯 Declarar e Inicializar',
-    'constant': '🔒 Declarar Constante',
-    'array': '📊 Declarar Arreglo',
-
+    'assignment': '📝 Asignación Simple (x = 10)',
+    'arithmetic': '🔢 Operación Matemática (a = b + c)',
+    'increment': '➕ Incrementar en 1 (x++)',
+    'decrement': '➖ Decrementar en 1 (x--)',
     'custom': '✏️ Escribir Manualmente',
   };
 
-  // Operadores matemáticos disponibles
   final Map<String, String> operators = {
     '+': 'Sumar (+)',
     '-': 'Restar (-)',
     '*': 'Multiplicar (×)',
     '/': 'Dividir (÷)',
     '%': 'Módulo (%)',
-  };
-
-  // Tipos de datos disponibles en C
-  final Map<String, String> dataTypes = {
-    'int': 'Entero (int)',
-    'float': 'Decimal (float)',
-    'double': 'Decimal doble (double)',
-    'char': 'Carácter (char)',
-    'bool': 'Booleano (bool)',
-    'string': 'Cadena de texto (char[])',
   };
 
   @override
@@ -67,9 +47,7 @@ class _ProcessNodeDialogState extends State<ProcessNodeDialog> {
     _resultController = TextEditingController();
     _valueController = TextEditingController();
     _customTextController = TextEditingController(text: widget.node.text);
-    _variableNameController = TextEditingController();
 
-    // Intentar interpretar el texto existente
     _parseExistingText();
   }
 
@@ -77,64 +55,9 @@ class _ProcessNodeDialogState extends State<ProcessNodeDialog> {
     String text = widget.node.text.trim();
     if (text.isEmpty) return;
 
-    // Detectar declaración con inicialización
-    RegExp initPattern =
-        RegExp(r'^(int|float|double|char|bool)\s+(\w+)\s*=\s*(.+)$');
-    Match? match = initPattern.firstMatch(text);
-
-    if (match != null) {
-      selectedOperationType = 'initialization';
-      selectedDataType = match.group(1) ?? 'int';
-      _variableNameController.text = match.group(2) ?? '';
-      _valueController.text = match.group(3) ?? '';
-      return;
-    }
-
-    // Detectar declaración simple
-    RegExp declPattern = RegExp(r'^(int|float|double|char|bool)\s+(\w+)$');
-    match = declPattern.firstMatch(text);
-
-    if (match != null) {
-      selectedOperationType = 'declaration';
-      selectedDataType = match.group(1) ?? 'int';
-      _variableNameController.text = match.group(2) ?? '';
-      return;
-    }
-
-    // Detectar constante
-    if (text.contains('const')) {
-      RegExp constPattern =
-          RegExp(r'^const\s+(int|float|double|char|bool)\s+(\w+)\s*=\s*(.+)$');
-      match = constPattern.firstMatch(text);
-
-      if (match != null) {
-        selectedOperationType = 'constant';
-        selectedDataType = match.group(1) ?? 'int';
-        _variableNameController.text = match.group(2) ?? '';
-        _valueController.text = match.group(3) ?? '';
-        return;
-      }
-    }
-
-    // Detectar arreglo
-    if (text.contains('[') && text.contains(']')) {
-      RegExp arrayPattern =
-          RegExp(r'^(int|float|double|char|bool)\s+(\w+)\[(\d+)\]$');
-      match = arrayPattern.firstMatch(text);
-
-      if (match != null) {
-        selectedOperationType = 'array';
-        selectedDataType = match.group(1) ?? 'int';
-        _variableNameController.text = match.group(2) ?? '';
-        _valueController.text = match.group(3) ?? '';
-        return;
-      }
-    }
-
-    // Detectar si es una operación aritmética simple
-    RegExp arithmeticPattern =
-        RegExp(r'^(\w+)\s*=\s*(\w+)\s*([+\-*/])\s*(\w+)$');
-    match = arithmeticPattern.firstMatch(text);
+    // Detectar operación aritmética
+    RegExp arithmeticPattern = RegExp(r'^(\w+)\s*=\s*(\w+)\s*([+\-*/%])\s*(\w+)$');
+    Match? match = arithmeticPattern.firstMatch(text);
 
     if (match != null) {
       selectedOperationType = 'arithmetic';
@@ -145,33 +68,32 @@ class _ProcessNodeDialogState extends State<ProcessNodeDialog> {
       return;
     }
 
-    // Detectar asignación simple
-    RegExp assignmentPattern = RegExp(r'^(\w+)\s*=\s*(.+)$');
-    match = assignmentPattern.firstMatch(text);
+    // Detectar asignación simple (ignorar declaraciones de variables manejadas en VariableNodeDialog)
+    if (!text.startsWith('int ') && !text.startsWith('float ') && !text.startsWith('char ') && !text.startsWith('bool ') && !text.startsWith('const ') && !text.startsWith('double ')) {
+      RegExp assignmentPattern = RegExp(r'^(\w+)\s*=\s*(.+)$');
+      match = assignmentPattern.firstMatch(text);
 
-    if (match != null) {
-      selectedOperationType = 'assignment';
-      _resultController.text = match.group(1) ?? '';
-      _valueController.text = match.group(2) ?? '';
-      return;
+      if (match != null) {
+        selectedOperationType = 'assignment';
+        _resultController.text = match.group(1) ?? '';
+        _valueController.text = match.group(2) ?? '';
+        return;
+      }
+
+      // Detectar incremento/decremento
+      if (text.endsWith('++') || text.contains('=') && text.contains('+ 1') && text.contains(text.split('=')[0].trim())) {
+        selectedOperationType = 'increment';
+        _resultController.text = text.replaceAll(RegExp(r'[+=\s1]'), '');
+        return;
+      }
+
+      if (text.endsWith('--') || text.contains('=') && text.contains('- 1') && text.contains(text.split('=')[0].trim())) {
+        selectedOperationType = 'decrement';
+        _resultController.text = text.replaceAll(RegExp(r'[-=\s1]'), '');
+        return;
+      }
     }
 
-    // Detectar incremento/decremento
-    if (text.contains('++') || text.contains('+ 1')) {
-      selectedOperationType = 'increment';
-      String varName = text.replaceAll(RegExp(r'[+=\s1]'), '');
-      _resultController.text = varName;
-      return;
-    }
-
-    if (text.contains('--') || text.contains('- 1')) {
-      selectedOperationType = 'decrement';
-      String varName = text.replaceAll(RegExp(r'[-=\s1]'), '');
-      _resultController.text = varName;
-      return;
-    }
-
-    // Si no coincide con ningún patrón, usar texto personalizado
     selectedOperationType = 'custom';
     useCustomText = true;
   }
@@ -183,23 +105,22 @@ class _ProcessNodeDialogState extends State<ProcessNodeDialog> {
     _resultController.dispose();
     _valueController.dispose();
     _customTextController.dispose();
-    _variableNameController.dispose();
     super.dispose();
   }
 
   String _generateProcessText() {
+    if (useCustomText || selectedOperationType == 'custom') {
+      return _customTextController.text;
+    }
+
     switch (selectedOperationType) {
-      // PROCESO
       case 'assignment':
-        if (_resultController.text.isNotEmpty &&
-            _valueController.text.isNotEmpty) {
+        if (_resultController.text.isNotEmpty && _valueController.text.isNotEmpty) {
           return '${_resultController.text} = ${_valueController.text}';
         }
         break;
       case 'arithmetic':
-        if (_resultController.text.isNotEmpty &&
-            _variable1Controller.text.isNotEmpty &&
-            _variable2Controller.text.isNotEmpty) {
+        if (_resultController.text.isNotEmpty && _variable1Controller.text.isNotEmpty && _variable2Controller.text.isNotEmpty) {
           return '${_resultController.text} = ${_variable1Controller.text} $selectedOperator ${_variable2Controller.text}';
         }
         break;
@@ -213,29 +134,21 @@ class _ProcessNodeDialogState extends State<ProcessNodeDialog> {
           return '${_resultController.text} = ${_resultController.text} - 1';
         }
         break;
-
-      // VARIABLE (declaración)
-      case 'declaration':
-        return '$selectedDataType ${_variableNameController.text}';
-      case 'initialization':
-        return '$selectedDataType ${_variableNameController.text} = ${_valueController.text}';
-      case 'constant':
-        return 'const $selectedDataType ${_variableNameController.text} = ${_valueController.text}';
-      case 'array':
-        if (selectedDataType == 'string') {
-          String size =
-              _valueController.text.isEmpty ? '100' : _valueController.text;
-          return 'char ${_variableNameController.text}[$size]';
-        } else {
-          String size =
-              _valueController.text.isEmpty ? '10' : _valueController.text;
-          return '$selectedDataType ${_variableNameController.text}[$size]';
-        }
-
-      case 'custom':
-        return _customTextController.text;
     }
     return '';
+  }
+
+  String? _validateIdentifier(String? value) {
+    if (value == null || value.trim().isEmpty) return 'Requerido';
+    if (!RegExp(r'^[a-zA-Z_][a-zA-Z0-9_]*$').hasMatch(value)) {
+      return 'Inválido';
+    }
+    return null;
+  }
+
+  String? _validateRequired(String? value) {
+    if (value == null || value.trim().isEmpty) return 'Requerido';
+    return null;
   }
 
   Widget _buildOperationTypeSelector() {
@@ -243,17 +156,14 @@ class _ProcessNodeDialogState extends State<ProcessNodeDialog> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text(
-          'Tipo de operación:',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 16,
-          ),
+          '¿Qué acción realizará este proceso?',
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
         ),
         const SizedBox(height: 8),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
           decoration: BoxDecoration(
-            border: Border.all(color: Colors.grey),
+            border: Border.all(color: Colors.grey.shade400),
             borderRadius: BorderRadius.circular(8),
           ),
           child: DropdownButtonHideUnderline(
@@ -280,30 +190,32 @@ class _ProcessNodeDialogState extends State<ProcessNodeDialog> {
   }
 
   Widget _buildInputFields() {
-    if (useCustomText) {
+    if (useCustomText || selectedOperationType == 'custom') {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            'Escribir proceso personalizado:',
+            'Proceso Personalizado:',
             style: TextStyle(fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 8),
-          TextField(
+          TextFormField(
             controller: _customTextController,
             decoration: const InputDecoration(
-              labelText: 'Proceso',
-              hintText: 'Ej: suma = a + b o int contador = 0',
+              labelText: 'Código del proceso',
+              hintText: 'Ej: x = a + b * c',
               border: OutlineInputBorder(),
+              prefixIcon: Icon(Icons.code),
             ),
             maxLines: 2,
+            onChanged: (v) => setState(() {}),
+            validator: _validateRequired,
           ),
         ],
       );
     }
 
     switch (selectedOperationType) {
-      // PROCESO
       case 'assignment':
         return _buildAssignmentFields();
       case 'arithmetic':
@@ -311,17 +223,6 @@ class _ProcessNodeDialogState extends State<ProcessNodeDialog> {
       case 'increment':
       case 'decrement':
         return _buildIncrementDecrementFields();
-
-      // VARIABLE
-      case 'declaration':
-        return _buildDeclarationFields();
-      case 'initialization':
-        return _buildInitializationFields();
-      case 'constant':
-        return _buildConstantFields();
-      case 'array':
-        return _buildArrayFields();
-
       default:
         return Container();
     }
@@ -331,37 +232,39 @@ class _ProcessNodeDialogState extends State<ProcessNodeDialog> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Asignar valor a variable:',
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
+        const Text('Configurar asignación:', style: TextStyle(fontWeight: FontWeight.bold)),
         const SizedBox(height: 12),
         Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Expanded(
               flex: 2,
-              child: TextField(
+              child: TextFormField(
                 controller: _resultController,
                 decoration: const InputDecoration(
-                  labelText: 'Variable',
-                  hintText: 'nombre',
+                  labelText: 'Destino',
+                  hintText: 'Ej: x',
                   border: OutlineInputBorder(),
                 ),
+                validator: _validateIdentifier,
+                onChanged: (v) => setState(() {}),
               ),
             ),
             const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 8),
-              child: Text('=', style: TextStyle(fontSize: 20)),
+              padding: EdgeInsets.only(top: 15, left: 12, right: 12),
+              child: Text('=', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
             ),
             Expanded(
               flex: 3,
-              child: TextField(
+              child: TextFormField(
                 controller: _valueController,
                 decoration: const InputDecoration(
-                  labelText: 'Valor',
-                  hintText: '10 o edad',
+                  labelText: 'Valor o Expresión',
+                  hintText: 'Ej: 10, y, "Hola"',
                   border: OutlineInputBorder(),
                 ),
+                validator: _validateRequired,
+                onChanged: (v) => setState(() {}),
               ),
             ),
           ],
@@ -374,53 +277,44 @@ class _ProcessNodeDialogState extends State<ProcessNodeDialog> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Operación matemática:',
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
+        const Text('Configurar operación matemática:', style: TextStyle(fontWeight: FontWeight.bold)),
         const SizedBox(height: 12),
+        TextFormField(
+          controller: _resultController,
+          decoration: const InputDecoration(
+            labelText: 'Variable que guardará el resultado',
+            hintText: 'Ej: suma, total',
+            border: OutlineInputBorder(),
+          ),
+          validator: _validateIdentifier,
+          onChanged: (v) => setState(() {}),
+        ),
+        const Padding(
+          padding: EdgeInsets.symmetric(vertical: 8),
+          child: Center(child: Text('=', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold))),
+        ),
         Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Expanded(
-              flex: 2,
-              child: TextField(
-                controller: _resultController,
-                decoration: const InputDecoration(
-                  labelText: 'Resultado',
-                  hintText: 'suma',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-            ),
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 4),
-              child: Text('=', style: TextStyle(fontSize: 20)),
-            ),
-            Expanded(
-              flex: 2,
-              child: TextField(
+              flex: 3,
+              child: TextFormField(
                 controller: _variable1Controller,
                 decoration: const InputDecoration(
-                  labelText: 'Variable 1',
-                  hintText: 'a',
+                  labelText: 'Valor 1',
                   border: OutlineInputBorder(),
                 ),
+                validator: _validateRequired,
+                onChanged: (v) => setState(() {}),
               ),
             ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        Row(
-          children: [
-            const Expanded(flex: 2, child: SizedBox()),
-            const Expanded(flex: 1, child: SizedBox()),
+            const SizedBox(width: 8),
             Expanded(
               flex: 2,
               child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey),
+                  border: Border.all(color: Colors.grey.shade400),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: DropdownButtonHideUnderline(
@@ -442,16 +336,17 @@ class _ProcessNodeDialogState extends State<ProcessNodeDialog> {
                 ),
               ),
             ),
-            const SizedBox(width: 4),
+            const SizedBox(width: 8),
             Expanded(
-              flex: 2,
-              child: TextField(
+              flex: 3,
+              child: TextFormField(
                 controller: _variable2Controller,
                 decoration: const InputDecoration(
-                  labelText: 'Variable 2',
-                  hintText: 'b',
+                  labelText: 'Valor 2',
                   border: OutlineInputBorder(),
                 ),
+                validator: _validateRequired,
+                onChanged: (v) => setState(() {}),
               ),
             ),
           ],
@@ -466,147 +361,21 @@ class _ProcessNodeDialogState extends State<ProcessNodeDialog> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          isIncrement
-              ? 'Incrementar variable en 1:'
-              : 'Decrementar variable en 1:',
+          isIncrement ? 'Variable a incrementar:' : 'Variable a decrementar:',
           style: const TextStyle(fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 12),
-        TextField(
+        TextFormField(
           controller: _resultController,
           decoration: InputDecoration(
             labelText: 'Variable',
-            hintText: 'contador',
+            hintText: 'Ej: contador, i',
             border: const OutlineInputBorder(),
-            suffixText: isIncrement ? '+ 1' : '- 1',
+            suffixText: isIncrement ? '++' : '--',
+            suffixStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
           ),
-        ),
-      ],
-    );
-  }
-
-  // ===== NUEVOS BUILDERS PARA VARIABLE =====
-
-  Widget _buildDeclarationFields() {
-    return Column(
-      children: [
-        _buildDataTypeSelector(),
-        const SizedBox(height: 16),
-        _buildVariableNameField(),
-      ],
-    );
-  }
-
-  Widget _buildInitializationFields() {
-    return Column(
-      children: [
-        _buildDataTypeSelector(),
-        const SizedBox(height: 16),
-        _buildVariableNameField(),
-        const SizedBox(height: 16),
-        TextField(
-          controller: _valueController,
-          decoration: const InputDecoration(
-            labelText: 'Valor Inicial',
-            hintText: 'Ej: 0, 3.14, true',
-            border: OutlineInputBorder(),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildConstantFields() {
-    return Column(
-      children: [
-        _buildDataTypeSelector(),
-        const SizedBox(height: 16),
-        _buildVariableNameField(),
-        const SizedBox(height: 16),
-        TextField(
-          controller: _valueController,
-          decoration: const InputDecoration(
-            labelText: 'Valor de la Constante',
-            hintText: 'Ej: 10, 3.1416',
-            border: OutlineInputBorder(),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildArrayFields() {
-    return Column(
-      children: [
-        _buildDataTypeSelector(),
-        const SizedBox(height: 16),
-        _buildVariableNameField(),
-        const SizedBox(height: 16),
-        TextField(
-          controller: _valueController,
-          decoration: const InputDecoration(
-            labelText: 'Tamaño del arreglo',
-            hintText: 'Ej: 10, 50, 100',
-            border: OutlineInputBorder(),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildDataTypeSelector() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Tipo de Dato',
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 8),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-          decoration: BoxDecoration(
-            border: Border.all(color: Colors.grey),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: DropdownButtonHideUnderline(
-            child: DropdownButton<String>(
-              value: selectedDataType,
-              isExpanded: true,
-              onChanged: (String? value) {
-                setState(() {
-                  selectedDataType = value!;
-                });
-              },
-              items: dataTypes.entries.map((entry) {
-                return DropdownMenuItem<String>(
-                  value: entry.key,
-                  child: Text(entry.value),
-                );
-              }).toList(),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildVariableNameField() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Nombre de la Variable',
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 8),
-        TextField(
-          controller: _variableNameController,
-          decoration: const InputDecoration(
-            labelText: 'Nombre',
-            hintText: 'Ej: contador, suma, edad',
-            border: OutlineInputBorder(),
-          ),
+          validator: _validateIdentifier,
+          onChanged: (v) => setState(() {}),
         ),
       ],
     );
@@ -614,33 +383,29 @@ class _ProcessNodeDialogState extends State<ProcessNodeDialog> {
 
   Widget _buildPreview() {
     String previewText = _generateProcessText();
-    if (previewText.isEmpty) return Container();
 
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.grey[100],
+        color: Colors.grey.shade100,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.grey[300]!),
+        border: Border.all(color: Colors.grey.shade300),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            'Vista previa:',
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 14,
-            ),
+            'Vista Previa del Código:',
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.blueGrey),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 8),
           Text(
-            previewText,
-            style: const TextStyle(
+            previewText.isEmpty ? 'Completa los campos' : '$previewText;',
+            style: TextStyle(
               fontFamily: 'monospace',
-              fontSize: 16,
-              color: Colors.blue,
+              fontSize: 14,
+              color: previewText.isEmpty ? Colors.grey : Colors.black87,
             ),
           ),
         ],
@@ -653,33 +418,33 @@ class _ProcessNodeDialogState extends State<ProcessNodeDialog> {
     return AlertDialog(
       title: const Row(
         children: [
-          Icon(Icons.settings, color: Colors.blue),
+          Icon(Icons.settings_applications, color: Colors.deepOrange),
           SizedBox(width: 8),
           Text('Configurar Proceso'),
         ],
       ),
       content: Container(
-        width: double.maxFinite,
+        width: MediaQuery.of(context).size.width * 0.85,
         constraints: const BoxConstraints(maxHeight: 500),
         child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Un proceso realiza operaciones, cálculos, asignaciones o declaraciones de variables.',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey,
+          child: Form(
+            key: _formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'El proceso modifica el valor de variables ya existentes.',
+                  style: TextStyle(fontSize: 13, color: Colors.grey),
                 ),
-              ),
-              const SizedBox(height: 16),
-              _buildOperationTypeSelector(),
-              const SizedBox(height: 16),
-              _buildInputFields(),
-              const SizedBox(height: 16),
-              _buildPreview(),
-            ],
+                const SizedBox(height: 16),
+                _buildOperationTypeSelector(),
+                const SizedBox(height: 16),
+                _buildInputFields(),
+                const SizedBox(height: 16),
+                _buildPreview(),
+              ],
+            ),
           ),
         ),
       ),
@@ -690,8 +455,10 @@ class _ProcessNodeDialogState extends State<ProcessNodeDialog> {
         ),
         FilledButton(
           onPressed: () {
-            String result = _generateProcessText();
-            Navigator.of(context).pop(NodeDialogResult.simple(result));
+            if (_formKey.currentState!.validate()) {
+              String result = _generateProcessText();
+              Navigator.of(context).pop(NodeDialogResult.simple(result));
+            }
           },
           child: const Text('Guardar'),
         ),

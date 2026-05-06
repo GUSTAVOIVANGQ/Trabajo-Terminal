@@ -16,6 +16,7 @@ import 'login_screen.dart';
 import 'metrics_screen.dart';
 import 'admin_metrics_screen.dart';
 import 'theme_settings_screen.dart';
+import 'package:tutorial_coach_mark/tutorial_coach_mark.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -42,6 +43,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
   bool _crashReportsConsent = false;
   bool _updatingCrashReportsConsent = false;
 
+  final GlobalKey _avatarKey = GlobalKey();
+  final GlobalKey _settingsKey = GlobalKey();
+  final GlobalKey _syncKey = GlobalKey();
+
   @override
   void initState() {
     super.initState();
@@ -49,6 +54,96 @@ class _ProfileScreenState extends State<ProfileScreen> {
     _loadAutoSavePreference();
     _loadTelemetryConsent();
     _loadCrashReportsConsent();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkFirstTimeProfile();
+    });
+  }
+
+  Future<void> _checkFirstTimeProfile() async {
+    final prefs = await SharedPreferences.getInstance();
+    final hasShown = prefs.getBool('tutorial_shown_profile') ?? false;
+    if (!hasShown && mounted) {
+      await prefs.setBool('tutorial_shown_profile', true);
+      _showProfileTour();
+    }
+  }
+
+  void _showProfileTour() {
+    List<TargetFocus> targets = [];
+    
+    targets.add(TargetFocus(
+      identify: "avatar",
+      keyTarget: _avatarKey,
+      shape: ShapeLightFocus.RRect,
+      contents: [
+        TargetContent(
+          align: ContentAlign.bottom,
+          builder: (context, controller) {
+            return const Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text("Personaliza tu perfil", style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
+                SizedBox(height: 10),
+                Text("Aquí puedes ver tu información básica y cambiar tu foto de perfil tocando el ícono de cámara.", style: TextStyle(color: Colors.white, fontSize: 16)),
+              ],
+            );
+          },
+        )
+      ],
+    ));
+
+    targets.add(TargetFocus(
+      identify: "settings",
+      keyTarget: _settingsKey,
+      shape: ShapeLightFocus.RRect,
+      contents: [
+        TargetContent(
+          align: ContentAlign.top,
+          builder: (context, controller) {
+            return const Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text("Configuración de la app", style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
+                SizedBox(height: 10),
+                Text("Ajusta el tema, autoguardado y permisos.", style: TextStyle(color: Colors.white, fontSize: 16)),
+              ],
+            );
+          },
+        )
+      ],
+    ));
+
+    targets.add(TargetFocus(
+      identify: "sync",
+      keyTarget: _syncKey,
+      shape: ShapeLightFocus.RRect,
+      contents: [
+        TargetContent(
+          align: ContentAlign.top,
+          builder: (context, controller) {
+            return const Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text("Sincronización y datos", style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
+                SizedBox(height: 10),
+                Text("Respalda tus diagramas en la nube.", style: TextStyle(color: Colors.white, fontSize: 16)),
+              ],
+            );
+          },
+        )
+      ],
+    ));
+
+    TutorialCoachMark(
+      targets: targets,
+      colorShadow: Theme.of(context).primaryColor,
+      textSkip: "SALTAR",
+      paddingFocus: 10,
+      opacityShadow: 0.8,
+    ).show(context: context);
   }
 
   Future<void> _loadAutoSavePreference() async {
@@ -907,6 +1002,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           children: [
             // Avatar y información básica
             Container(
+              key: _avatarKey,
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
                 color: Theme.of(context).primaryColor.withOpacity(0.1),
@@ -1149,9 +1245,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ],
 
                   // Configuración de tema
-                  _buildInfoCard(
-                    title: 'Configuración de la aplicación',
-                    items: [
+                  Container(
+                    key: _settingsKey,
+                    child: _buildInfoCard(
+                      title: 'Configuración de la aplicación',
+                      items: [
                       ListTile(
                         leading: const Icon(Icons.palette_outlined),
                         title: const Text('Tema'),
@@ -1215,13 +1313,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
                     ],
                   ),
+                ),
 
                   const SizedBox(height: 16),
 
                   // Sección de Sincronización y Gestión de Datos
-                  _buildInfoCard(
-                    title: 'Sincronización y datos',
-                    items: [
+                  Container(
+                    key: _syncKey,
+                    child: _buildInfoCard(
+                      title: 'Sincronización y datos',
+                      items: [
                       // Botón de sincronización
                       ListTile(
                         leading: _isSyncing
@@ -1278,6 +1379,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
                     ],
                   ),
+                ),
 
                   const SizedBox(height: 16),
 

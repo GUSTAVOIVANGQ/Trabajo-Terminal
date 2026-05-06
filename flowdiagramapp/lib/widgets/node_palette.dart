@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/diagram_node.dart';
 import '../themes/app_themes.dart';
 import '../services/theme_service.dart';
+import '../interactive_tutorials/auto_tutorial_script.dart';
 
 /// ISO 5807 compliant Node Palette with all flowchart symbols
 /// organized by categories
@@ -70,13 +71,16 @@ class _NodePaletteState extends State<NodePalette> {
           if (_expandedCategories['basic']!) ...[
             _buildPaletteItem(context, NodeType.terminal, 'Terminal',
                 _getNodeIcon(NodeType.terminal), nodeColors['terminal']!,
-                hasCodeGen: true),
+                hasCodeGen: true,
+                itemKey: EditorTutorialKeys.terminalButton),
             _buildPaletteItem(context, NodeType.process, 'Process',
                 _getNodeIcon(NodeType.process), nodeColors['process']!,
-                hasCodeGen: true),
+                hasCodeGen: true,
+                itemKey: EditorTutorialKeys.processButton),
             _buildPaletteItem(context, NodeType.decision, 'Decision',
                 _getNodeIcon(NodeType.decision), nodeColors['decision']!,
-                hasCodeGen: true),
+                hasCodeGen: true,
+                itemKey: EditorTutorialKeys.decisionButton),
             _buildPaletteItem(
                 context,
                 NodeType.preparation,
@@ -86,7 +90,8 @@ class _NodePaletteState extends State<NodePalette> {
                 hasCodeGen: true),
             _buildPaletteItem(context, NodeType.data, 'Data',
                 _getNodeIcon(NodeType.data), nodeColors['data']!,
-                hasCodeGen: true),
+                hasCodeGen: true,
+                itemKey: EditorTutorialKeys.dataButton),
             _buildPaletteItem(
                 context,
                 NodeType.predefinedProcess,
@@ -383,8 +388,10 @@ class _NodePaletteState extends State<NodePalette> {
     IconData icon,
     Color color, {
     bool hasCodeGen = false,
+    GlobalKey? itemKey,
   }) {
     return Column(
+      key: itemKey,
       mainAxisSize: MainAxisSize.min,
       children: [
         Padding(

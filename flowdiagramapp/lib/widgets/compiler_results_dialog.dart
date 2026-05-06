@@ -1,16 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../compiler/compiler.dart';
+import '../models/diagram_validator.dart';
 
 /// Dialog that displays comprehensive compiler results with tabs for each phase
 class CompilerResultsDialog extends StatefulWidget {
   final CompilationResult result;
+  final ValidationResult? structuralResult;
   final String? legacyCode;
 
   const CompilerResultsDialog({
     super.key,
     required this.result,
     this.legacyCode,
+    this.structuralResult,
   });
 
   @override
@@ -122,7 +125,12 @@ class _CompilerResultsDialogState extends State<CompilerResultsDialog>
   }
 
   Widget _buildHeader(ThemeData theme, bool isDark) {
-    final success = widget.result.success;
+    // Verificar si hay errores en la validación estructural
+    final structuralResult = widget.structuralResult;
+    final hasStructuralErrors = structuralResult != null && !structuralResult.isValid;
+    
+    // Si hay errores estructurales, mostrar como error. De lo contrario, usar el estado de compilación
+    final success = !hasStructuralErrors && widget.result.success;
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -148,7 +156,9 @@ class _CompilerResultsDialogState extends State<CompilerResultsDialog>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  success ? 'Compilación Exitosa' : 'Compilación con Errores',
+                  hasStructuralErrors
+                      ? 'Validación Estructural con Errores'
+                      : (success ? 'Compilación Exitosa' : 'Compilación con Errores'),
                   style: theme.textTheme.titleLarge?.copyWith(
                     fontWeight: FontWeight.bold,
                     color: success ? Colors.green[700] : Colors.red[700],
@@ -176,11 +186,161 @@ class _CompilerResultsDialogState extends State<CompilerResultsDialog>
     final metrics = widget.result.metrics;
     final errors = widget.result.errors;
 
+    // Mostrar resumen de validación estructural si está disponible
+    final structural = widget.structuralResult;
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Structural validation summary (Fase 0) - Expandible
+          if (structural != null) ...[
+            _buildSectionTitle('🔎 Validación Estructural (Fase 0)', theme),
+            const SizedBox(height: 8),
+            ExpansionTile(
+              tilePadding: const EdgeInsets.symmetric(horizontal: 8),
+              childrenPadding: const EdgeInsets.only(bottom: 8),
+              initiallyExpanded: !structural.isValid, // Expandir si hay errores
+              leading: Icon(
+                structural.isValid ? Icons.check_circle : Icons.error,
+                color: structural.isValid ? Colors.green : Colors.red,
+                size: 28,
+              ),
+              title: Text(
+                structural.isValid
+                    ? 'Validación estructural ✓'
+                    : 'Validación estructural ✗ (${structural.errors.length} ${structural.errors.length == 1 ? 'error' : 'errores'})',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 15,
+                  color: structural.isValid ? Colors.green[700] : Colors.red[700],
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+              subtitle: structural.warnings.isNotEmpty
+                  ? Text(
+                      '${structural.warnings.length} ${structural.warnings.length == 1 ? 'advertencia' : 'advertencias'}',
+                      style: TextStyle(color: Colors.orange[600]),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    )
+                  : null,
+              children: [
+                if (structural.errors.isNotEmpty) ...[
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            const Icon(Icons.error_outline, color: Colors.red, size: 20),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Errores (${structural.errors.length})',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: Colors.red[700],
+                                fontSize: 13,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        ...structural.errors.asMap().entries.map((entry) {
+                          final index = entry.key;
+                          final error = entry.value;
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 8, left: 28),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  '${index + 1}.',
+                                  style: TextStyle(
+                                    color: Colors.red[600],
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    error,
+                                    style: TextStyle(
+                                      color: isDark ? Colors.grey[200] : Colors.grey[800],
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        }),
+                      ],
+                    ),
+                  ),
+                ],
+                if (structural.warnings.isNotEmpty) ...[
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            const Icon(Icons.warning_amber, color: Colors.orange, size: 20),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Advertencias (${structural.warnings.length})',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: Colors.orange[700],
+                                fontSize: 13,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        ...structural.warnings.asMap().entries.map((entry) {
+                          final index = entry.key;
+                          final warning = entry.value;
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 8, left: 28),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  '${index + 1}.',
+                                  style: TextStyle(
+                                    color: Colors.orange[600],
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    warning,
+                                    style: TextStyle(
+                                      color: isDark ? Colors.grey[200] : Colors.grey[800],
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        }),
+                      ],
+                    ),
+                  ),
+                ],
+              ],
+            ),
+            const SizedBox(height: 16),
+          ],
+
           // Metrics cards
           _buildSectionTitle('📊 Métricas de Compilación', theme),
           const SizedBox(height: 12),
@@ -317,6 +477,14 @@ class _CompilerResultsDialogState extends State<CompilerResultsDialog>
   }
 
   Widget _buildLexicalTab(ThemeData theme, bool isDark) {
+    // Requerir validación estructural antes de mostrar fases
+    if (widget.structuralResult != null && !widget.structuralResult!.isValid) {
+      return _buildEmptyState(
+        'La validación estructural falló. Corrige los errores antes de ejecutar el análisis léxico.',
+        Icons.error,
+        isDark,
+      );
+    }
     final lexicalResult = widget.result.lexicalResult;
 
     if (lexicalResult == null) {
@@ -443,6 +611,13 @@ class _CompilerResultsDialogState extends State<CompilerResultsDialog>
   }
 
   Widget _buildSyntacticTab(ThemeData theme, bool isDark) {
+    if (widget.structuralResult != null && !widget.structuralResult!.isValid) {
+      return _buildEmptyState(
+        'La validación estructural falló. Corrige los errores antes de ejecutar el análisis sintáctico.',
+        Icons.error,
+        isDark,
+      );
+    }
     final syntaxResult = widget.result.syntaxResult;
     final ast = widget.result.ast;
 
@@ -561,6 +736,13 @@ class _CompilerResultsDialogState extends State<CompilerResultsDialog>
   }
 
   Widget _buildSemanticTab(ThemeData theme, bool isDark) {
+    if (widget.structuralResult != null && !widget.structuralResult!.isValid) {
+      return _buildEmptyState(
+        'La validación estructural falló. Corrige los errores antes de ejecutar el análisis semántico.',
+        Icons.error,
+        isDark,
+      );
+    }
     final semanticResult = widget.result.semanticResult;
     final symbolTable = widget.result.symbolTable;
 
@@ -710,6 +892,13 @@ class _CompilerResultsDialogState extends State<CompilerResultsDialog>
   }
 
   Widget _buildOptimizationTab(ThemeData theme, bool isDark) {
+    if (widget.structuralResult != null && !widget.structuralResult!.isValid) {
+      return _buildEmptyState(
+        'La validación estructural falló. Corrige los errores antes de ejecutar las optimizaciones.',
+        Icons.error,
+        isDark,
+      );
+    }
     final optimizationResult = widget.result.optimizationResult;
 
     if (optimizationResult == null) {
@@ -865,6 +1054,24 @@ class _CompilerResultsDialogState extends State<CompilerResultsDialog>
   }
 
   Widget _buildCodeTab(ThemeData theme, bool isDark) {
+    if (widget.structuralResult != null && !widget.structuralResult!.isValid) {
+      return Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            child: const Text(
+              'Generación de código detenida debido a errores en la validación estructural.',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+          ),
+          Expanded(
+            child: Center(
+              child: Icon(Icons.error, size: 64, color: Colors.red[400]),
+            ),
+          ),
+        ],
+      );
+    }
     // Mostrar código legacy si está disponible
     final code = widget.legacyCode ?? 'Generación de código pendiente (Fase 5)';
 

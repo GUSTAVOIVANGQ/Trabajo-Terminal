@@ -212,8 +212,8 @@ class DiagramNode {
   final Map<String, dynamic>
       metadata; // Metadata para estructuras de control y transpilador
 
-  // Dimensiones del nodo (varían según el tipo)
-  Size get size {
+  // Dimensiones por defecto del nodo (varían según el tipo)
+  Size get defaultSize {
     switch (type) {
       // Basic symbols
       case NodeType.terminal:
@@ -270,6 +270,14 @@ class DiagramNode {
       case NodeType.comment:
         return const Size(160, 80);
     }
+  }
+
+  // Tamaño actual (respeta customWidth/customHeight si existen)
+  Size get size {
+    final def = defaultSize;
+    final w = (metadata['customWidth'] as num?)?.toDouble() ?? def.width;
+    final h = (metadata['customHeight'] as num?)?.toDouble() ?? def.height;
+    return Size(w, h);
   }
 
   DiagramNode({
@@ -704,6 +712,14 @@ class Connection {
   ConnectionAnchor sourceAnchor;
   ConnectionAnchor targetAnchor;
 
+  /// Desplazamiento del segmento medio en rutas ortogonales.
+  /// Para rutas vertical-vertical: desplaza el segmento horizontal (eje Y → shift en X).
+  /// Para rutas horizontal-horizontal: desplaza el segmento vertical (eje X → shift en Y).
+  /// null = comportamiento automático (calculado por _getOrthogonalRoute).
+  double? midPointOffset;
+  double sourceOffset;
+  double targetOffset;
+
   Connection({
     required this.source,
     required this.target,
@@ -711,6 +727,9 @@ class Connection {
     this.isLoopBack = false,
     this.sourceAnchor = ConnectionAnchor.auto,
     this.targetAnchor = ConnectionAnchor.auto,
+    this.midPointOffset,
+    this.sourceOffset = 0.0,
+    this.targetOffset = 0.0,
   });
 
   // Calcular los puntos de conexión entre nodos
@@ -720,23 +739,36 @@ class Connection {
     final targetCenter =
         target.position + Offset(target.size.width / 2, target.size.height / 2);
 
-    final sourcePoint = _getAnchorPoint(source, sourceAnchor, targetCenter);
-    final targetPoint = _getAnchorPoint(target, targetAnchor, sourceCenter);
+    final sourcePoint = _getAnchorPoint(source, sourceAnchor, targetCenter, offset: sourceOffset);
+    final targetPoint = _getAnchorPoint(target, targetAnchor, sourceCenter, offset: targetOffset);
 
     return [sourcePoint, targetPoint];
   }
 
   Offset _getAnchorPoint(
-      DiagramNode node, ConnectionAnchor anchor, Offset otherCenter) {
-    switch (anchor) {
+      DiagramNode node, ConnectionAnchor anchor, Offset otherCenter, {double offset = 0.0}) {
+    final hw = (node.size.width / 2) - 10.0;
+    final hh = (node.size.height / 2) - 10.0;
+    double clampOffset(double off, double maxOff) => off.clamp(-maxOff, maxOff);
+
+    ConnectionAnchor effectiveAnchor = anchor;
+    if (anchor == ConnectionAnchor.auto) {
+      final nearest = node.getNearestConnectionPoint(otherCenter);
+      if (nearest == node.getInputPoint()) effectiveAnchor = ConnectionAnchor.top;
+      else if (nearest == node.getOutputPoint()) effectiveAnchor = ConnectionAnchor.bottom;
+      else if (nearest == node.getLeftPoint()) effectiveAnchor = ConnectionAnchor.left;
+      else if (nearest == node.getRightPoint()) effectiveAnchor = ConnectionAnchor.right;
+    }
+
+    switch (effectiveAnchor) {
       case ConnectionAnchor.top:
-        return node.getInputPoint();
+        return Offset(node.getInputPoint().dx + clampOffset(offset, hw), node.getInputPoint().dy);
       case ConnectionAnchor.bottom:
-        return node.getOutputPoint();
+        return Offset(node.getOutputPoint().dx + clampOffset(offset, hw), node.getOutputPoint().dy);
       case ConnectionAnchor.left:
-        return node.getLeftPoint();
+        return Offset(node.getLeftPoint().dx, node.getLeftPoint().dy + clampOffset(offset, hh));
       case ConnectionAnchor.right:
-        return node.getRightPoint();
+        return Offset(node.getRightPoint().dx, node.getRightPoint().dy + clampOffset(offset, hh));
       case ConnectionAnchor.auto:
         return node.getNearestConnectionPoint(otherCenter);
     }

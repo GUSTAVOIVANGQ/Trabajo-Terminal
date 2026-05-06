@@ -7,6 +7,7 @@ import 'preparation_node_dialog.dart';
 import 'subprocess_node_dialog.dart';
 import 'connector_node_dialog.dart';
 import 'comment_node_dialog.dart';
+import 'variable_node_dialog.dart';
 
 class NodeEditorDialog extends StatefulWidget {
   final DiagramNode node;
@@ -32,8 +33,25 @@ class _NodeEditorDialogState extends State<NodeEditorDialog> {
     super.dispose();
   }
 
+  bool _isVariableNode() {
+    if (widget.node.metadata['concept_type'] == 'declareInt') return true;
+    
+    String t = widget.node.text.trim();
+    return t.startsWith('int ') || 
+           t.startsWith('float ') || 
+           t.startsWith('double ') || 
+           t.startsWith('char ') || 
+           t.startsWith('bool ') || 
+           t.startsWith('const ');
+  }
+
   @override
   Widget build(BuildContext context) {
+    // Si detectamos que es una declaración de variable, usamos su diálogo
+    if ((widget.node.type == NodeType.process || widget.node.type == NodeType.preparation) && _isVariableNode()) {
+      return VariableNodeDialog(node: widget.node);
+    }
+
     // Para nodos de proceso, usar el diálogo especializado
     if (widget.node.type == NodeType.process) {
       return ProcessNodeDialog(node: widget.node);

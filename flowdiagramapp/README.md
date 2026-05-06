@@ -412,8 +412,8 @@ powershell -ExecutionPolicy Bypass -File scripts/run_test_reports.ps1 -OutDir te
 
 - `flutter_test_compiler.txt` / `flutter_test_compiler.jsonl`
 - `flutter_test_phase4.txt` / `flutter_test_phase4.jsonl`
-- `resumen_conteo_tests_compiler.txt` *(si `python` está disponible)*
-- `resumen_conteo_tests_suite_base.txt` *(si `python` está disponible)*
+- `resumen_conteo_tests_compiler.txt` _(si `python` está disponible)_
+- `resumen_conteo_tests_suite_base.txt` _(si `python` está disponible)_
 - `resumen_benchmark.txt`
 
 ### Código (PowerShell) — equivalente al script

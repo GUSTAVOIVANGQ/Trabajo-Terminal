@@ -13,6 +13,7 @@ import 'interactive_tutorials_screen.dart';
 import 'welcome_screen.dart'; // Nueva importación para pantalla de bienvenida
 // import 'exercises_screen.dart'; // Nueva importación para ejercicios
 import '../widgets/theme_selector_widget.dart';
+import 'package:tutorial_coach_mark/tutorial_coach_mark.dart';
 
 class LoadDiagramScreen extends StatefulWidget {
   const LoadDiagramScreen({super.key});
@@ -33,6 +34,13 @@ class _LoadDiagramScreenState extends State<LoadDiagramScreen>
   List<SavedDiagram> _templates = [];
   bool _isLoading = true;
   bool _hasShownWelcome = false;
+
+  final GlobalKey _tabBarKey = GlobalKey();
+  final GlobalKey _createFabKey = GlobalKey();
+  final GlobalKey _tutorialsFabKey = GlobalKey();
+  final GlobalKey _interactiveTutorialsFabKey = GlobalKey();
+  final GlobalKey _profileKey = GlobalKey();
+  final GlobalKey _themeKey = GlobalKey();
 
   @override
   void initState() {
@@ -100,6 +108,12 @@ class _LoadDiagramScreenState extends State<LoadDiagramScreen>
                 userId: tutorialUserKey,
                 onComplete: () {
                   Navigator.of(context).pop();
+                  // Esperar a que la animación de pop termine antes de mostrar el tour
+                  Future.delayed(const Duration(milliseconds: 500), () {
+                    if (mounted) {
+                      _showAppTour();
+                    }
+                  });
                 },
               ),
             ),
@@ -113,6 +127,139 @@ class _LoadDiagramScreenState extends State<LoadDiagramScreen>
   void dispose() {
     _tabController.dispose();
     super.dispose();
+  }
+
+  void _showAppTour() {
+    List<TargetFocus> targets = [];
+    
+    targets.add(
+      TargetFocus(
+        identify: "tabBar",
+        keyTarget: _tabBarKey,
+        alignSkip: Alignment.topRight,
+        shape: ShapeLightFocus.RRect,
+        contents: [
+          TargetContent(
+            align: ContentAlign.bottom,
+            builder: (context, controller) {
+              return const Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    "Tus Diagramas y Plantillas",
+                    style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
+                  ),
+                  SizedBox(height: 10),
+                  Text(
+                    "Aquí podrás ver los diagramas que has guardado, o usar una plantilla prediseñada para empezar rápidamente.",
+                    style: TextStyle(color: Colors.white, fontSize: 16),
+                  ),
+                ],
+              );
+            },
+          )
+        ],
+      )
+    );
+
+    targets.add(
+      TargetFocus(
+        identify: "createFab",
+        keyTarget: _createFabKey,
+        alignSkip: Alignment.topRight,
+        contents: [
+          TargetContent(
+            align: ContentAlign.top,
+            builder: (context, controller) {
+              return const Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    "Crear Nuevo Diagrama",
+                    style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
+                  ),
+                  SizedBox(height: 10),
+                  Text(
+                    "Toca aquí para abrir el editor y comenzar a diseñar un algoritmo desde cero.",
+                    style: TextStyle(color: Colors.white, fontSize: 16),
+                  ),
+                ],
+              );
+            },
+          )
+        ],
+      )
+    );
+
+    targets.add(
+      TargetFocus(
+        identify: "tutorialsFab",
+        keyTarget: _tutorialsFabKey,
+        alignSkip: Alignment.topRight,
+        contents: [
+          TargetContent(
+            align: ContentAlign.top,
+            builder: (context, controller) {
+              return const Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    "Guías de Uso",
+                    style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
+                  ),
+                  SizedBox(height: 10),
+                  Text(
+                    "Aquí puedes leer sobre cómo funciona la aplicación y sus características principales.",
+                    style: TextStyle(color: Colors.white, fontSize: 16),
+                  ),
+                ],
+              );
+            },
+          )
+        ],
+      )
+    );
+
+    targets.add(
+      TargetFocus(
+        identify: "interactiveTutorialsFab",
+        keyTarget: _interactiveTutorialsFabKey,
+        alignSkip: Alignment.topRight,
+        contents: [
+          TargetContent(
+            align: ContentAlign.top,
+            builder: (context, controller) {
+              return const Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    "¡Aprende Jugando!",
+                    style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
+                  ),
+                  SizedBox(height: 10),
+                  Text(
+                    "Ahora te invitamos a experimentar y ver tutoriales automatizados de mi app. En esta sección puedes aprender paso a paso cómo armar algoritmos.",
+                    style: TextStyle(color: Colors.white, fontSize: 16),
+                  ),
+                ],
+              );
+            },
+          )
+        ],
+      )
+    );
+
+    TutorialCoachMark(
+      targets: targets,
+      colorShadow: Theme.of(context).primaryColor,
+      textSkip: "SALTAR",
+      paddingFocus: 10,
+      opacityShadow: 0.8,
+    ).show(context: context);
   }
 
   @override
@@ -140,7 +287,10 @@ class _LoadDiagramScreenState extends State<LoadDiagramScreen>
           ),
           */
           // Botón para cambiar tema
-          const ThemeToggleButton(),
+          Container(
+            key: _themeKey,
+            child: const ThemeToggleButton(),
+          ),
 
           IconButton(
             icon: const Icon(Icons.help_outline),
@@ -155,6 +305,7 @@ class _LoadDiagramScreenState extends State<LoadDiagramScreen>
           ),
 
           IconButton(
+            key: _profileKey,
             icon: const Icon(Icons.person),
             onPressed: () {
               Navigator.of(context).push(
@@ -167,6 +318,7 @@ class _LoadDiagramScreenState extends State<LoadDiagramScreen>
           ),
         ],
         bottom: TabBar(
+          key: _tabBarKey,
           controller: _tabController,
           labelColor: appBarForeground,
           unselectedLabelColor: appBarForeground.withOpacity(0.75),
@@ -201,6 +353,7 @@ class _LoadDiagramScreenState extends State<LoadDiagramScreen>
         children: [
           // Botón de tutoriales interactivos (nuevo)
           FloatingActionButton(
+            key: _interactiveTutorialsFabKey,
             onPressed: () {
               Navigator.of(context).push(
                 MaterialPageRoute(
@@ -216,12 +369,19 @@ class _LoadDiagramScreenState extends State<LoadDiagramScreen>
           const SizedBox(height: 12),
           // Botón de tutoriales (nuevo)
           FloatingActionButton(
-            onPressed: () {
-              Navigator.of(context).push(
+            key: _tutorialsFabKey,
+            onPressed: () async {
+              final result = await Navigator.of(context).push(
                 MaterialPageRoute(
                   builder: (context) => const TutorialListScreen(),
                 ),
               );
+              if (result == 'start_tour' && mounted) {
+                // Pequeño delay para dejar que la pantalla termine de aparecer
+                Future.delayed(const Duration(milliseconds: 300), () {
+                  if (mounted) _showAppTour();
+                });
+              }
             },
             heroTag: 'tutorials_fab',
             tooltip: 'Guías de Uso',
@@ -231,6 +391,7 @@ class _LoadDiagramScreenState extends State<LoadDiagramScreen>
           const SizedBox(height: 12),
           // Botón crear nuevo
           FloatingActionButton(
+            key: _createFabKey,
             onPressed: () {
               // En lugar de cerrar la pantalla actual, navegamos a la pantalla del editor
               Navigator.of(

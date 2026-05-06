@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'node_palette.dart';
 import 'programming_concepts_palette.dart';
 import '../models/diagram_node.dart';
+import '../interactive_tutorials/auto_tutorial_script.dart';
 
 class EditorSidePanel extends StatefulWidget {
   final Function(NodeType) onNodeSelected;
@@ -36,6 +37,7 @@ class _EditorSidePanelState extends State<EditorSidePanel>
   @override
   Widget build(BuildContext context) {
     return Container(
+      key: EditorTutorialKeys.sidePanel,
       width: 90,
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surfaceContainerHighest,

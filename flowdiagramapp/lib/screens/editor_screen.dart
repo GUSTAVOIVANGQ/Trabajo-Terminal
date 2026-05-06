@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import '../widgets/flow_diagram_canvas_final.dart';
@@ -8,7 +9,7 @@ import '../widgets/programming_concepts_palette.dart';
 import '../widgets/editor_side_panel.dart';
 import '../widgets/node_editor_dialog.dart';
 import '../widgets/validation_result_dialog.dart';
-import '../widgets/compiler_results_dialog.dart'; // Dialog del compilador
+import '../widgets/compiler_results_dialog.dart'; // Dialog del conversor
 import 'load_diagram_screen.dart';
 import '../widgets/save_diagram_dialog.dart';
 import '../models/diagram_node.dart';
@@ -21,8 +22,12 @@ import '../services/metrics_service.dart'; // Nueva importación
 import '../services/diagram_export_service.dart'; // Importación para exportación
 import '../services/auth_service.dart'; // Importación para autenticación
 import '../services/auto_save_settings_service.dart';
-import '../services/tutorial_event_service.dart';
-import '../compiler/compiler.dart'; // Compilador completo
+import '../compiler/compiler.dart'; // Conversor completo
+import '../interactive_tutorials/auto_tutorial_models.dart';
+import '../interactive_tutorials/auto_tutorial_controller.dart';
+import '../interactive_tutorials/auto_tutorial_script.dart';
+import '../interactive_tutorials/auto_tutorial_overlay.dart';
+import 'package:tutorial_coach_mark/tutorial_coach_mark.dart';
 
 class _DiagramHistorySnapshot {
   final List<DiagramNode> nodes;
@@ -39,7 +44,10 @@ class _DiagramHistorySnapshot {
 class EditorScreen extends StatefulWidget {
   final SavedDiagram? initialDiagram;
 
-  const EditorScreen({super.key, this.initialDiagram});
+  /// Si se proporciona, abre el editor vacío y lanza el tutorial automático.
+  final AutoTutorialDefinition? autoTutorial;
+
+  const EditorScreen({super.key, this.initialDiagram, this.autoTutorial});
 
   @override
   State<EditorScreen> createState() => _EditorScreenState();
@@ -73,7 +81,6 @@ class _EditorScreenState extends State<EditorScreen> {
   final AuthService _authService = AuthService(); // Servicio de autenticación
   final AutoSaveSettingsService _autoSaveSettingsService =
       AutoSaveSettingsService();
-  final TutorialEventService _tutorialEventService = TutorialEventService();
   bool _hasUnsavedChanges = false;
   bool _autoSaveEnabled = false;
   bool _isAutoSaving = false;
@@ -91,6 +98,15 @@ class _EditorScreenState extends State<EditorScreen> {
   // GlobalKey para capturar el canvas y exportar
   final GlobalKey _canvasKey = GlobalKey();
 
+  // Keys para el Tour de la App
+  final GlobalKey _editorSidePanelKey = GlobalKey();
+  final GlobalKey _editorSaveKey = GlobalKey();
+  final GlobalKey _editorCompileKey = GlobalKey();
+  final GlobalKey _editorZoomKey = GlobalKey();
+
+  // ── Tutorial automático ──────────────────────────────────────────────────
+  late final AutoTutorialController _tutorialController;
+
   /// Obtiene el ID del usuario actual (o 'guest' para invitados)
   String? _getCurrentUserId() {
     final user = _authService.currentUser;
@@ -102,6 +118,38 @@ class _EditorScreenState extends State<EditorScreen> {
   void initState() {
     super.initState();
 
+    // Inicializar el controlador de tutorial automático
+    _tutorialController = AutoTutorialController(
+      onAddNode: ({required type, required nodeId, required position, content}) async {
+        if (!mounted) return;
+        await _addTutorialNode(
+          type: type,
+          nodeId: nodeId,
+          position: position,
+          content: content,
+        );
+      },
+      onConnectNodes: ({required sourceId, required targetId}) async {
+        if (!mounted) return;
+        await _createConnectionByIds(
+          sourceId: sourceId,
+          targetId: targetId,
+        );
+      },
+      onRunValidation: () async {
+        if (!mounted) return;
+        _compileWithFullPipeline();
+      },
+      onViewGeneratedCode: () async {
+        if (!mounted) return;
+        _compileWithFullPipeline();
+      },
+      onSaveDiagram: () async {
+        if (!mounted) return;
+        _showSaveDiagramDialog();
+      },
+    );
+
     // Si se proporciona un diagrama inicial, cargarlo
     if (widget.initialDiagram != null) {
       _loadDiagram(widget.initialDiagram!);
@@ -110,11 +158,181 @@ class _EditorScreenState extends State<EditorScreen> {
     }
 
     _initializeAutoSave();
+
+    // Arrancar tutorial automático tras el primer frame
+    if (widget.autoTutorial != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        Future.delayed(const Duration(milliseconds: 400), () {
+          if (mounted) {
+            _tutorialController.startTutorial(widget.autoTutorial!, context);
+          }
+        });
+      });
+    } else {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _checkFirstTimeEditor();
+      });
+    }
+  }
+
+  Future<void> _checkFirstTimeEditor() async {
+    final prefs = await SharedPreferences.getInstance();
+    final hasShown = prefs.getBool('tutorial_shown_editor') ?? false;
+    if (!hasShown && mounted) {
+      await prefs.setBool('tutorial_shown_editor', true);
+      _showEditorTour();
+    }
+  }
+
+  void _showEditorTour() {
+    List<TargetFocus> targets = [];
+    
+    targets.add(TargetFocus(
+      identify: "sidePanel",
+      keyTarget: _editorSidePanelKey,
+      shape: ShapeLightFocus.RRect,
+      alignSkip: Alignment.topRight,
+      contents: [
+        TargetContent(
+          align: ContentAlign.custom,
+          customPosition: CustomTargetContentPosition(
+            left: 110, // Just to the right of the side panel
+            top: MediaQuery.of(context).size.height * 0.3,
+          ),
+          builder: (context, controller) {
+            return Container(
+              width: MediaQuery.of(context).size.width - 130, // Fit the remaining screen
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.black.withOpacity(0.7),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text("Panel de Herramientas", style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
+                  SizedBox(height: 10),
+                  Text("Aquí encontrarás todos los nodos disponibles. Solo toca uno para agregarlo al diagrama.", style: TextStyle(color: Colors.white, fontSize: 16)),
+                ],
+              ),
+            );
+          },
+        )
+      ],
+    ));
+
+    targets.add(TargetFocus(
+      identify: "canvas",
+      keyTarget: _canvasKey,
+      shape: ShapeLightFocus.RRect,
+      contents: [
+        TargetContent(
+          align: ContentAlign.custom,
+          customPosition: CustomTargetContentPosition(
+            left: 40,
+            top: MediaQuery.of(context).size.height * 0.3,
+          ),
+          builder: (context, controller) {
+            return Container(
+              width: MediaQuery.of(context).size.width - 80,
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.black.withOpacity(0.8),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text("Área de Trabajo", style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
+                  SizedBox(height: 10),
+                  Text("Este es tu lienzo. Arrastra los nodos para moverlos. Si mantienes presionado un nodo, podrás arrastrar una flecha para conectarlo con otro.", style: TextStyle(color: Colors.white, fontSize: 16)),
+                ],
+              ),
+            );
+          },
+        )
+      ],
+    ));
+
+    targets.add(TargetFocus(
+      identify: "save",
+      keyTarget: _editorSaveKey,
+      contents: [
+        TargetContent(
+          align: ContentAlign.bottom,
+          builder: (context, controller) {
+            return const Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text("Guardar Progreso", style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
+                SizedBox(height: 10),
+                Text("Guarda tu diagrama para no perder el trabajo. Si tienes autoguardado activado, se hará solo.", style: TextStyle(color: Colors.white, fontSize: 16)),
+              ],
+            );
+          },
+        )
+      ],
+    ));
+
+    targets.add(TargetFocus(
+      identify: "compile",
+      keyTarget: _editorCompileKey,
+      contents: [
+        TargetContent(
+          align: ContentAlign.bottom,
+          builder: (context, controller) {
+            return const Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text("Magia: Generar Código", style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
+                SizedBox(height: 10),
+                Text("Presiona aquí para validar tu diagrama y convertirlo automáticamente a código fuente funcional en lenguaje C.", style: TextStyle(color: Colors.white, fontSize: 16)),
+              ],
+            );
+          },
+        )
+      ],
+    ));
+
+    targets.add(TargetFocus(
+      identify: "zoom",
+      keyTarget: _editorZoomKey,
+      shape: ShapeLightFocus.RRect,
+      contents: [
+        TargetContent(
+          align: ContentAlign.top,
+          builder: (context, controller) {
+            return const Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text("Control de Vista", style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
+                SizedBox(height: 10),
+                Text("Usa estos botones para acercar, alejar o centrar el diagrama en la pantalla.", style: TextStyle(color: Colors.white, fontSize: 16)),
+              ],
+            );
+          },
+        )
+      ],
+    ));
+
+    TutorialCoachMark(
+      targets: targets,
+      colorShadow: Theme.of(context).primaryColor,
+      textSkip: "SALTAR",
+      paddingFocus: 10,
+      opacityShadow: 0.8,
+    ).show(context: context);
   }
 
   @override
   void dispose() {
     _autoSaveTimer?.cancel();
+    _tutorialController.dispose();
     super.dispose();
   }
 
@@ -246,91 +464,101 @@ class _EditorScreenState extends State<EditorScreen> {
             ),
             actions: [
               IconButton(
+                key: EditorTutorialKeys.undoButton,
                 icon: const Icon(Icons.undo),
                 tooltip: 'Deshacer',
                 onPressed: _canUndo ? _undo : null,
               ),
               IconButton(
+                key: EditorTutorialKeys.redoButton,
                 icon: const Icon(Icons.redo),
                 tooltip: 'Rehacer',
                 onPressed: _canRedo ? _redo : null,
               ),
-              // Botón para validar el diagrama
-              IconButton(
-                icon: const Icon(Icons.check_circle_outline),
-                tooltip: 'Validar diagrama',
-                onPressed: _validateDiagram,
-              ),
               // Botón para guardar diagrama
-              IconButton(
-                icon: _hasUnsavedChanges
-                    ? const Icon(Icons.save, color: Colors.amber)
-                    : const Icon(Icons.save),
-                tooltip: 'Guardar diagrama',
-                onPressed: _showSaveDiagramDialog,
+              Container(
+                key: _editorSaveKey,
+                child: IconButton(
+                  key: EditorTutorialKeys.saveButton,
+                  icon: _hasUnsavedChanges
+                      ? const Icon(Icons.save, color: Colors.amber)
+                      : const Icon(Icons.save),
+                  tooltip: 'Guardar diagrama',
+                  onPressed: _showSaveDiagramDialog,
+                ),
               ),
               // Botón para cargar diagrama
               IconButton(
+                key: EditorTutorialKeys.loadButton,
                 icon: const Icon(Icons.folder_open),
                 tooltip: 'Cargar diagrama',
                 onPressed: () => _navigateToLoadDiagram(context),
               ),
-              // Menú de generación de código con dos opciones
-              PopupMenuButton<String>(
-                icon: const Icon(Icons.code),
-                tooltip: 'Generar código',
-                onSelected: (value) {
-                  if (value == 'simple') {
-                    _generateCode();
-                  } else if (value == 'compiler') {
-                    _compileWithFullPipeline();
-                  }
-                },
-                itemBuilder: (context) => [
-                  const PopupMenuItem(
-                    value: 'simple',
-                    child: Row(
-                      children: [
-                        Icon(Icons.flash_on, color: Colors.orange),
-                        SizedBox(width: 8),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text('Generador Simple'),
-                            Text(
-                              'Traducción directa a C',
-                              style:
-                                  TextStyle(fontSize: 11, color: Colors.grey),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                  const PopupMenuItem(
-                    value: 'compiler',
-                    child: Row(
-                      children: [
-                        Icon(Icons.precision_manufacturing, color: Colors.blue),
-                        SizedBox(width: 8),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text('Compilador Avanzado'),
-                            Text(
-                              'Análisis completo + Optimización',
-                              style:
-                                  TextStyle(fontSize: 11, color: Colors.grey),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
+              // Botón de compilación: ejecuta el conversor completo (validación + análisis + generación)
+              Container(
+                key: _editorCompileKey,
+                child: IconButton(
+                  key: EditorTutorialKeys.compileButton,
+                  icon: const Icon(Icons.code),
+                  tooltip: 'Generar código',
+                  onPressed: _compileWithFullPipeline,
+                ),
               ),
+              // MENÚ COMENTADO — opciones separadas (Generador Simple / Conversor Avanzado)
+              // PopupMenuButton<String>(
+              //   icon: const Icon(Icons.code),
+              //   tooltip: 'Generar código',
+              //   onSelected: (value) {
+              //     if (value == 'simple') {
+              //       _generateCode();           // Generador Simple: traducción directa a C
+              //     } else if (value == 'compiler') {
+              //       _compileWithFullPipeline(); // Conversor Avanzado: análisis completo + optimización
+              //     }
+              //   },
+              //   itemBuilder: (context) => [
+              //     const PopupMenuItem(
+              //       value: 'simple',
+              //       child: Row(
+              //         children: [
+              //           Icon(Icons.flash_on, color: Colors.orange),
+              //           SizedBox(width: 8),
+              //           Column(
+              //             crossAxisAlignment: CrossAxisAlignment.start,
+              //             children: [
+              //               Text('Generador Simple'),
+              //               Text(
+              //                 'Traducción directa a C',
+              //                 style: TextStyle(fontSize: 11, color: Colors.grey),
+              //               ),
+              //             ],
+              //           ),
+              //         ],
+              //       ),
+              //     ),
+              //     const PopupMenuItem(
+              //       value: 'compiler',
+              //       child: Row(
+              //         children: [
+              //           Icon(Icons.precision_manufacturing, color: Colors.blue),
+              //           SizedBox(width: 8),
+              //           Column(
+              //             crossAxisAlignment: CrossAxisAlignment.start,
+              //             children: [
+              //               Text('Conversor Avanzado'),
+              //               Text(
+              //                 'Análisis completo + Optimización',
+              //                 style: TextStyle(fontSize: 11, color: Colors.grey),
+              //               ),
+              //             ],
+              //           ),
+              //         ],
+              //       ),
+              //     ),
+              //   ],
+              // ),
               // Menú de exportación
               PopupMenuButton<String>(
+                key: EditorTutorialKeys.exportButton,
                 icon: const Icon(Icons.file_download),
                 tooltip: 'Exportar diagrama',
                 onSelected: (value) {
@@ -387,59 +615,23 @@ class _EditorScreenState extends State<EditorScreen> {
                   ),
                 ],
               ),
-              if (selectedNode != null)
-                IconButton(
-                  icon: const Icon(Icons.edit),
-                  tooltip: 'Editar nodo',
-                  onPressed: () => _editSelectedNode(),
-                ),
-              if (selectedNode != null)
-                IconButton(
-                  icon: const Icon(Icons.delete),
-                  tooltip: 'Eliminar nodo',
-                  onPressed: () => _deleteSelectedNode(),
-                ),
-              // Nuevo botón para gestionar conexiones
-              if (selectedNode != null)
-                IconButton(
-                  icon: isConnecting
-                      ? const Icon(Icons.link_off)
-                      : const Icon(Icons.link),
-                  tooltip:
-                      isConnecting ? 'Cancelar conexión' : 'Crear conexión',
-                  onPressed: () {
-                    if (!_isTutorialActionAllowed(
-                      TutorialEditorAction.connectNodes,
-                    )) {
-                      return;
-                    }
 
-                    setState(() {
-                      if (isConnecting) {
-                        connectionStart = null;
-                        isConnecting = false;
-                        // _showSnackBar('Conexión cancelada');
-                      } else {
-                        connectionStart = selectedNode;
-                        isConnecting = true;
-                        // _showSnackBar('Selecciona otro nodo para conectarlo');
-                      }
-                    });
-                  },
-                ),
             ],
           ),
           body: Row(
             children: [
               // Panel lateral con pestañas para símbolos y conceptos
-              EditorSidePanel(
-                onNodeSelected: (nodeType) {
-                  // No seleccionar automáticamente el nodo si estamos en modo conexión
-                  _addNode(nodeType, autoSelect: !isConnecting);
-                },
-                onConceptSelected: (conceptType) {
-                  _addConcept(conceptType);
-                },
+              Container(
+                key: _editorSidePanelKey,
+                child: EditorSidePanel(
+                  onNodeSelected: (nodeType) {
+                    // No seleccionar automáticamente el nodo si estamos en modo conexión
+                    _addNode(nodeType, autoSelect: !isConnecting);
+                  },
+                  onConceptSelected: (conceptType) {
+                    _addConcept(conceptType);
+                  },
+                ),
               ),
 
               // Área principal del canvas
@@ -447,9 +639,11 @@ class _EditorScreenState extends State<EditorScreen> {
                 child: Stack(
                   children: [
                     FlowDiagramCanvas(
+                      key: EditorTutorialKeys.canvas,
                       nodes: nodes,
                       connections: connections,
                       selectedNode: selectedNode,
+                      selectedConnection: selectedConnection,
                       panOffset: panOffset,
                       scale: currentScale,
                       canvasKey: _canvasKey, // Agregar el GlobalKey
@@ -523,10 +717,6 @@ class _EditorScreenState extends State<EditorScreen> {
                           }
                         });
 
-                        if (node != null && !isConnecting) {
-                          _emitTutorialNodeSelectionEvent(node);
-                        }
-
                         // Mostrar indicación visual de que el nodo fue seleccionado
                         // if (node != null && !isConnecting) {
                         //   String nodeName = "";
@@ -569,12 +759,6 @@ class _EditorScreenState extends State<EditorScreen> {
                         // }
                       },
                       onNodeLongPress: (node) {
-                        if (!_isTutorialActionAllowed(
-                          TutorialEditorAction.connectNodes,
-                        )) {
-                          return;
-                        }
-
                         setState(() {
                           // Solo iniciar conexión si no estamos ya en ese modo
                           if (!isConnecting) {
@@ -599,11 +783,19 @@ class _EditorScreenState extends State<EditorScreen> {
                         _recordHistoryState();
                       },
                       onConnectionTap: (connection) {
+                        // Single-tap: solo seleccionar la conexión (sin abrir diálogo)
                         setState(() {
                           selectedConnection = connection;
-                          selectedNode = null; // Deseleccionar cualquier nodo
-                          _showConnectionOptionsDialog(connection);
+                          selectedNode = null;
                         });
+                      },
+                      onConnectionLongPress: (connection) {
+                        // Long-press: abrir opciones avanzadas de la conexión
+                        setState(() {
+                          selectedConnection = connection;
+                          selectedNode = null;
+                        });
+                        _showConnectionOptionsDialog(connection);
                       },
                     ),
 
@@ -633,12 +825,179 @@ class _EditorScreenState extends State<EditorScreen> {
                           ),
                         ),
                       ),
+
+                    // ── Toolbar flotante de nodo seleccionado ──
+                    if (selectedNode != null && !isConnecting)
+                      Positioned(
+                        bottom: 16,
+                        left: 0,
+                        right: 0,
+                        child: Center(
+                          child: Material(
+                            elevation: 6,
+                            borderRadius: BorderRadius.circular(28),
+                            color: Theme.of(context).colorScheme.surface,
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 8, vertical: 4),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  // Nombre del tipo de nodo
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 8),
+                                    child: Text(
+                                      _getNodeTypeName(selectedNode!.type),
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w600,
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .onSurface
+                                            .withOpacity(0.7),
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(
+                                      width: 4,
+                                      child: VerticalDivider(thickness: 1)),
+                                  // Editar nodo
+                                  IconButton(
+                                    icon: const Icon(Icons.edit_outlined),
+                                    tooltip: 'Editar nodo',
+                                    onPressed: () => _editSelectedNode(),
+                                  ),
+                                  // Cambiar color
+                                  IconButton(
+                                    icon: const Icon(Icons.palette_outlined),
+                                    tooltip: 'Cambiar color',
+                                    onPressed: () => _showColorPicker(),
+                                  ),
+                                  // Crear conexión
+                                  IconButton(
+                                    icon: const Icon(Icons.link),
+                                    tooltip: 'Crear conexión',
+                                    onPressed: () {
+                                      setState(() {
+                                        connectionStart = selectedNode;
+                                        isConnecting = true;
+                                      });
+                                    },
+                                  ),
+                                  const SizedBox(
+                                      width: 4,
+                                      child: VerticalDivider(thickness: 1)),
+                                  // Eliminar nodo
+                                  IconButton(
+                                    icon: const Icon(Icons.delete_outline,
+                                        color: Colors.red),
+                                    tooltip: 'Eliminar nodo',
+                                    onPressed: () => _deleteSelectedNode(),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+
+                    // ── Toolbar de conexión seleccionada ──
+                    if (selectedConnection != null && !isConnecting)
+                      Positioned(
+                        bottom: 16,
+                        left: 0,
+                        right: 0,
+                        child: Center(
+                          child: Material(
+                            elevation: 4,
+                            borderRadius: BorderRadius.circular(28),
+                            color: Theme.of(context).colorScheme.surface,
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 8, vertical: 4),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  // Etiqueta
+                                  IconButton(
+                                    icon: const Icon(Icons.label_outline),
+                                    tooltip: 'Editar etiqueta',
+                                    onPressed: () async {
+                                      final conn = selectedConnection!;
+                                      await _editConnectionLabel(conn);
+                                      setState(() {});
+                                    },
+                                  ),
+                                  // Tipo (recta / cuadrada)
+                                  IconButton(
+                                    icon: Icon(selectedConnection!.isLoopBack
+                                        ? Icons.timeline
+                                        : Icons.turn_left),
+                                    tooltip: selectedConnection!.isLoopBack
+                                        ? 'Cambiar a recta'
+                                        : 'Cambiar a cuadrada',
+                                    onPressed: () {
+                                      _toggleConnectionType(selectedConnection!);
+                                    },
+                                  ),
+                                  // Más opciones (abre el diálogo completo)
+                                  IconButton(
+                                    icon: const Icon(Icons.tune),
+                                    tooltip: 'Más opciones',
+                                    onPressed: () =>
+                                        _showConnectionOptionsDialog(
+                                            selectedConnection!),
+                                  ),
+                                  const SizedBox(
+                                      width: 4,
+                                      child: VerticalDivider(thickness: 1)),
+                                  // Eliminar
+                                  IconButton(
+                                    icon: const Icon(Icons.delete_outline,
+                                        color: Colors.red),
+                                    tooltip: 'Eliminar flecha',
+                                    onPressed: () {
+                                      final conn = selectedConnection!;
+                                      setState(() {
+                                        selectedConnection = null;
+                                      });
+                                      _deleteConnection(conn);
+                                    },
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+
+                    // ── Barra de control del tutorial automático ──
+                    ListenableBuilder(
+                      listenable: _tutorialController,
+                      builder: (ctx, _) {
+                        if (!_tutorialController.state.isActive) {
+                          return const SizedBox.shrink();
+                        }
+                        return Positioned(
+                          bottom: 100,
+                          left: 0,
+                          right: 0,
+                          child: Center(
+                            child: AutoTutorialControlBar(
+                              controller: _tutorialController,
+                            ),
+                          ),
+                        );
+                      },
+                    ),
                   ],
                 ),
               ),
             ],
           ),
           floatingActionButton: Column(
+            key: _editorZoomKey,
             mainAxisSize: MainAxisSize.min,
             children: [
               if (isConnecting)
@@ -695,6 +1054,8 @@ class _EditorScreenState extends State<EditorScreen> {
       ),
     );
   }
+
+
 
   void _zoomCanvas({required bool zoomIn}) {
     if (isConnecting) return;
@@ -894,10 +1255,6 @@ class _EditorScreenState extends State<EditorScreen> {
   }
 
   void _addNode(NodeType nodeType, {bool autoSelect = true}) {
-    if (!_isTutorialActionAllowed(TutorialEditorAction.addNode)) {
-      return;
-    }
-
     final node = DiagramNode(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
       type: nodeType,
@@ -928,10 +1285,6 @@ class _EditorScreenState extends State<EditorScreen> {
   }
 
   void _addConcept(ProgrammingConceptType conceptType) {
-    if (!_isTutorialActionAllowed(TutorialEditorAction.addConcept)) {
-      return;
-    }
-
     // Calcular posición central para el nuevo nodo
     final centerPosition = Offset(
       (MediaQuery.of(context).size.width / 2 - panOffset.dx) / currentScale,
@@ -1638,10 +1991,6 @@ class _EditorScreenState extends State<EditorScreen> {
   }
 
   void _createConnection(DiagramNode source, DiagramNode target) {
-    if (!_isTutorialActionAllowed(TutorialEditorAction.connectNodes)) {
-      return;
-    }
-
     // No crear conexión si es el mismo nodo
     if (source == target) {
       connectionStart = null;
@@ -1676,7 +2025,6 @@ class _EditorScreenState extends State<EditorScreen> {
           isConnecting = false;
         });
         _recordHistoryState();
-        _tutorialEventService.emit(TutorialEditorEvent.nodesConnected);
 
         // if (shouldBeLoopBack) {
         //   _showSnackBar(
@@ -1809,7 +2157,6 @@ class _EditorScreenState extends State<EditorScreen> {
         isConnecting = false;
       });
       _recordHistoryState();
-      _tutorialEventService.emit(TutorialEditorEvent.nodesConnected);
 
       // if (isLoopBack) {
       //   _showSnackBar(
@@ -2055,69 +2402,6 @@ class _EditorScreenState extends State<EditorScreen> {
     }
   }
 
-  void _emitTutorialNodeSelectionEvent(DiagramNode node) {
-    final targetElementId = _resolveTutorialTargetElementId(node);
-    if (targetElementId == null) {
-      return;
-    }
-
-    if (targetElementId == 'node_start') {
-      _tutorialEventService.emit(
-        TutorialEditorEvent.nodeStartSelected,
-        targetElementId: targetElementId,
-      );
-      return;
-    }
-
-    if (targetElementId == 'node_end') {
-      _tutorialEventService.emit(
-        TutorialEditorEvent.nodeEndSelected,
-        targetElementId: targetElementId,
-      );
-    }
-  }
-
-  String? _resolveTutorialTargetElementId(DiagramNode? node) {
-    if (node == null) {
-      return null;
-    }
-
-    if (node.type == NodeType.terminal) {
-      final normalizedText = node.text.trim().toLowerCase();
-      final isStartNode = normalizedText.contains('inicio') ||
-          normalizedText.contains('start') ||
-          normalizedText.isEmpty;
-      final isEndNode = normalizedText.contains('fin') ||
-          normalizedText.contains('end') ||
-          normalizedText.contains('terminar');
-
-      if (isStartNode) {
-        return 'node_start';
-      }
-
-      if (isEndNode) {
-        return 'node_end';
-      }
-    }
-
-    if (node.type == NodeType.data && node.metadata['isOutput'] == true) {
-      return 'node_data_output';
-    }
-
-    return null;
-  }
-
-  bool _isTutorialActionAllowed(TutorialEditorAction action) {
-    if (_tutorialEventService.isActionAllowed(action)) {
-      return true;
-    }
-
-    final hint = _tutorialEventService.activeGate.hint ??
-        'Completa la accion requerida del tutorial para continuar.';
-    _showSnackBar('Accion bloqueada por tutorial activo. $hint');
-    return false;
-  }
-
   bool _isValidConnection(DiagramNode source, DiagramNode target) {
     // Un nodo terminal de fin no puede tener salidas
     final sourceIsEnd = source.type == NodeType.terminal &&
@@ -2156,10 +2440,6 @@ class _EditorScreenState extends State<EditorScreen> {
   }
 
   Future<void> _editSelectedNode() async {
-    if (!_isTutorialActionAllowed(TutorialEditorAction.editNode)) {
-      return;
-    }
-
     if (selectedNode == null) return;
 
     final dynamic result = await showDialog<dynamic>(
@@ -2199,10 +2479,70 @@ class _EditorScreenState extends State<EditorScreen> {
         _hasUnsavedChanges = true;
       });
       _recordHistoryState();
-      _tutorialEventService.emit(
-        TutorialEditorEvent.nodeEdited,
-        targetElementId: _resolveTutorialTargetElementId(selectedNode),
-      );
+    }
+  }
+
+  Future<void> _showColorPicker() async {
+    if (selectedNode == null) return;
+
+    final List<Color> predefinedColors = [
+      Colors.blue,
+      Colors.red,
+      Colors.green,
+      Colors.orange,
+      Colors.purple,
+      Colors.teal,
+      Colors.pink,
+      Colors.indigo,
+      Colors.brown,
+      Colors.blueGrey,
+    ];
+
+    final Color? pickedColor = await showDialog<Color>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Elegir color'),
+        content: Wrap(
+          spacing: 8.0,
+          runSpacing: 8.0,
+          children: predefinedColors.map((color) {
+            return GestureDetector(
+              onTap: () => Navigator.of(context).pop(color),
+              child: Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: color,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.grey.shade300, width: 1),
+                ),
+              ),
+            );
+          }).toList(),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancelar'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(Colors.transparent),
+            child: const Text('Por defecto'),
+          ),
+        ],
+      ),
+    );
+
+    if (pickedColor != null && mounted) {
+      setState(() {
+        if (pickedColor == Colors.transparent) {
+          selectedNode!.metadata.remove('customColor');
+        } else {
+          selectedNode!.metadata['customColor'] = pickedColor.value;
+        }
+        _hasUnsavedChanges = true;
+      });
+      _recordHistoryState();
     }
   }
 
@@ -2390,10 +2730,6 @@ class _EditorScreenState extends State<EditorScreen> {
   }
 
   void _deleteSelectedNode() {
-    if (!_isTutorialActionAllowed(TutorialEditorAction.deleteNode)) {
-      return;
-    }
-
     if (selectedNode == null) return;
 
     // Eliminar también todas las conexiones relacionadas con este nodo
@@ -2419,10 +2755,6 @@ class _EditorScreenState extends State<EditorScreen> {
 
   // Método para validar el diagrama
   void _validateDiagram() {
-    if (!_isTutorialActionAllowed(TutorialEditorAction.runValidation)) {
-      return;
-    }
-
     final ValidationResult result = DiagramValidator.validateDiagram(
       nodes,
       connections,
@@ -2440,8 +2772,6 @@ class _EditorScreenState extends State<EditorScreen> {
       },
     );
 
-    _tutorialEventService.emit(TutorialEditorEvent.diagramValidated);
-
     _showValidationDialog(result);
   }
 
@@ -2455,10 +2785,6 @@ class _EditorScreenState extends State<EditorScreen> {
 
   // Método para generar código con el generador simple (original)
   void _generateCode() {
-    if (!_isTutorialActionAllowed(TutorialEditorAction.viewGeneratedCode)) {
-      return;
-    }
-
     // Primero validamos el diagrama
     final validationResult = DiagramValidator.validateDiagram(
       nodes,
@@ -2490,17 +2816,14 @@ class _EditorScreenState extends State<EditorScreen> {
       },
     );
 
-    _tutorialEventService.emit(TutorialEditorEvent.codeGenerated);
-
     _showCodeDialog(code);
   }
 
-  // Método para compilar con el pipeline completo (todas las fases)
+  // Método para convertir con el pipeline completo (todas las fases).
+  // Este método es el único punto de entrada para compilar: ejecuta primero
+  // la validación estructural (Fase 0 / E-SYN) y luego el pipeline completo.
+  // El botón "Generar código" del AppBar llama directamente a este método.
   void _compileWithFullPipeline() {
-    if (!_isTutorialActionAllowed(TutorialEditorAction.viewGeneratedCode)) {
-      return;
-    }
-
     // Verificar que hay nodos en el diagrama
     if (nodes.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -2512,7 +2835,16 @@ class _EditorScreenState extends State<EditorScreen> {
       return;
     }
 
-    // Crear el compilador con opciones
+    // ── Fase 0: Validación estructural del grafo (E-SYN) ────────────────────
+    // Se ejecuta siempre, antes que cualquier fase del compilador.
+    // El resultado se pasa al diálogo para mostrarse en la primera pestaña.
+    final ValidationResult structuralResult = DiagramValidator.validateDiagram(
+      nodes,
+      connections,
+    );
+
+    // ── Fases 1-5: Pipeline del conversor ──────────────────────────────────
+    // Crear el conversor con opciones estándar
     final compiler = DiagramCompilerPipeline(
       options: const CompilerOptions(
         optimizationLevel: 2, // Nivel estándar de optimización
@@ -2521,10 +2853,10 @@ class _EditorScreenState extends State<EditorScreen> {
       ),
     );
 
-    // Compilar el diagrama
+    // Ejecutar el pipeline completo (léxico → sintáctico → semántico → RI → código)
     final result = compiler.compile(nodes, connections);
 
-    // También generar código con el generador legacy para mostrar en la pestaña de código
+    // Generar código con el generador legacy para la pestaña de código del diálogo
     String? legacyCode;
     if (result.success || result.errors.errorCount == 0) {
       legacyCode = CodeGenerator.generateCode(
@@ -2532,16 +2864,16 @@ class _EditorScreenState extends State<EditorScreen> {
         connections,
         ProgrammingLanguage.c,
       );
-      _tutorialEventService.emit(TutorialEditorEvent.codeGenerated);
     }
 
-    // Registrar métrica de compilación
+    // Registrar métrica de conversión
     _metricsService.trackUserAction(
       action: 'compilacion_completa',
       category: 'code_generation',
       metadata: {
         'nodes_count': nodes.length,
         'connections_count': connections.length,
+        'structural_valid': structuralResult.isValid,
         'success': result.success,
         'errors': result.errors.errorCount,
         'warnings': result.errors.warningCount,
@@ -2552,12 +2884,15 @@ class _EditorScreenState extends State<EditorScreen> {
       },
     );
 
-    // Mostrar el diálogo de resultados del compilador
+    // Mostrar el diálogo de resultados del conversor.
+    // structuralResult se pasa para que la primera pestaña muestre
+    // la validación estructural (E-SYN) antes que las fases del compilador.
     showDialog(
       context: context,
       builder: (context) => CompilerResultsDialog(
         result: result,
         legacyCode: legacyCode,
+        structuralResult: structuralResult, // Resultado Fase 0 (E-SYN)
       ),
     );
   }
@@ -2604,10 +2939,6 @@ class _EditorScreenState extends State<EditorScreen> {
 
   // Mostrar diálogo para guardar el diagrama
   Future<void> _showSaveDiagramDialog() async {
-    if (!_isTutorialActionAllowed(TutorialEditorAction.saveDiagram)) {
-      return;
-    }
-
     final Map<String, dynamic>? result = await showDialog<Map<String, dynamic>>(
       context: context,
       builder: (context) => SaveDiagramDialog(
@@ -2639,7 +2970,6 @@ class _EditorScreenState extends State<EditorScreen> {
             currentDiagram = newDiagram.copyWith(id: id);
             _markCurrentStateAsSavedInHistory();
           });
-          _tutorialEventService.emit(TutorialEditorEvent.diagramSaved);
           // _showSnackBar('Diagrama guardado correctamente');
         } else {
           // Actualizar diagrama existente (mantener userId original o asignar si no tiene)
@@ -2658,7 +2988,6 @@ class _EditorScreenState extends State<EditorScreen> {
             currentDiagram = updatedDiagram;
             _markCurrentStateAsSavedInHistory();
           });
-          _tutorialEventService.emit(TutorialEditorEvent.diagramSaved);
           // _showSnackBar('Diagrama actualizado correctamente');
         }
       } catch (e) {
@@ -3053,5 +3382,76 @@ class _EditorScreenState extends State<EditorScreen> {
         ],
       ),
     );
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // Métodos del tutorial automático
+  // ─────────────────────────────────────────────────────────────────────────
+
+  /// Agrega un nodo con ID fijo para que el script pueda referenciarlo.
+  Future<void> _addTutorialNode({
+    required AutoTutorialNodeType type,
+    required String nodeId,
+    required Offset position,
+    String? content,
+  }) async {
+    final nodeType = _mapAutoNodeType(type);
+    final text = content ?? _defaultTextForAutoType(type);
+    final node = DiagramNode(
+      id: nodeId,
+      type: nodeType,
+      position: position,
+      text: text,
+    );
+    setState(() {
+      nodes.add(node);
+      _hasUnsavedChanges = true;
+    });
+    _recordHistoryState();
+  }
+
+  /// Crea una conexión buscando los nodos por sus IDs.
+  Future<void> _createConnectionByIds({
+    required String sourceId,
+    required String targetId,
+  }) async {
+    final source = nodes.where((n) => n.id == sourceId).firstOrNull;
+    final target = nodes.where((n) => n.id == targetId).firstOrNull;
+    if (source == null || target == null) return;
+    _createConnection(source, target);
+  }
+
+  /// Mapea AutoTutorialNodeType al NodeType de la app.
+  NodeType _mapAutoNodeType(AutoTutorialNodeType type) {
+    switch (type) {
+      case AutoTutorialNodeType.start:
+      case AutoTutorialNodeType.end:
+        return NodeType.terminal;
+      case AutoTutorialNodeType.process:
+        return NodeType.process;
+      case AutoTutorialNodeType.decision:
+        return NodeType.decision;
+      case AutoTutorialNodeType.dataInput:
+      case AutoTutorialNodeType.dataOutput:
+        return NodeType.data;
+    }
+  }
+
+  /// Texto por defecto cuando el script no especifica content.
+  String _defaultTextForAutoType(AutoTutorialNodeType type) {
+    switch (type) {
+      case AutoTutorialNodeType.start:
+        return 'Inicio';
+      case AutoTutorialNodeType.end:
+        return 'Fin';
+      case AutoTutorialNodeType.process:
+        return 'Proceso';
+      case AutoTutorialNodeType.decision:
+        return 'Condición';
+      case AutoTutorialNodeType.dataInput:
+        return 'Entrada';
+      case AutoTutorialNodeType.dataOutput:
+        return 'Salida';
+    }
   }
 }
