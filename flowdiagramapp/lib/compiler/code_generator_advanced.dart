@@ -104,6 +104,17 @@ class AdvancedCodeGenerator {
     // Generate main function
     buffer.writeln('int main() {');
 
+    // Generate variable declarations from symbol table
+    final declarations = symbolTable.generateCDeclarations();
+    if (declarations.isNotEmpty) {
+      final indentedDecls = declarations.split('\n')
+          .where((line) => line.trim().isNotEmpty)
+          .map((line) => '${options.indentation}$line')
+          .join('\n');
+      buffer.writeln(indentedDecls);
+      buffer.writeln('');
+    }
+
     // Sort nodes by execution order (start from terminal start)
     final orderedNodes = _getNodesInExecutionOrder(nodes, connections);
 
@@ -537,7 +548,6 @@ class AdvancedCodeGenerator {
         final formatSpec = _getFormatSpecifierForVariable(varName, symbolTable);
         final needsAmpersand = formatSpec != '%s'; // Strings don't need &
         final ampersand = needsAmpersand ? '&' : '';
-        buffer.writeln('${indent}printf("Ingrese $varName: ");');
         buffer.writeln('${indent}scanf("$formatSpec", $ampersand$varName);');
       }
       return;
@@ -549,7 +559,6 @@ class AdvancedCodeGenerator {
       final formatSpec = _getFormatSpecifierForVariable(varName, symbolTable);
       final needsAmpersand = formatSpec != '%s';
       final ampersand = needsAmpersand ? '&' : '';
-      buffer.writeln('${indent}printf("Ingrese $varName: ");');
       buffer.writeln('${indent}scanf("$formatSpec", $ampersand$varName);');
     }
   }
@@ -656,7 +665,8 @@ class AdvancedCodeGenerator {
         (c.label.toLowerCase() == 'sí' ||
             c.label.toLowerCase() == 'si' ||
             c.label.toLowerCase() == 'yes' ||
-            c.label.toLowerCase() == 'true'));
+            c.label.toLowerCase() == 'true' ||
+            c.label.toLowerCase() == 'verdadero'));
 
     for (final conn in yesBranch) {
       _generateBranchCode(conn.target, allNodes, connections, symbolTable,
@@ -668,7 +678,9 @@ class AdvancedCodeGenerator {
     // Find and generate 'no' branch
     final noBranch = connections.where((c) =>
         c.source.id == node.id &&
-        (c.label.toLowerCase() == 'no' || c.label.toLowerCase() == 'false'));
+        (c.label.toLowerCase() == 'no' ||
+            c.label.toLowerCase() == 'false' ||
+            c.label.toLowerCase() == 'falso'));
 
     if (noBranch.isNotEmpty) {
       buffer.writeln('${indent}else {');
@@ -922,7 +934,8 @@ class AdvancedCodeGenerator {
         (c.label.toLowerCase() == 'sí' ||
             c.label.toLowerCase() == 'si' ||
             c.label.toLowerCase() == 'yes' ||
-            c.label.toLowerCase() == 'true'));
+            c.label.toLowerCase() == 'true' ||
+            c.label.toLowerCase() == 'verdadero'));
 
     for (final conn in yesBranch) {
       if (conn.target.id != loopNodeId) {
@@ -938,7 +951,9 @@ class AdvancedCodeGenerator {
     final noBranch = connections.where((c) =>
         c.source.id == node.id &&
         !c.isLoopBack &&
-        (c.label.toLowerCase() == 'no' || c.label.toLowerCase() == 'false'));
+        (c.label.toLowerCase() == 'no' ||
+            c.label.toLowerCase() == 'false' ||
+            c.label.toLowerCase() == 'falso'));
 
     if (noBranch.isNotEmpty) {
       buffer.writeln('${indent}else {');

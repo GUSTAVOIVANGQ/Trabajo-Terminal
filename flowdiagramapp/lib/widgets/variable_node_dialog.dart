@@ -12,31 +12,41 @@ class VariableNodeDialog extends StatefulWidget {
 }
 
 class _VariableNodeDialogState extends State<VariableNodeDialog> {
-  final _formKey = GlobalKey<FormState>();
-  
-  late TextEditingController _nameController;
+  String selectedDeclarationType = 'declaration'; // Por defecto declaración
+  late TextEditingController _variableNameController;
   late TextEditingController _valueController;
-  late TextEditingController _arraySizeController;
+  late TextEditingController _customTextController;
+  String selectedDataType = 'int';
+  bool initializeWithValue = false;
+  bool useCustomText = false;
 
-  String _selectedDataType = 'int';
-  bool _isConstant = false;
-  bool _isArray = false;
+  // Tipos de declaraciones disponibles
+  final Map<String, String> declarationTypes = {
+    'declaration': 'Declarar Variable',
+    'initialization': 'Declarar e Inicializar',
+    'constant': 'Declarar Constante',
+    'array': 'Declarar Arreglo',
+    'custom': 'Escribir Manualmente',
+  };
 
-  final Map<String, String> _dataTypes = {
-    'int': 'Número entero (Ej. 5)',
-    'float': 'Número decimal (Ej. 3.14)',
-    'char': 'Un solo carácter (Ej. a)',
-    'string': 'Texto o palabra (Ej. Hola)',
-    'bool': 'Verdadero o Falso (true/false)',
+  // Tipos de datos disponibles en C
+  final Map<String, String> dataTypes = {
+    'int': 'Entero (int)',
+    'float': 'Decimal (float)',
+    'double': 'Decimal doble (double)',
+    'char': 'Carácter (char)',
+    'bool': 'Booleano (bool)',
+    'string': 'Cadena de texto (char[])',
   };
 
   @override
   void initState() {
     super.initState();
-    _nameController = TextEditingController();
+    _variableNameController = TextEditingController();
     _valueController = TextEditingController();
-    _arraySizeController = TextEditingController(text: '10');
+    _customTextController = TextEditingController(text: widget.node.text);
 
+    // Intentar interpretar el texto existente
     _parseExistingText();
   }
 
@@ -44,110 +54,407 @@ class _VariableNodeDialogState extends State<VariableNodeDialog> {
     String text = widget.node.text.trim();
     if (text.isEmpty) return;
 
-    // Detectar si es constante
-    if (text.startsWith('const ')) {
-      _isConstant = true;
-      text = text.substring(6).trim();
+    // Detectar declaración con inicialización
+    RegExp initPattern =
+        RegExp(r'^(int|float|double|char|bool)\s+(\w+)\s*=\s*(.+)$');
+    Match? match = initPattern.firstMatch(text);
+
+    if (match != null) {
+      selectedDeclarationType = 'initialization';
+      selectedDataType = match.group(1) ?? 'int';
+      _variableNameController.text = match.group(2) ?? '';
+      _valueController.text = match.group(3) ?? '';
+      initializeWithValue = true;
+      return;
     }
 
-    // Buscar tipo de dato
-    String foundType = 'int';
-    for (String type in ['int', 'float', 'double', 'char', 'bool']) {
-      if (text.startsWith('$type ')) {
-        foundType = type;
-        text = text.substring(type.length).trim();
-        break;
-      }
+    // Detectar declaración simple
+    RegExp declPattern = RegExp(r'^(int|float|double|char|bool)\s+(\w+)$');
+    match = declPattern.firstMatch(text);
+
+    if (match != null) {
+      selectedDeclarationType = 'declaration';
+      selectedDataType = match.group(1) ?? 'int';
+      _variableNameController.text = match.group(2) ?? '';
+      initializeWithValue = false;
+      return;
     }
 
-    // Detectar si es un arreglo de char (string)
-    if (foundType == 'char' && (text.contains('[') || text.contains('*'))) {
-      _selectedDataType = 'string';
-      _isArray = false; // Manejado internamente como string
-    } else {
-      if (foundType == 'double') foundType = 'float'; // Simplificar a float para UI
-      _selectedDataType = foundType;
-    }
+    // Detectar constante
+    if (text.contains('const')) {
+      RegExp constPattern =
+          RegExp(r'^const\s+(int|float|double|char|bool)\s+(\w+)\s*=\s*(.+)$');
+      match = constPattern.firstMatch(text);
 
-    // Detectar arreglo genérico
-    if (text.contains('[') && text.contains(']')) {
-      if (_selectedDataType != 'string') {
-        _isArray = true;
-      }
-      
-      RegExp arrayPattern = RegExp(r'^(\w+)\[(\d+)\]');
-      Match? match = arrayPattern.firstMatch(text);
       if (match != null) {
-        _nameController.text = match.group(1) ?? '';
-        _arraySizeController.text = match.group(2) ?? '10';
-        text = text.substring(match.end).trim();
-        if (text.startsWith('=')) {
-          _valueController.text = text.substring(1).trim();
-        }
+        selectedDeclarationType = 'constant';
+        selectedDataType = match.group(1) ?? 'int';
+        _variableNameController.text = match.group(2) ?? '';
+        _valueController.text = match.group(3) ?? '';
         return;
       }
     }
 
-    // Variable normal con o sin inicialización
-    RegExp varPattern = RegExp(r'^(\w+)\s*(?:=\s*(.+))?$');
-    Match? match = varPattern.firstMatch(text);
-    if (match != null) {
-      _nameController.text = match.group(1) ?? '';
-      _valueController.text = match.group(2) ?? '';
-    } else {
-      // Fallback
-      _nameController.text = text.replaceAll(RegExp(r'[^a-zA-Z0-9_]'), '');
+    // Detectar arreglo
+    if (text.contains('[') && text.contains(']')) {
+      RegExp arrayPattern =
+          RegExp(r'^(int|float|double|char|bool)\s+(\w+)\[(\d+)\]$');
+      match = arrayPattern.firstMatch(text);
+
+      if (match != null) {
+        selectedDeclarationType = 'array';
+        selectedDataType = match.group(1) ?? 'int';
+        _variableNameController.text = match.group(2) ?? '';
+        _valueController.text = match.group(3) ?? '';
+        return;
+      }
     }
+
+    // Detectar cadena de texto (char[])
+    if (text.contains('char') && (text.contains('[') || text.contains('*'))) {
+      selectedDataType = 'string';
+      selectedDeclarationType = 'array';
+
+      RegExp stringPattern = RegExp(r'^char\s+(\w+)\[(\d*)\]$');
+      match = stringPattern.firstMatch(text);
+
+      if (match != null) {
+        _variableNameController.text = match.group(1) ?? '';
+        _valueController.text = match.group(2) ?? '100';
+        return;
+      }
+    }
+
+    // Si no coincide con ningún patrón, usar texto personalizado
+    selectedDeclarationType = 'custom';
+    useCustomText = true;
   }
 
   @override
   void dispose() {
-    _nameController.dispose();
+    _variableNameController.dispose();
     _valueController.dispose();
-    _arraySizeController.dispose();
+    _customTextController.dispose();
     super.dispose();
   }
 
   String _generateVariableText() {
-    if (_nameController.text.trim().isEmpty) return '';
-
-    String prefix = _isConstant ? 'const ' : '';
-    String type = _selectedDataType == 'string' ? 'char' : _selectedDataType;
-    String name = _nameController.text.trim();
-    
-    String declaration;
-    if (_selectedDataType == 'string') {
-      String size = _arraySizeController.text.trim().isEmpty ? '100' : _arraySizeController.text.trim();
-      declaration = '$prefix$type $name[$size]';
-    } else if (_isArray) {
-      String size = _arraySizeController.text.trim().isEmpty ? '10' : _arraySizeController.text.trim();
-      declaration = '$prefix$type $name[$size]';
-    } else {
-      declaration = '$prefix$type $name';
+    if (useCustomText || selectedDeclarationType == 'custom') {
+      return _customTextController.text;
     }
 
-    String value = _valueController.text.trim();
-    if (value.isNotEmpty) {
-      // Basic formatting for strings/chars if user forgot quotes
-      if (_selectedDataType == 'string' && !value.startsWith('"') && !value.startsWith('{')) {
-        value = '"$value"';
-      } else if (_selectedDataType == 'char' && !value.startsWith("'") && value.length == 1) {
-        value = "'$value'";
-      }
-      return '$declaration = $value';
-    }
+    switch (selectedDeclarationType) {
+      case 'declaration':
+        return '$selectedDataType ${_variableNameController.text}';
 
-    return declaration;
+      case 'initialization':
+        return '$selectedDataType ${_variableNameController.text} = ${_valueController.text}';
+
+      case 'constant':
+        return 'const $selectedDataType ${_variableNameController.text} = ${_valueController.text}';
+
+      case 'array':
+        if (selectedDataType == 'string') {
+          String size =
+              _valueController.text.isEmpty ? '100' : _valueController.text;
+          return 'char ${_variableNameController.text}[$size]';
+        } else {
+          String size =
+              _valueController.text.isEmpty ? '10' : _valueController.text;
+          return '$selectedDataType ${_variableNameController.text}[$size]';
+        }
+
+      default:
+        return '';
+    }
   }
 
-  String? _validateVariableName(String? value) {
-    if (value == null || value.trim().isEmpty) {
-      return 'El nombre es obligatorio';
+  Widget _buildDeclarationTypeSelector() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Tipo de Declaración',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 8),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+          decoration: BoxDecoration(
+            border: Border.all(color: Colors.grey),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: DropdownButtonHideUnderline(
+            child: DropdownButton<String>(
+              value: selectedDeclarationType,
+              isExpanded: true,
+              onChanged: (String? value) {
+                setState(() {
+                  selectedDeclarationType = value!;
+                  useCustomText = value == 'custom';
+                });
+              },
+              items: declarationTypes.entries.map((entry) {
+                return DropdownMenuItem<String>(
+                  value: entry.key,
+                  child: Text(entry.value),
+                );
+              }).toList(),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildInputFields() {
+    if (useCustomText || selectedDeclarationType == 'custom') {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Declaración Personalizada',
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 8),
+          TextField(
+            controller: _customTextController,
+            decoration: const InputDecoration(
+              labelText: 'Código de declaración',
+              hintText: 'Ej: int matriz[10][10]',
+              border: OutlineInputBorder(),
+            ),
+            maxLines: 2,
+            onChanged: (value) => setState(() {}),
+          ),
+        ],
+      );
     }
-    if (!RegExp(r'^[a-zA-Z_][a-zA-Z0-9_]*$').hasMatch(value)) {
-      return 'Solo letras, números y guiones bajos. No debe empezar con número.';
+
+    return Column(
+      children: [
+        _buildDataTypeSelector(),
+        const SizedBox(height: 16),
+        _buildVariableNameField(),
+        if (selectedDeclarationType == 'initialization' ||
+            selectedDeclarationType == 'constant' ||
+            selectedDeclarationType == 'array') ...[
+          const SizedBox(height: 16),
+          _buildValueField(),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildDataTypeSelector() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Tipo de Dato',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 8),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+          decoration: BoxDecoration(
+            border: Border.all(color: Colors.grey),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: DropdownButtonHideUnderline(
+            child: DropdownButton<String>(
+              value: selectedDataType,
+              isExpanded: true,
+              onChanged: (String? value) {
+                setState(() {
+                  selectedDataType = value!;
+                });
+              },
+              items: dataTypes.entries.map((entry) {
+                return DropdownMenuItem<String>(
+                  value: entry.key,
+                  child: Text(entry.value),
+                );
+              }).toList(),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildVariableNameField() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Nombre de la Variable',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 8),
+        TextField(
+          controller: _variableNameController,
+          decoration: const InputDecoration(
+            labelText: 'Nombre',
+            hintText: 'Ej: contador, suma, edad',
+            border: OutlineInputBorder(),
+          ),
+          onChanged: (value) => setState(() {}),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildValueField() {
+    String label;
+    String hint;
+
+    switch (selectedDeclarationType) {
+      case 'initialization':
+        label = 'Valor Inicial';
+        hint = _getValueHint();
+        break;
+      case 'constant':
+        label = 'Valor de la Constante';
+        hint = _getValueHint();
+        break;
+      case 'array':
+        label = selectedDataType == 'string'
+            ? 'Tamaño del arreglo'
+            : 'Tamaño del arreglo';
+        hint = selectedDataType == 'string' ? 'Ej: 100' : 'Ej: 10, 50';
+        break;
+      default:
+        label = 'Valor';
+        hint = 'Ingrese el valor';
     }
-    return null;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 8),
+        TextField(
+          controller: _valueController,
+          decoration: InputDecoration(
+            labelText: label,
+            hintText: hint,
+            border: const OutlineInputBorder(),
+          ),
+          onChanged: (value) => setState(() {}),
+        ),
+      ],
+    );
+  }
+
+  String _getValueHint() {
+    switch (selectedDataType) {
+      case 'int':
+        return 'Ej: 0, 5, -10';
+      case 'float':
+      case 'double':
+        return 'Ej: 0.0, 3.14, -2.5';
+      case 'char':
+        return "Ej: 'a', 'X', '1'";
+      case 'bool':
+        return 'Ej: true, false';
+      case 'string':
+        return 'Ej: 100 (tamaño)';
+      default:
+        return 'Ingrese el valor';
+    }
+  }
+
+  Widget _buildPreview() {
+    String generatedText = _generateVariableText();
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.grey[100],
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.grey[300]!),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Vista Previa del Código:',
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 12,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            generatedText.isEmpty
+                ? 'Complete los campos para ver la vista previa'
+                : generatedText,
+            style: const TextStyle(
+              fontFamily: 'monospace',
+              fontSize: 13,
+              color: Colors.black87,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHelpText() {
+    String helpText;
+
+    switch (selectedDeclarationType) {
+      case 'declaration':
+        helpText = 'Declara una variable sin asignarle un valor inicial. '
+            'La variable se puede usar después para almacenar datos.';
+        break;
+      case 'initialization':
+        helpText = 'Declara una variable y le asigna un valor inicial. '
+            'Es recomendable inicializar las variables para evitar valores basura.';
+        break;
+      case 'constant':
+        helpText =
+            'Declara una constante que no puede cambiar su valor durante la ejecución. '
+            'Útil para valores fijos como PI o tamaños máximos.';
+        break;
+      case 'array':
+        helpText =
+            'Declara un arreglo que puede almacenar múltiples valores del mismo tipo. '
+            'Especifica el tamaño entre corchetes.';
+        break;
+      default:
+        helpText =
+            'Escriba manualmente la declaración de variable en sintaxis de C.';
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.blue[50],
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.blue[200]!),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.info_outline, color: Colors.blue[700], size: 20),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              helpText,
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.blue[700],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -155,118 +462,27 @@ class _VariableNodeDialogState extends State<VariableNodeDialog> {
     return AlertDialog(
       title: const Row(
         children: [
-          Icon(Icons.data_object, color: Colors.blue),
+          Icon(Icons.settings, color: Colors.teal),
           SizedBox(width: 8),
-          Text('Crear Variable'),
+          Text('Configurar Variable'),
         ],
       ),
       content: Container(
         width: MediaQuery.of(context).size.width * 0.85,
         constraints: const BoxConstraints(maxHeight: 600),
         child: SingleChildScrollView(
-          child: Form(
-            key: _formKey,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Tipo de dato que almacenará:',
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 8),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                  decoration: BoxDecoration(
-                    border: Border.all(color: Colors.grey.shade400),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: DropdownButtonHideUnderline(
-                    child: DropdownButton<String>(
-                      value: _selectedDataType,
-                      isExpanded: true,
-                      onChanged: (String? value) {
-                        setState(() {
-                          _selectedDataType = value!;
-                          if (value == 'string') {
-                            _isArray = false; // String ya es un arreglo de chars
-                          }
-                        });
-                      },
-                      items: _dataTypes.entries.map((entry) {
-                        return DropdownMenuItem<String>(
-                          value: entry.key,
-                          child: Text(entry.value),
-                        );
-                      }).toList(),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _nameController,
-                  decoration: const InputDecoration(
-                    labelText: 'Nombre de la variable',
-                    hintText: 'Ej: edad, nombre, contador',
-                    border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.text_fields),
-                  ),
-                  validator: _validateVariableName,
-                  onChanged: (value) => setState(() {}),
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _valueController,
-                  decoration: InputDecoration(
-                    labelText: 'Valor inicial (Opcional)',
-                    hintText: _selectedDataType == 'int' ? 'Ej: 0' : 
-                              _selectedDataType == 'string' ? 'Ej: "Hola"' : 'Dejar en blanco si no tiene valor aún',
-                    border: const OutlineInputBorder(),
-                  ),
-                  onChanged: (value) => setState(() {}),
-                ),
-                const SizedBox(height: 16),
-                
-                // Opciones avanzadas
-                ExpansionTile(
-                  title: const Text('Opciones Adicionales', style: TextStyle(fontSize: 14)),
-                  tilePadding: EdgeInsets.zero,
-                  children: [
-                    CheckboxListTile(
-                      title: const Text('Es un valor constante (No cambiará)'),
-                      value: _isConstant,
-                      onChanged: (val) => setState(() => _isConstant = val ?? false),
-                      controlAffinity: ListTileControlAffinity.leading,
-                      contentPadding: EdgeInsets.zero,
-                    ),
-                    if (_selectedDataType != 'string')
-                      CheckboxListTile(
-                        title: const Text('Es una lista/arreglo (Múltiples valores)'),
-                        value: _isArray,
-                        onChanged: (val) => setState(() => _isArray = val ?? false),
-                        controlAffinity: ListTileControlAffinity.leading,
-                        contentPadding: EdgeInsets.zero,
-                      ),
-                    if (_isArray || _selectedDataType == 'string')
-                      Padding(
-                        padding: const EdgeInsets.only(top: 8.0, bottom: 8.0),
-                        child: TextFormField(
-                          controller: _arraySizeController,
-                          decoration: InputDecoration(
-                            labelText: _selectedDataType == 'string' ? 'Longitud máxima del texto' : 'Cantidad de elementos en la lista',
-                            border: const OutlineInputBorder(),
-                          ),
-                          keyboardType: TextInputType.number,
-                          onChanged: (value) => setState(() {}),
-                        ),
-                      ),
-                  ],
-                ),
-                
-                const SizedBox(height: 16),
-                _buildPreview(),
-              ],
-            ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildDeclarationTypeSelector(),
+              const SizedBox(height: 16),
+              _buildInputFields(),
+              const SizedBox(height: 16),
+              _buildPreview(),
+              const SizedBox(height: 16),
+              _buildHelpText(),
+            ],
           ),
         ),
       ),
@@ -277,8 +493,8 @@ class _VariableNodeDialogState extends State<VariableNodeDialog> {
         ),
         FilledButton(
           onPressed: () {
-            if (_formKey.currentState!.validate()) {
-              String result = _generateVariableText();
+            String result = _generateVariableText();
+            if (result.isNotEmpty) {
               Navigator.of(context).pop(NodeDialogResult.simple(result));
             }
           },
@@ -287,37 +503,4 @@ class _VariableNodeDialogState extends State<VariableNodeDialog> {
       ],
     );
   }
-
-  Widget _buildPreview() {
-    String generatedText = _generateVariableText();
-
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.grey.shade100,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.grey.shade300),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Vista Previa del Código en C:',
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.blueGrey),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            generatedText.isEmpty ? 'Escribe un nombre para ver el código' : '$generatedText;',
-            style: TextStyle(
-              fontFamily: 'monospace',
-              fontSize: 14,
-              color: generatedText.isEmpty ? Colors.grey : Colors.black87,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 }
-

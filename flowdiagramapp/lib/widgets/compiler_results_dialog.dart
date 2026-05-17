@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../compiler/compiler.dart';
 import '../models/diagram_validator.dart';
+import 'execution_tab.dart';
 
 /// Dialog that displays comprehensive compiler results with tabs for each phase
 class CompilerResultsDialog extends StatefulWidget {
@@ -27,7 +28,7 @@ class _CompilerResultsDialogState extends State<CompilerResultsDialog>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 6, vsync: this);
+    _tabController = TabController(length: 7, vsync: this);
   }
 
   @override
@@ -97,6 +98,10 @@ class _CompilerResultsDialogState extends State<CompilerResultsDialog>
                     icon: Icon(Icons.code, size: 20),
                     text: 'Código',
                   ),
+                  Tab(
+                    icon: Icon(Icons.play_circle_outline, size: 20),
+                    text: 'Ejecutar',
+                  ),
                 ],
               ),
             ),
@@ -112,6 +117,11 @@ class _CompilerResultsDialogState extends State<CompilerResultsDialog>
                   _buildSemanticTab(theme, isDark),
                   _buildOptimizationTab(theme, isDark),
                   _buildCodeTab(theme, isDark),
+                  ExecutionTab(
+                    cCode: widget.result.generatedCode ?? '',
+                    compilationSuccess: widget.result.success &&
+                        (widget.structuralResult?.isValid ?? true),
+                  ),
                 ],
               ),
             ),
@@ -1072,8 +1082,8 @@ class _CompilerResultsDialogState extends State<CompilerResultsDialog>
         ],
       );
     }
-    // Mostrar código legacy si está disponible
-    final code = widget.legacyCode ?? 'Generación de código pendiente (Fase 5)';
+    // Mostrar código generado avanzado, con fallback a legacy si no está disponible
+    final code = widget.result.generatedCode ?? widget.legacyCode ?? 'Generación de código pendiente (Fase 5)';
 
     return Column(
       children: [

@@ -849,7 +849,7 @@ class DiagramSyntaxAnalyzer {
         type == TokenType.kwPrintf;
   }
 
-  /// Parse input statement: Leer(x), scanf("%d", &x)
+  /// Parse input statement: Leer(x), scanf("%d", &x), or Leer x
   List<StatementNode> _parseInputStatement() {
     final position = _getPosition();
     final variables = <IdentifierNode>[];
@@ -861,7 +861,7 @@ class DiagramSyntaxAnalyzer {
     }
 
     // Parse arguments
-    _match([TokenType.leftParen]);
+    final hasParens = _match([TokenType.leftParen]);
 
     // Check for format string first (scanf style)
     if (_check(TokenType.stringLiteral)) {
@@ -871,7 +871,10 @@ class DiagramSyntaxAnalyzer {
     }
 
     // Parse variable list
-    while (!_check(TokenType.rightParen) && !_isAtEnd()) {
+    while (!_isAtEnd()) {
+      if (hasParens && _check(TokenType.rightParen)) break;
+      if (!hasParens && _check(TokenType.semicolon)) break;
+
       // Skip & for scanf
       _match([TokenType.opBitAnd]);
 
@@ -887,7 +890,9 @@ class DiagramSyntaxAnalyzer {
       if (!_match([TokenType.comma])) break;
     }
 
-    _match([TokenType.rightParen]);
+    if (hasParens) {
+      _match([TokenType.rightParen]);
+    }
     _match([TokenType.semicolon]);
 
     return [
@@ -900,7 +905,7 @@ class DiagramSyntaxAnalyzer {
     ];
   }
 
-  /// Parse output statement: Mostrar(x), printf("%d", x)
+  /// Parse output statement: Mostrar(x), printf("%d", x), or Mostrar x
   List<StatementNode> _parseOutputStatement() {
     final position = _getPosition();
     final expressions = <ASTNode>[];
@@ -912,7 +917,7 @@ class DiagramSyntaxAnalyzer {
     }
 
     // Parse arguments
-    _match([TokenType.leftParen]);
+    final hasParens = _match([TokenType.leftParen]);
 
     // Check for format string first (printf style)
     if (_check(TokenType.stringLiteral)) {
@@ -921,7 +926,10 @@ class DiagramSyntaxAnalyzer {
 
       if (_match([TokenType.comma])) {
         // Parse remaining expressions
-        while (!_check(TokenType.rightParen) && !_isAtEnd()) {
+        while (!_isAtEnd()) {
+          if (hasParens && _check(TokenType.rightParen)) break;
+          if (!hasParens && _check(TokenType.semicolon)) break;
+          
           final expr = _parseExpression();
           if (expr != null) {
             expressions.add(expr);
@@ -930,8 +938,11 @@ class DiagramSyntaxAnalyzer {
         }
       }
     } else {
-      // Spanish style: Mostrar(x, y, z)
-      while (!_check(TokenType.rightParen) && !_isAtEnd()) {
+      // Spanish style: Mostrar(x, y, z) or Mostrar x
+      while (!_isAtEnd()) {
+        if (hasParens && _check(TokenType.rightParen)) break;
+        if (!hasParens && _check(TokenType.semicolon)) break;
+        
         final expr = _parseExpression();
         if (expr != null) {
           expressions.add(expr);
@@ -940,7 +951,9 @@ class DiagramSyntaxAnalyzer {
       }
     }
 
-    _match([TokenType.rightParen]);
+    if (hasParens) {
+      _match([TokenType.rightParen]);
+    }
     _match([TokenType.semicolon]);
 
     return [

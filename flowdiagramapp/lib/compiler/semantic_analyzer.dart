@@ -369,6 +369,14 @@ class DiagramSemanticAnalyzer {
       else if (node.type == NodeType.process) {
         _extractDeclarationFromProcess(node.text, node.id);
       }
+      // Check for implicit declarations in data input nodes
+      else if (node.type == NodeType.data) {
+        final text = node.text.trim().toLowerCase();
+        final isInput = text.startsWith('leer') || text.startsWith('ingresar') || text.startsWith('scanf');
+        if (isInput) {
+          _extractImplicitDeclarationsFromData(node.text, node.id);
+        }
+      }
     }
   }
 
@@ -496,6 +504,27 @@ class DiagramSemanticAnalyzer {
     }
   }
 
+  /// Extract implicit declarations from data input nodes
+  void _extractImplicitDeclarationsFromData(String text, String nodeId) {
+    final tokens = _lexer.tokenize(text, nodeId: nodeId);
+    if (tokens.isEmpty) return;
+
+    for (int i = 0; i < tokens.length; i++) {
+      // Skip the first keyword if it's an action keyword
+      if (i == 0 && (tokens[i].type == TokenType.kwLeer || 
+          tokens[i].type == TokenType.kwIngresar || 
+          tokens[i].type == TokenType.kwScanf)) {
+        continue;
+      }
+      if (tokens[i].type == TokenType.identifier) {
+        final varName = tokens[i].lexeme;
+        if (!_symbolTable.symbolExists(varName)) {
+          _registerDeclaration(varName, DataType.integer, true, nodeId);
+        }
+      }
+    }
+  }
+
   /// Convert string type name to DataType
   DataType? _stringToDataType(String typeName) {
     switch (typeName.toLowerCase()) {
@@ -558,6 +587,17 @@ class DiagramSemanticAnalyzer {
             stmt.initializer != null,
             diagNode.diagramNodeId,
           );
+        } else if (stmt is InputStatementNode) {
+          for (final varNode in stmt.variables) {
+            if (!_symbolTable.symbolExists(varNode.name)) {
+              _registerDeclaration(
+                varNode.name,
+                DataType.integer,
+                true,
+                diagNode.diagramNodeId,
+              );
+            }
+          }
         }
       }
     }
@@ -999,38 +1039,65 @@ class DiagramSemanticAnalyzer {
       return;
     }
 
-    // Extract variables from function arguments
-    bool inParens = false;
-    for (final token in tokens) {
-      if (token.type == TokenType.leftParen) {
-        inParens = true;
-        continue;
-      }
-      if (token.type == TokenType.rightParen) {
-        inParens = false;
-        continue;
-      }
+    // Extract variables
+    List<String> extractedVars = [];
+    
+    // Check if it's a format with parentheses like scanf("%d", &x)
+    bool hasParens = tokens.any((t) => t.type == TokenType.leftParen);
+    
+    if (hasParens) {
+      bool inParens = false;
+      for (final token in tokens) {
+        if (token.type == TokenType.leftParen) {
+          inParens = true;
+          continue;
+        }
+        if (token.type == TokenType.rightParen) {
+          inParens = false;
+          continue;
+        }
 
-      if (inParens && token.type == TokenType.identifier) {
-        final varName = token.lexeme;
+        if (inParens && token.type == TokenType.identifier) {
+          extractedVars.add(token.lexeme);
+        }
+      }
+    } else {
+      // For simple format like "Leer nombre" or "Mostrar nombre"
+      for (int i = 0; i < tokens.length; i++) {
+        // Skip keywords
+        if (tokens[i].type == TokenType.identifier) {
+          extractedVars.add(tokens[i].lexeme);
+        }
+      }
+    }
 
+    for (final varName in extractedVars) {
+      if (isInput) {
+        // Auto-declare if it doesn't exist (implicit declaration for inputs)
         if (!_symbolTable.symbolExists(varName)) {
-          errors
-              .add(SemanticError.undeclaredVariable(varName, nodeId: node.id));
+          _symbolTable.declareSymbol(
+            name: varName,
+            // We use DataType.unknown to let the code generator infer from name,
+            // or integer as fallback since the generator defaults to int.
+            dataType: DataType.integer, 
+            nodeId: node.id,
+            isInitialized: true,
+          );
+          _variableTypes[varName] = DataType.integer;
+        }
+        modifiedVars.add(varName);
+        _symbolTable.markAsInitialized(varName);
+      } else {
+        if (!_symbolTable.symbolExists(varName)) {
+          errors.add(SemanticError.undeclaredVariable(varName, nodeId: node.id));
         } else {
-          if (isInput) {
-            modifiedVars.add(varName);
-            _symbolTable.markAsInitialized(varName);
-          } else {
-            usedVars.add(varName);
-            _symbolTable.markAsUsed(varName);
+          usedVars.add(varName);
+          _symbolTable.markAsUsed(varName);
 
-            // Check if variable is initialized for output
-            final symbol = _symbolTable.lookup(varName);
-            if (symbol != null && !symbol.isInitialized) {
-              warnings.add(SemanticError.uninitializedVariable(varName,
-                  nodeId: node.id));
-            }
+          // Check if variable is initialized for output
+          final symbol = _symbolTable.lookup(varName);
+          if (symbol != null && !symbol.isInitialized) {
+            warnings.add(SemanticError.uninitializedVariable(varName, nodeId: node.id));
           }
         }
       }

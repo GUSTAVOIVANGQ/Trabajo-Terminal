@@ -12,495 +12,308 @@ class DecisionNodeDialog extends StatefulWidget {
 }
 
 class _DecisionNodeDialogState extends State<DecisionNodeDialog> {
-  final _formKey = GlobalKey<FormState>();
+  String _mode = 'simple'; // 'simple' | 'compound' | 'check' | 'free'
 
-  String selectedConditionType = 'comparison';
-  late TextEditingController _variable1Controller;
-  late TextEditingController _variable2Controller;
-  late TextEditingController _variableController;
-  late TextEditingController _valueController;
-  late TextEditingController _customTextController;
-  String selectedOperator = '>';
-  String selectedLogicalOperator = '&&';
-  bool useCustomText = false;
+  // Modo: comparación simple
+  late TextEditingController _simpleLeftCtrl;
+  late TextEditingController _simpleRightCtrl;
+  String _simpleOp = '>';
 
-  final Map<String, String> conditionTypes = {
-    'comparison': '⚖️ Comparación Simple (ej. x > 10, a == b)',
-    'logical': '🧠 Condición Múltiple (&&, ||)',
-    'loop_condition': '🔄 Bucle Automático (Generar estructura)',
-    'custom': '✏️ Escribir Manualmente',
-  };
+  // Modo: condición compuesta
+  late TextEditingController _compLeft1Ctrl;
+  late TextEditingController _compRight1Ctrl;
+  String _compOp1 = '>';
+  String _logicOp = '&&';
+  late TextEditingController _compLeft2Ctrl;
+  late TextEditingController _compRight2Ctrl;
+  String _compOp2 = '>';
 
-  final Map<String, String> comparisonOperators = {
-    '>': 'Mayor que (>)',
-    '<': 'Menor que (<)',
-    '>=': 'Mayor o igual (>=)',
-    '<=': 'Menor o igual (<=)',
-    '==': 'Igual a (==)',
-    '!=': 'Diferente (!=)',
-  };
+  // Modo: verificar estado
+  late TextEditingController _checkVarCtrl;
+  bool _checkNegated = false;
 
-  final Map<String, String> logicalOperators = {
-    '&&': 'Y (&&)',
-    '||': 'O (||)',
-    '!': 'NO (!)',
+  // Modo: texto libre
+  late TextEditingController _freeCtrl;
+
+  static const _compOps = ['>', '<', '>=', '<=', '==', '!='];
+  static const _compOpLabels = {
+    '>':  'mayor que  ( > )',
+    '<':  'menor que  ( < )',
+    '>=': 'mayor o igual  ( >= )',
+    '<=': 'menor o igual  ( <= )',
+    '==': 'igual a  ( == )',
+    '!=': 'diferente de  ( != )',
   };
 
   @override
   void initState() {
     super.initState();
-    _variable1Controller = TextEditingController();
-    _variable2Controller = TextEditingController();
-    _variableController = TextEditingController();
-    _valueController = TextEditingController();
-    _customTextController = TextEditingController(text: widget.node.text);
-
+    _simpleLeftCtrl  = TextEditingController();
+    _simpleRightCtrl = TextEditingController();
+    _compLeft1Ctrl   = TextEditingController();
+    _compRight1Ctrl  = TextEditingController();
+    _compLeft2Ctrl   = TextEditingController();
+    _compRight2Ctrl  = TextEditingController();
+    _checkVarCtrl    = TextEditingController();
+    _freeCtrl        = TextEditingController();
     _parseExistingText();
   }
 
   void _parseExistingText() {
-    String text = widget.node.text.trim();
+    String text = widget.node.text
+        .replaceAll('¿', '')
+        .replaceAll('?', '')
+        .trim();
     if (text.isEmpty) return;
 
-    text = text.replaceAll('¿', '').replaceAll('?', '').trim();
-
-    if (text.contains('&&') || text.contains('||')) {
-      selectedConditionType = 'logical';
-      if (text.contains('&&')) {
-        selectedLogicalOperator = '&&';
-      } else {
-        selectedLogicalOperator = '||';
-      }
+    // Detectar condición compuesta: expr1 && expr2  ó  expr1 || expr2
+    final compoundPattern = RegExp(r'^(.+?)\s*(&&|\|\|)\s*(.+)$');
+    final mc = compoundPattern.firstMatch(text);
+    if (mc != null) {
+      _mode    = 'compound';
+      _logicOp = mc.group(2)!;
+      _parseSimplePart(mc.group(1)!.trim(), _compLeft1Ctrl, _compRight1Ctrl,
+              (op) => _compOp1 = op);
+      _parseSimplePart(mc.group(3)!.trim(), _compLeft2Ctrl, _compRight2Ctrl,
+              (op) => _compOp2 = op);
       return;
     }
 
-    RegExp comparisonPattern = RegExp(r'^(\w+)\s*(>=|<=|>|<|==|!=)\s*(.+)$');
-    Match? match = comparisonPattern.firstMatch(text);
-
-    if (match != null) {
-      selectedConditionType = 'comparison';
-      _variable1Controller.text = match.group(1) ?? '';
-      selectedOperator = match.group(2) ?? '>';
-      _variable2Controller.text = match.group(3) ?? '';
+    // Detectar comparación simple
+    final simplePattern = RegExp(r'^(.+?)\s*(>=|<=|!=|>|<|==)\s*(.+)$');
+    final ms = simplePattern.firstMatch(text);
+    if (ms != null) {
+      _mode                = 'simple';
+      _simpleLeftCtrl.text  = ms.group(1)!.trim();
+      _simpleOp             = ms.group(2)!;
+      _simpleRightCtrl.text = ms.group(3)!.trim();
       return;
     }
 
-    selectedConditionType = 'custom';
-    useCustomText = true;
+    // Detectar negación
+    if (text.startsWith('!') || text.toLowerCase().startsWith('no ')) {
+      _mode             = 'check';
+      _checkNegated     = true;
+      _checkVarCtrl.text = text
+          .replaceFirst(RegExp(r'^(!|no\s+)', caseSensitive: false), '')
+          .trim();
+      return;
+    }
+
+    // Verificación simple (pocas palabras, sin operador)
+    if (text.split(' ').length <= 3) {
+      _mode              = 'check';
+      _checkVarCtrl.text = text;
+      return;
+    }
+
+    // Resto → libre
+    _mode         = 'free';
+    _freeCtrl.text = text;
+  }
+
+  void _parseSimplePart(
+      String part,
+      TextEditingController leftCtrl,
+      TextEditingController rightCtrl,
+      void Function(String) setOp,
+      ) {
+    final p =
+    RegExp(r'^(.+?)\s*(>=|<=|!=|>|<|==)\s*(.+)$').firstMatch(part);
+    if (p != null) {
+      leftCtrl.text  = p.group(1)!.trim();
+      setOp(p.group(2)!);
+      rightCtrl.text = p.group(3)!.trim();
+    } else {
+      leftCtrl.text = part;
+    }
   }
 
   @override
   void dispose() {
-    _variable1Controller.dispose();
-    _variable2Controller.dispose();
-    _variableController.dispose();
-    _valueController.dispose();
-    _customTextController.dispose();
+    _simpleLeftCtrl.dispose();
+    _simpleRightCtrl.dispose();
+    _compLeft1Ctrl.dispose();
+    _compRight1Ctrl.dispose();
+    _compLeft2Ctrl.dispose();
+    _compRight2Ctrl.dispose();
+    _checkVarCtrl.dispose();
+    _freeCtrl.dispose();
     super.dispose();
   }
 
-  String _generateConditionText() {
-    if (useCustomText || selectedConditionType == 'custom') {
-      return _customTextController.text;
-    }
+  String _generateText() {
+    switch (_mode) {
+      case 'simple':
+        final l = _simpleLeftCtrl.text.trim();
+        final r = _simpleRightCtrl.text.trim();
+        if (l.isEmpty) return '';
+        if (r.isEmpty) return '¿$l?';
+        return '¿$l $_simpleOp $r?';
 
-    switch (selectedConditionType) {
-      case 'comparison':
-        if (_variable1Controller.text.isNotEmpty && _variable2Controller.text.isNotEmpty) {
-          return '¿${_variable1Controller.text} $selectedOperator ${_variable2Controller.text}?';
-        }
-        break;
-      case 'logical':
-        if (_variable1Controller.text.isNotEmpty && _variable2Controller.text.isNotEmpty) {
-          return '¿${_variable1Controller.text} $selectedLogicalOperator ${_variable2Controller.text}?';
-        }
-        break;
-      case 'loop_condition':
-        if (_variableController.text.isNotEmpty && _valueController.text.isNotEmpty) {
-          return '¿${_variableController.text} $selectedOperator ${_valueController.text}?';
-        }
-        break;
+      case 'compound':
+        final l1 = _compLeft1Ctrl.text.trim();
+        final r1 = _compRight1Ctrl.text.trim();
+        final l2 = _compLeft2Ctrl.text.trim();
+        final r2 = _compRight2Ctrl.text.trim();
+        if (l1.isEmpty || l2.isEmpty) return '';
+        final part1 = r1.isEmpty ? l1 : '$l1 $_compOp1 $r1';
+        final part2 = r2.isEmpty ? l2 : '$l2 $_compOp2 $r2';
+        return '¿$part1 $_logicOp $part2?';
+
+      case 'check':
+        final v = _checkVarCtrl.text.trim();
+        if (v.isEmpty) return '';
+        return _checkNegated ? '¿!$v?' : '¿$v?';
+
+      case 'free':
+        final t = _freeCtrl.text.trim();
+        if (t.isEmpty) return '';
+        if (!t.startsWith('¿') && !t.endsWith('?')) return '¿$t?';
+        return t;
     }
     return '';
   }
 
-  String? _validateIdentifier(String? value) {
-    if (value == null || value.trim().isEmpty) return 'Requerido';
-    if (!RegExp(r'^[a-zA-Z_][a-zA-Z0-9_]*$').hasMatch(value)) {
-      return 'Inválido';
-    }
-    return null;
-  }
-
-  String? _validateRequired(String? value) {
-    if (value == null || value.trim().isEmpty) return 'Requerido';
-    return null;
-  }
-
-  Widget _buildConditionTypeSelector() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          '¿Qué tipo de decisión quieres evaluar?',
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-        ),
-        const SizedBox(height: 8),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-          decoration: BoxDecoration(
-            border: Border.all(color: Colors.grey.shade400),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: DropdownButtonHideUnderline(
-            child: DropdownButton<String>(
-              value: selectedConditionType,
-              isExpanded: true,
-              items: conditionTypes.entries.map((entry) {
-                return DropdownMenuItem<String>(
-                  value: entry.key,
-                  child: Text(entry.value),
-                );
-              }).toList(),
-              onChanged: (String? newValue) {
-                setState(() {
-                  selectedConditionType = newValue!;
-                  useCustomText = newValue == 'custom';
-                });
-              },
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildInputFields() {
-    if (useCustomText || selectedConditionType == 'custom') {
-      return _buildCustomFields();
-    }
-
-    switch (selectedConditionType) {
-      case 'comparison':
-        return _buildComparisonFields();
-      case 'logical':
-        return _buildLogicalFields();
-      case 'loop_condition':
-        return _buildLoopConditionFields();
-      default:
-        return _buildCustomFields();
-    }
-  }
-
-  Widget _buildComparisonFields() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const SizedBox(height: 16),
-        const Text('Configurar comparación:', style: TextStyle(fontWeight: FontWeight.bold)),
-        const SizedBox(height: 12),
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              flex: 3,
-              child: TextFormField(
-                controller: _variable1Controller,
-                decoration: const InputDecoration(
-                  labelText: 'Valor 1',
-                  hintText: 'ej: edad',
-                  border: OutlineInputBorder(),
-                ),
-                validator: _validateRequired,
-                onChanged: (_) => setState(() {}),
-              ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              flex: 3,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey.shade400),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: DropdownButtonHideUnderline(
-                  child: DropdownButton<String>(
-                    value: selectedOperator,
-                    isExpanded: true,
-                    items: comparisonOperators.entries.map((entry) {
-                      return DropdownMenuItem<String>(
-                        value: entry.key,
-                        child: Text(entry.key),
-                      );
-                    }).toList(),
-                    onChanged: (value) {
-                      setState(() {
-                        selectedOperator = value!;
-                      });
-                    },
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              flex: 3,
-              child: TextFormField(
-                controller: _variable2Controller,
-                decoration: const InputDecoration(
-                  labelText: 'Valor 2',
-                  hintText: 'ej: 18',
-                  border: OutlineInputBorder(),
-                ),
-                validator: _validateRequired,
-                onChanged: (_) => setState(() {}),
-              ),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildLogicalFields() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const SizedBox(height: 16),
-        const Text('Unir dos condiciones lógicas:', style: TextStyle(fontWeight: FontWeight.bold)),
-        const SizedBox(height: 12),
-        TextFormField(
-          controller: _variable1Controller,
-          decoration: const InputDecoration(
-            labelText: 'Primera Condición',
-            hintText: 'ej: edad > 18',
-            border: OutlineInputBorder(),
-          ),
-          validator: _validateRequired,
-          onChanged: (_) => setState(() {}),
-        ),
-        const SizedBox(height: 12),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-          decoration: BoxDecoration(
-            border: Border.all(color: Colors.grey.shade400),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: DropdownButtonHideUnderline(
-            child: DropdownButton<String>(
-              value: selectedLogicalOperator,
-              isExpanded: true,
-              items: logicalOperators.entries.map((entry) {
-                return DropdownMenuItem<String>(
-                  value: entry.key,
-                  child: Text(entry.value),
-                );
-              }).toList(),
-              onChanged: (value) {
-                setState(() {
-                  selectedLogicalOperator = value!;
-                });
-              },
-            ),
-          ),
-        ),
-        const SizedBox(height: 12),
-        TextFormField(
-          controller: _variable2Controller,
-          decoration: const InputDecoration(
-            labelText: 'Segunda Condición',
-            hintText: 'ej: tiene_licencia == true',
-            border: OutlineInputBorder(),
-          ),
-          validator: _validateRequired,
-          onChanged: (_) => setState(() {}),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildLoopConditionFields() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const SizedBox(height: 16),
-        const Text(
-          '🔄 Condición de Bucle',
-          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.orange),
-        ),
-        const SizedBox(height: 8),
-        const Text(
-          'Esta condición se evaluará en cada iteración del bucle.',
-          style: TextStyle(fontSize: 12, color: Colors.grey),
-        ),
-        const SizedBox(height: 12),
-        TextFormField(
-          controller: _variableController,
-          decoration: const InputDecoration(
-            labelText: 'Variable de Control',
-            hintText: 'ej: contador, i',
-            border: OutlineInputBorder(),
-            prefixIcon: Icon(Icons.loop),
-          ),
-          validator: _validateIdentifier,
-          onChanged: (_) => setState(() {}),
-        ),
-        const SizedBox(height: 12),
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              flex: 2,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey.shade400),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: DropdownButtonHideUnderline(
-                  child: DropdownButton<String>(
-                    value: selectedOperator,
-                    isExpanded: true,
-                    items: const [
-                      DropdownMenuItem(value: '<', child: Text('Menor que (<)')),
-                      DropdownMenuItem(value: '<=', child: Text('Menor igual (<=)')),
-                      DropdownMenuItem(value: '>', child: Text('Mayor que (>)?')),
-                      DropdownMenuItem(value: '>=', child: Text('Mayor igual (>=)')),
-                      DropdownMenuItem(value: '!=', child: Text('Diferente (!=)')),
-                    ],
-                    onChanged: (value) {
-                      setState(() {
-                        selectedOperator = value!;
-                      });
-                    },
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              flex: 3,
-              child: TextFormField(
-                controller: _valueController,
-                decoration: const InputDecoration(
-                  labelText: 'Valor Límite',
-                  hintText: 'ej: 10, maximo',
-                  border: OutlineInputBorder(),
-                ),
-                validator: _validateRequired,
-                onChanged: (_) => setState(() {}),
-              ),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildCustomFields() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const SizedBox(height: 16),
-        const Text('Escribir condición manualmente:', style: TextStyle(fontWeight: FontWeight.bold)),
-        const SizedBox(height: 8),
-        TextFormField(
-          controller: _customTextController,
-          decoration: const InputDecoration(
-            labelText: 'Condición',
-            hintText: 'ej: x == 5 && y > 10',
-            border: OutlineInputBorder(),
-            prefixIcon: Icon(Icons.code),
-          ),
-          maxLines: 2,
-          validator: _validateRequired,
-          onChanged: (_) => setState(() {}),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildPreview() {
-    final generatedText = _generateConditionText();
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.grey.shade100,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.grey.shade300),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Vista Previa:',
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.blueGrey),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            generatedText.isEmpty ? 'Completa los campos' : generatedText,
-            style: TextStyle(
-              fontFamily: 'monospace',
-              fontSize: 14,
-              color: generatedText.isEmpty ? Colors.grey : Colors.black87,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
+    final preview = _generateText();
+
     return AlertDialog(
-      title: const Row(
+      title: Row(
         children: [
-          Icon(Icons.call_split, color: Colors.orange),
-          SizedBox(width: 8),
-          Text('Editar Nodo de Decisión'),
+          Icon(Icons.diamond_outlined, color: Colors.orange[700]),
+          const SizedBox(width: 8),
+          const Text('Decisión'),
         ],
       ),
-      content: SizedBox(
-        width: MediaQuery.of(context).size.width * 0.85,
-        child: SingleChildScrollView(
-          child: Form(
-            key: _formKey,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.orange.shade50,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.orange.shade200),
-                  ),
-                  child: const Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        '💡 Nodo de Decisión',
-                        style: TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                      SizedBox(height: 4),
-                      Text(
-                        'Uso: Preguntas, condiciones, comparaciones\n'
-                        'Salidas: Dos o más ramas (Sí/No, Verdadero/Falso)',
-                        style: TextStyle(fontSize: 12),
-                      ),
-                    ],
-                  ),
+      content: SingleChildScrollView(
+        child: SizedBox(
+          width: MediaQuery.of(context).size.width * 0.85,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Explicación
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.orange[50],
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.orange[200]!),
                 ),
-                const SizedBox(height: 16),
-                _buildConditionTypeSelector(),
-                _buildInputFields(),
-                const SizedBox(height: 16),
-                _buildPreview(),
-              ],
-            ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(Icons.info_outline, size: 18, color: Colors.orange[700]),
+                    const SizedBox(width: 8),
+                    const Expanded(
+                      child: Text(
+                        'Evalúa una condición y dirige el flujo por una de '
+                            'sus salidas. Las salidas se etiquetan con '
+                            'Sí / No o Verdadero / Falso.',
+                        style: TextStyle(fontSize: 13),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 20),
+
+              // Selector de modo — cuadrícula 2×2
+              const Text('Tipo de condición',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  Expanded(
+                    child: _ModeCard(
+                      label: 'Comparación',
+                      icon: Icons.compare_arrows,
+                      example: 'edad > 18',
+                      selected: _mode == 'simple',
+                      onTap: () => setState(() => _mode = 'simple'),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: _ModeCard(
+                      label: 'Compuesta',
+                      icon: Icons.account_tree_outlined,
+                      example: 'a>0 && a<100',
+                      selected: _mode == 'compound',
+                      onTap: () => setState(() => _mode = 'compound'),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Expanded(
+                    child: _ModeCard(
+                      label: 'Verificar estado',
+                      icon: Icons.check_circle_outline,
+                      example: '¿encontrado?',
+                      selected: _mode == 'check',
+                      onTap: () => setState(() => _mode = 'check'),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: _ModeCard(
+                      label: 'Texto libre',
+                      icon: Icons.edit_outlined,
+                      example: '¿cualquier\ncondición?',
+                      selected: _mode == 'free',
+                      onTap: () => setState(() => _mode = 'free'),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+
+              // Campos según el modo
+              if (_mode == 'simple')   ..._buildSimpleFields(),
+              if (_mode == 'compound') ..._buildCompoundFields(),
+              if (_mode == 'check')    ..._buildCheckFields(),
+              if (_mode == 'free')     ..._buildFreeFields(),
+
+              const SizedBox(height: 20),
+
+              // Vista previa
+              _buildPreview(context, preview),
+
+              const SizedBox(height: 12),
+
+              // Recordatorio de etiquetas en flechas
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.call_split,
+                        size: 16,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Recuerda etiquetar las salidas (Sí / No) '
+                            'en las flechas que salen del rombo.',
+                        style: TextStyle(
+                            fontSize: 12,
+                            color: Theme.of(context)
+                                .colorScheme
+                                .onSurfaceVariant),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
         ),
       ),
@@ -510,29 +323,330 @@ class _DecisionNodeDialogState extends State<DecisionNodeDialog> {
           child: const Text('Cancelar'),
         ),
         FilledButton(
-          onPressed: () {
-            if (_formKey.currentState!.validate()) {
-              final generatedText = _generateConditionText();
-
-              if (selectedConditionType == 'loop_condition' &&
-                  _variableController.text.isNotEmpty &&
-                  _valueController.text.isNotEmpty) {
-                final result = NodeDialogResult(
-                  text: generatedText,
-                  generateLoopStructure: true,
-                  loopVariable: _variableController.text,
-                  loopLimit: _valueController.text,
-                  loopCondition: selectedOperator,
-                );
-                Navigator.of(context).pop(result);
-              } else {
-                Navigator.of(context).pop(generatedText);
-              }
-            }
-          },
+          onPressed: preview.isEmpty
+              ? null
+              : () => Navigator.of(context)
+              .pop(NodeDialogResult.simple(preview)),
           child: const Text('Guardar'),
         ),
       ],
+    );
+  }
+
+  // ── Comparación simple ─────────────────────────────────────────────────────
+  List<Widget> _buildSimpleFields() {
+    return [
+      const Text('Comparación',
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+      const SizedBox(height: 8),
+      TextField(
+        controller: _simpleLeftCtrl,
+        decoration: const InputDecoration(
+          labelText: 'Variable o valor',
+          hintText: 'Ej: edad, nota, contador',
+          border: OutlineInputBorder(),
+        ),
+        onChanged: (_) => setState(() {}),
+      ),
+      const SizedBox(height: 10),
+      DropdownButtonFormField<String>(
+        value: _simpleOp,
+        decoration: const InputDecoration(
+          labelText: 'Condición',
+          border: OutlineInputBorder(),
+        ),
+        items: _compOps
+            .map((op) => DropdownMenuItem(
+          value: op,
+          child: Text(_compOpLabels[op] ?? op),
+        ))
+            .toList(),
+        onChanged: (v) => setState(() => _simpleOp = v!),
+      ),
+      const SizedBox(height: 10),
+      TextField(
+        controller: _simpleRightCtrl,
+        decoration: const InputDecoration(
+          labelText: 'Comparar con',
+          hintText: 'Ej: 18, 0, limite',
+          border: OutlineInputBorder(),
+        ),
+        onChanged: (_) => setState(() {}),
+      ),
+    ];
+  }
+
+  // ── Condición compuesta ────────────────────────────────────────────────────
+  List<Widget> _buildCompoundFields() {
+    return [
+      const Text('Condición compuesta',
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+      const SizedBox(height: 4),
+      Text(
+        'Combina dos comparaciones con Y (&&) u O (||)',
+        style: TextStyle(
+            fontSize: 12,
+            color: Theme.of(context).colorScheme.onSurfaceVariant),
+      ),
+      const SizedBox(height: 12),
+      _buildInlineComparison(
+        leftCtrl:   _compLeft1Ctrl,
+        rightCtrl:  _compRight1Ctrl,
+        currentOp:  _compOp1,
+        onOpChanged: (v) => setState(() => _compOp1 = v),
+        label: 'Primera condición',
+      ),
+      const SizedBox(height: 10),
+      // Selector Y / O
+      Row(
+        children: [
+          const Expanded(child: Divider()),
+          const SizedBox(width: 8),
+          SegmentedButton<String>(
+            segments: const [
+              ButtonSegment(value: '&&', label: Text('Y  (&&)')),
+              ButtonSegment(value: '||', label: Text('O  (||)')),
+            ],
+            selected: {_logicOp},
+            onSelectionChanged: (s) => setState(() => _logicOp = s.first),
+          ),
+          const SizedBox(width: 8),
+          const Expanded(child: Divider()),
+        ],
+      ),
+      const SizedBox(height: 10),
+      _buildInlineComparison(
+        leftCtrl:   _compLeft2Ctrl,
+        rightCtrl:  _compRight2Ctrl,
+        currentOp:  _compOp2,
+        onOpChanged: (v) => setState(() => _compOp2 = v),
+        label: 'Segunda condición',
+      ),
+    ];
+  }
+
+  Widget _buildInlineComparison({
+    required TextEditingController leftCtrl,
+    required TextEditingController rightCtrl,
+    required String currentOp,
+    required void Function(String) onOpChanged,
+    required String label,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label,
+            style:
+            const TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
+        const SizedBox(height: 6),
+        Row(
+          children: [
+            Expanded(
+              flex: 4,
+              child: TextField(
+                controller: leftCtrl,
+                decoration: const InputDecoration(
+                  hintText: 'variable',
+                  border: OutlineInputBorder(),
+                  isDense: true,
+                ),
+                onChanged: (_) => setState(() {}),
+              ),
+            ),
+            const SizedBox(width: 6),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6),
+              decoration: BoxDecoration(
+                border: Border.all(color: Colors.grey),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: DropdownButtonHideUnderline(
+                child: DropdownButton<String>(
+                  value: currentOp,
+                  isDense: true,
+                  items: _compOps
+                      .map((op) => DropdownMenuItem(
+                    value: op,
+                    child: Text(op,
+                        style: const TextStyle(
+                            fontFamily: 'monospace', fontSize: 14)),
+                  ))
+                      .toList(),
+                  onChanged: (v) => onOpChanged(v!),
+                ),
+              ),
+            ),
+            const SizedBox(width: 6),
+            Expanded(
+              flex: 4,
+              child: TextField(
+                controller: rightCtrl,
+                decoration: const InputDecoration(
+                  hintText: 'valor',
+                  border: OutlineInputBorder(),
+                  isDense: true,
+                ),
+                onChanged: (_) => setState(() {}),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  // ── Verificar estado ───────────────────────────────────────────────────────
+  List<Widget> _buildCheckFields() {
+    return [
+      const Text('Verificar estado',
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+      const SizedBox(height: 4),
+      Text(
+        'Para condiciones que son verdaderas o falsas por sí solas.',
+        style: TextStyle(
+            fontSize: 12,
+            color: Theme.of(context).colorScheme.onSurfaceVariant),
+      ),
+      const SizedBox(height: 12),
+      TextField(
+        controller: _checkVarCtrl,
+        decoration: const InputDecoration(
+          labelText: 'Variable o condición',
+          hintText: 'Ej: encontrado, esPar, lista vacía',
+          border: OutlineInputBorder(),
+        ),
+        onChanged: (_) => setState(() {}),
+      ),
+      const SizedBox(height: 8),
+      SwitchListTile(
+        title: const Text('Negar la condición'),
+        subtitle: Text(
+          _checkNegated
+              ? 'Se evalúa: ¿NO ${_checkVarCtrl.text.trim()}?'
+              : 'Se evalúa: ¿${_checkVarCtrl.text.trim()}?',
+          style: const TextStyle(fontSize: 12),
+        ),
+        value: _checkNegated,
+        contentPadding: EdgeInsets.zero,
+        onChanged: (v) => setState(() => _checkNegated = v),
+      ),
+    ];
+  }
+
+  // ── Texto libre ────────────────────────────────────────────────────────────
+  List<Widget> _buildFreeFields() {
+    return [
+      const Text('Condición',
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+      const SizedBox(height: 8),
+      TextField(
+        controller: _freeCtrl,
+        maxLines: 2,
+        decoration: const InputDecoration(
+          hintText: 'Ej: numero % 2 == 0\n    saldo > deuda',
+          border: OutlineInputBorder(),
+          helperText: 'Se agregarán ¿? automáticamente si no los escribes.',
+        ),
+        onChanged: (_) => setState(() {}),
+      ),
+    ];
+  }
+
+  // ── Vista previa ───────────────────────────────────────────────────────────
+  Widget _buildPreview(BuildContext context, String preview) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.orange[50],
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.orange[300]!, width: 2),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.visibility, size: 16, color: Colors.orange[700]),
+              const SizedBox(width: 6),
+              Text('Vista previa',
+                  style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.orange[900],
+                      fontSize: 13)),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            preview.isEmpty ? '(completa los campos)' : preview,
+            style: TextStyle(
+              fontFamily: 'monospace',
+              fontSize: 14,
+              color: preview.isEmpty ? Colors.grey : Colors.black87,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Tarjeta de modo ────────────────────────────────────────────────────────────
+class _ModeCard extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final String example;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _ModeCard({
+    required this.label,
+    required this.icon,
+    required this.example,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final borderColor = selected
+        ? Theme.of(context).colorScheme.primary
+        : Theme.of(context).colorScheme.outline;
+        
+    final contentColor = selected
+        ? Theme.of(context).colorScheme.onPrimaryContainer
+        : Theme.of(context).colorScheme.onSurfaceVariant;
+
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+        decoration: BoxDecoration(
+          color: selected
+              ? Theme.of(context).colorScheme.primaryContainer
+              : Theme.of(context).colorScheme.surfaceContainerHighest,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: borderColor, width: selected ? 2 : 1),
+        ),
+        child: Column(
+          children: [
+            Icon(icon, color: contentColor, size: 24),
+            const SizedBox(height: 4),
+            Text(label,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                    fontWeight: FontWeight.bold, color: contentColor, fontSize: 12)),
+            const SizedBox(height: 2),
+            Text(example,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                    fontSize: 10,
+                    fontFamily: 'monospace',
+                    color: contentColor.withOpacity(0.75))),
+          ],
+        ),
+      ),
     );
   }
 }

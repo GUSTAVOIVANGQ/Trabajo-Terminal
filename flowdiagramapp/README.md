@@ -525,16 +525,16 @@ lib/
   - Experiencia de zoom más natural e intuitiva
 - [X] Aceptación de Aviso de Privacidad
 - [X] Agregar la opcion de exportación de código a archivos .c ademas de exportacion a imagen.
+- [X] Implementar un sistema de tutoriales interactivos dentro de la aplicación
 
 ## 🔄 En Desarrollo
 
 - [ ] Arreglar la sincronización de diagramas de flujo con Firebase Storage. Firebase console debe habilitar el almacenamiento en la nube.
-- [ ] Implementar un sistema de tutoriales interactivos dentro de la aplicación
+- [ ] Agregar optimizaciones específicas para diagramas de flujo (detección de bucles)
 
 ### 🎯 Próximas Funcionalidades
 
 - [ ] Implementar validación semántica avanzada (tipos de datos, uso de variables, rutas no alcanzables)
-- [ ] Agregar optimizaciones específicas para diagramas de flujo (detección de bucles)
 - [ ] Extender el sistema de plantillas con más ejemplos y categorías
 - [ ] Agregar soporte para exportar a otros lenguajes (Python, Java)
 
