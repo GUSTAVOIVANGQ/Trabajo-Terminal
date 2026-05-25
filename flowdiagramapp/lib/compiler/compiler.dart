@@ -45,3 +45,6 @@ export 'compiler_errors.dart';
 
 // Main pipeline
 export 'compiler_pipeline.dart';
+
+// Interpreter (Pieza nueva — ejecución directa del AST)
+export 'ast_interpreter.dart';

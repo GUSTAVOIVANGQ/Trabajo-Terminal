@@ -39,7 +39,9 @@ class MainActivity : FlutterActivity() {
                         val maxInstr = call.argument<Int>("maxInstructions") ?: 500_000
                         executionJob = CoroutineScope(Dispatchers.IO).launch {
                             CRunner.execute(cCode, stdinLines, maxInstr).collect { event ->
-                                eventSink?.success(event.toMap())
+                                runOnUiThread {
+                                    eventSink?.success(event.toMap())
+                                }
                             }
                         }
                         result.success(null)

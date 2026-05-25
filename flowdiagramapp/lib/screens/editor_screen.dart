@@ -2041,15 +2041,14 @@ class _EditorScreenState extends State<EditorScreen> {
     }
   }
 
-  // Detectar si una conexión es de retorno a un nodo de decisión
+  // Detectar si una conexión crea un ciclo (back-edge) en el grafo.
+  // Detecta conexiones de retorno para ciclos while, do-while, etc.
+  // Si ya existe un camino del target al source, crear esta conexión
+  // formaría un ciclo, indicando que es una conexión de retorno (loopback).
   bool _isReturnToDecisionNode(DiagramNode source, DiagramNode target) {
-    // Si el destino es un nodo de decisión y hay una ruta desde ese nodo
-    // de decisión de vuelta al nodo fuente, es probable que sea un bucle
-    if (target.type == NodeType.decision) {
-      // Verificar si ya existe una ruta del nodo de decisión al nodo fuente
-      return _hasPathBetweenNodes(target, source, {});
-    }
-    return false;
+    // Verificar si ya existe una ruta del target al source
+    // Si existe, esta conexión crearía un ciclo (es un back-edge)
+    return _hasPathBetweenNodes(target, source, {});
   }
 
   // Verificar si hay un camino entre dos nodos

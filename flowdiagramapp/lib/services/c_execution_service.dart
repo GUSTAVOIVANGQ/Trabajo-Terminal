@@ -1,111 +1,120 @@
 import 'dart:async';
-import 'package:flutter/services.dart';
 
-// Execution event hierarchy
+import '../compiler/ast_interpreter.dart';
+import '../compiler/ast_nodes.dart';
+import '../compiler/symbol_table.dart';
+
+// ─── Events emitted by the execution service ────────────────────────────────
+
 sealed class ExecutionEvent {}
 
 class OutputEvent extends ExecutionEvent {
   final String text;
-  final bool isError;
-  OutputEvent(this.text, {this.isError = false});
+  OutputEvent(this.text);
 }
 
 class StdinPromptEvent extends ExecutionEvent {
-  final String hint;
-  StdinPromptEvent(this.hint);
+  final String variableName;
+  final String typeName;
+  StdinPromptEvent(this.variableName, this.typeName);
 }
 
 class CompletedEvent extends ExecutionEvent {
   final int exitCode;
   final int elapsedMs;
-  CompletedEvent(this.exitCode, this.elapsedMs);
+  final int steps;
+  final StopReason stopReason;
+  CompletedEvent(this.exitCode, this.elapsedMs, this.steps, this.stopReason);
 }
 
-class CancelledEvent extends ExecutionEvent {
-  final String reason;
-  CancelledEvent(this.reason);
-}
-
-class RuntimeErrorEvent extends ExecutionEvent {
+class ErrorEvent extends ExecutionEvent {
   final String message;
-  RuntimeErrorEvent(this.message);
+  ErrorEvent(this.message);
 }
 
-/// Service that communicates with the native C runner via MethodChannel / EventChannel.
-class CExecutionService {
-  static const _methodChannel = MethodChannel('com.flowcode.app/c_runner');
-  static const _eventChannel = EventChannel('com.flowcode.app/c_runner_events');
+// ─── Execution states ───────────────────────────────────────────────────────
 
-  StreamSubscription? _eventSub;
+enum ExecutionState { idle, running, awaitingInput, completed, error }
+
+// ─── The service ────────────────────────────────────────────────────────────
+
+/// Service that manages the lifecycle of AST interpretation.
+///
+/// Runs the pure-Dart AST interpreter, receiving output events and
+/// forwarding input requests to the UI.
+class CExecutionService {
+  ASTInterpreter? _interpreter;
+  Completer<String>? _inputCompleter;
+
+  ExecutionState _state = ExecutionState.idle;
+  ExecutionState get state => _state;
+
   final StreamController<ExecutionEvent> _controller =
       StreamController<ExecutionEvent>.broadcast();
 
   Stream<ExecutionEvent> get events => _controller.stream;
 
-  /// Execute C code. Optionally provide pre‑loaded stdin lines.
+  /// Start executing the given AST.
   Future<void> execute({
-    required String cCode,
-    List<String> preloadedStdin = const [],
-    int maxInstructions = 500000,
+    required ProgramNode ast,
+    int maxSteps = 10000,
+    int maxDurationSeconds = 5,
   }) async {
-    // Cancel any previous subscription
-    await _eventSub?.cancel();
+    _state = ExecutionState.running;
 
-    _eventSub = _eventChannel.receiveBroadcastStream().listen((raw) {
-      if (raw is Map) {
-        _controller.add(_parseEvent(Map<String, dynamic>.from(raw)));
-      }
-    }, onError: (e) {
-      _controller.add(RuntimeErrorEvent(e.toString()));
-    });
+    _interpreter = ASTInterpreter(
+      maxSteps: maxSteps,
+      maxDuration: Duration(seconds: maxDurationSeconds),
+      onOutput: (text) {
+        _controller.add(OutputEvent(text));
+      },
+      onInput: (varName, expectedType) async {
+        _state = ExecutionState.awaitingInput;
+        _controller.add(StdinPromptEvent(varName, expectedType.cRepresentation));
+        _inputCompleter = Completer<String>();
+        return _inputCompleter!.future;
+      },
+    );
 
-    await _methodChannel.invokeMethod('execute', {
-      'cCode': cCode,
-      'stdinLines': preloadedStdin.join('\n'),
-      'maxInstructions': maxInstructions,
-    });
+    final result = await _interpreter!.execute(ast);
+
+    final exitCode = result.stopReason == StopReason.completed ? 0 : 1;
+
+    if (result.errorMessage != null) {
+      _controller.add(ErrorEvent(result.errorMessage!));
+    }
+
+    _controller.add(CompletedEvent(
+      exitCode,
+      result.elapsedMs,
+      result.steps,
+      result.stopReason,
+    ));
+
+    _state = ExecutionState.completed;
+    _interpreter = null;
   }
 
-  /// Provide a line of input when the program requests stdin.
-  Future<void> provideInput(String line) async {
-    await _methodChannel.invokeMethod('provideInput', {'line': '$line\n'});
-  }
-
-  /// Cancel the currently running execution.
-  Future<void> cancel() async {
-    await _methodChannel.invokeMethod('cancel');
-  }
-
-  /// Validate C code without executing it.
-  Future<String?> validate(String cCode) async {
-    return await _methodChannel.invokeMethod<String>('validate', {'cCode': cCode});
-  }
-
-  /// Get interpreter version.
-  Future<String> getVersion() async {
-    return await _methodChannel.invokeMethod<String>('getVersion') ?? 'unknown';
-  }
-
-  ExecutionEvent _parseEvent(Map<String, dynamic> data) {
-    switch (data['type']) {
-      case 'output':
-        return OutputEvent(data['text'] as String,
-            isError: data['isError'] as bool? ?? false);
-      case 'stdin_prompt':
-        return StdinPromptEvent(data['hint'] as String? ?? '');
-      case 'completed':
-        return CompletedEvent(data['exitCode'] as int, data['elapsedMs'] as int);
-      case 'cancelled':
-        return CancelledEvent(data['reason'] as String);
-      case 'error':
-        return RuntimeErrorEvent(data['message'] as String);
-      default:
-        return RuntimeErrorEvent('Unknown event type: ${data['type']}');
+  /// Provide a line of stdin input.
+  void provideInput(String value) {
+    if (_inputCompleter != null && !_inputCompleter!.isCompleted) {
+      _inputCompleter!.complete(value);
+      _state = ExecutionState.running;
     }
   }
 
+  /// Cancel the currently running execution.
+  void cancel() {
+    _interpreter?.cancel();
+    if (_inputCompleter != null && !_inputCompleter!.isCompleted) {
+      _inputCompleter!.completeError(Exception('Cancelado'));
+    }
+    _state = ExecutionState.idle;
+    _interpreter = null;
+  }
+
   void dispose() {
-    _eventSub?.cancel();
+    cancel();
     _controller.close();
   }
 }

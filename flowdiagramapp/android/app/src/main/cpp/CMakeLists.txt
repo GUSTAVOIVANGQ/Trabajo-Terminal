@@ -21,9 +21,11 @@ list(FILTER PICOC_CORE_SOURCES EXCLUDE REGEX ".*[/\\\\]picoc\\.c$")
 #   unistd.c — confstr, ctermid, getdtablesize, gethostid, lockf, ualarm...
 #   string.c — index(), rindex() (BSD aliases; not in Bionic)
 #   errno.c  — references non-portable Linux errno constants
+#   stdio.c  — replace with Android-safe stdio that routes I/O via PlatformPutc
 list(FILTER PICOC_STDLIB_SOURCES EXCLUDE REGEX ".*[/\\\\]unistd\\.c$")
 list(FILTER PICOC_STDLIB_SOURCES EXCLUDE REGEX ".*[/\\\\]string\\.c$")
 list(FILTER PICOC_STDLIB_SOURCES EXCLUDE REGEX ".*[/\\\\]errno\\.c$")
+list(FILTER PICOC_STDLIB_SOURCES EXCLUDE REGEX ".*[/\\]stdio\\.c$")
 
 # ── Shared library ────────────────────────────────────────────────────────
 add_library(
@@ -31,8 +33,9 @@ add_library(
     SHARED
     ${PICOC_CORE_SOURCES}
     ${PICOC_STDLIB_SOURCES}
-    string_android.c          # Android-compatible replacement for string.c
-    android_stubs.c           # Stubs for excluded POSIX symbols (errno, unistd, PicocPlatformScanFile)
+    flowcode_stdio_android.c   # Android stdio: printf/scanf/putchar/puts via PlatformPutc
+    string_android.c           # Android-compatible replacement for string.c
+    android_stubs.c            # Stubs for excluded POSIX symbols (errno, unistd, PicocPlatformScanFile)
     picoc_platform_android.c
     flowcode_runner.c
 )
@@ -58,8 +61,8 @@ target_include_directories(flowcode_runner PRIVATE
 # DebugCleanup() unconditionally; those symbols are inside
 # #ifndef NO_DEBUGGER in debug.c, so omitting the flag avoids link errors.
 target_compile_definitions(flowcode_runner PRIVATE
-    UNIX_HOST           # main platform selector; enables setjmp exit + malloc heap
-    STACK_SIZE=65536    # 64 KB interpreter stack (used in flowcode_runner.c)
+    UNIX_HOST               # main platform selector; enables setjmp exit + malloc heap
+    STACK_SIZE=65536        # 64 KB interpreter stack (used in flowcode_runner.c)
 )
 
 target_compile_options(flowcode_runner PRIVATE

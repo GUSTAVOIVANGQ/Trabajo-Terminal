@@ -91,9 +91,12 @@ class CodeGenerator {
     return node.metadata['structureType'] == 'loop';
   }
 
-  /// Verifica si un nodo proceso es el inicio de un bucle do-while
+  /// Verifica si un nodo (process o data) es el inicio de un bucle do-while.
+  /// CORREGIDO: acepta NodeType.data además de NodeType.process,
+  /// porque el paralelogramo de entrada/salida también puede ser body del do-while.
   static bool _isDoWhileBodyNode(DiagramNode node) {
-    return node.metadata['structureType'] == 'loop' &&
+    return (node.type == NodeType.process || node.type == NodeType.data) &&
+        node.metadata['structureType'] == 'loop' &&
         node.metadata['loopType'] == 'do-while' &&
         node.metadata['role'] == 'loop-body';
   }
@@ -321,8 +324,15 @@ class CodeGenerator {
         loopNode, allNodes, connections, code, indent, processedNodes);
   }
 
-  /// Genera código do-while desde el nodo body (nueva estructura)
-  /// Estructura: body (proceso) -> condition (decisión) -> true: loop back, false: salir
+  /// Genera código do-while desde el nodo body (nueva estructura).
+  /// CORREGIDO: soporta cuerpos con múltiples nodos y NodeType.data correctamente.
+  ///
+  /// Estructura válida:
+  ///   bodyNode (data/process, role=loop-body)
+  ///     → [nodos intermedios opcionales, todos con structureType=loop o sin metadata]
+  ///       → conditionNode (decision, role=loop-condition)
+  ///         → true/Sí: isLoopBack → bodyNode   (repite el cuerpo)
+  ///         → false/No: nodo de salida          (sale del bucle)
   static void _generateDoWhileFromBodyNode(
     DiagramNode bodyNode,
     List<DiagramNode> allNodes,
@@ -331,60 +341,147 @@ class CodeGenerator {
     String indent,
     Map<String, bool> processedNodes,
   ) {
-    // Marcar el body como procesado
-    processedNodes[bodyNode.id] = true;
-
     code.writeln("${indent}do {");
 
-    // Generar el código del cuerpo
-    code.writeln("${indent}    // Cuerpo del do-while");
-    code.writeln("${indent}    ${_formatCProcessStatement(bodyNode.text)};");
-
-    // Encontrar el nodo de condición (siguiente al body)
-    final bodyConnections = connections
-        .where((conn) => conn.source == bodyNode && !conn.isLoopBack)
-        .toList();
-
+    // ── Recorrer todos los nodos del cuerpo hasta encontrar el conditionNode ──
     DiagramNode? conditionNode;
-    for (final conn in bodyConnections) {
-      if (_isDoWhileConditionNode(conn.target)) {
-        conditionNode = conn.target;
-        break;
-      } else if (conn.target.type == NodeType.decision) {
-        conditionNode = conn.target;
-        break;
+    DiagramNode current = bodyNode;
+    final Set<String> visitedInBody = {};
+
+    while (true) {
+      if (visitedInBody.contains(current.id)) break; // Protección anti-ciclo
+      visitedInBody.add(current.id);
+      processedNodes[current.id] = true;
+
+      // Generar código C del nodo actual según su tipo
+      _generateDoWhileBodyNodeCode(current, code, indent + "    ");
+
+      // Buscar el siguiente nodo (ignorar loopbacks)
+      final outConns = connections
+          .where((c) => c.source == current && !c.isLoopBack)
+          .toList();
+
+      if (outConns.isEmpty) break;
+
+      // Separar: ¿el destino es la condición del do-while, o es otro nodo del cuerpo?
+      DiagramNode? nextBodyNode;
+      for (final conn in outConns) {
+        if (_isDoWhileConditionNode(conn.target) ||
+            conn.target.type == NodeType.decision) {
+          conditionNode = conn.target;
+          break;
+        } else {
+          nextBodyNode ??= conn.target;
+        }
       }
+
+      if (conditionNode != null) break; // Encontramos el fin del cuerpo
+      if (nextBodyNode == null) break;
+      current = nextBodyNode; // Avanzar al siguiente nodo del cuerpo
     }
 
+    // ── Emitir cierre del do-while ──
     if (conditionNode != null) {
-      // Marcar la condición como procesada
       processedNodes[conditionNode.id] = true;
 
-      // Extraer la condición
-      String condition = conditionNode.metadata['condition'] ??
+      // Extraer la condición: preferir metadata['condition'] sobre el texto
+      final condition = conditionNode.metadata['condition'] as String? ??
           _extractLoopCondition(conditionNode.text);
 
       code.writeln("${indent}} while ($condition);");
 
-      // Procesar nodos después del bucle (salida Falso de la condición)
-      final exitConnections = connections.where((conn) =>
-          conn.source == conditionNode &&
-          !conn.isLoopBack &&
-          (conn.label.toLowerCase().contains('no') ||
-              conn.label.toLowerCase().contains('falso') ||
-              conn.label.toLowerCase().contains('false')));
+      // ── Procesar nodos después del bucle (rama de salida = No/False) ──
+      // Buscar la conexión de salida. Si tiene etiqueta "No/Falso/False", usarla.
+      // Si no hay etiquetas en ninguna conexión, tomar la que no sea loopback.
+      final allExitConns = connections
+          .where((c) => c.source == conditionNode && !c.isLoopBack)
+          .toList();
 
-      for (final conn in exitConnections) {
+      final hasAnyLabel = allExitConns.any((c) => c.label.isNotEmpty);
+
+      final exitConns = hasAnyLabel
+          ? allExitConns.where((c) {
+              final lbl = c.label.toLowerCase();
+              return lbl.contains('no') ||
+                  lbl.contains('falso') ||
+                  lbl.contains('false');
+            }).toList()
+          : allExitConns; // Sin etiquetas: toda conexión no-loopback es salida
+
+      for (final conn in exitConns) {
         _generateCNodeCode(
             conn.target, allNodes, connections, code, indent, processedNodes);
       }
     } else {
-      // Si no se encuentra condición, cerrar con condición por defecto
-      code.writeln("${indent}} while (1); // TODO: Agregar condición");
+      // Guard: no se encontró conditionNode
+      code.writeln("${indent}} while (1); // TODO: Verificar condición del bucle");
     }
   }
 
-  /// Procesa la salida de un nodo condición do-while
+  /// Genera el código C de un nodo individual dentro del cuerpo de un do-while.
+  /// Respeta el tipo real del nodo: data → scanf/printf, process → sentencia.
+  static void _generateDoWhileBodyNodeCode(
+    DiagramNode node,
+    StringBuffer code,
+    String indent,
+  ) {
+    switch (node.type) {
+      case NodeType.data:
+        final text = node.text.toLowerCase();
+        final isInput = text.contains('leer') ||
+            text.contains('ingresar') ||
+            text.contains('input') ||
+            text.contains('scanf');
+        final isOutput = text.contains('mostrar') ||
+            text.contains('escribir') ||
+            text.contains('imprimir') ||
+            text.contains('printf') ||
+            text.contains('print');
+
+        if (isInput) {
+          // Priorizar metadata['varName'] si existe (más preciso que parsear el texto)
+          final varName = node.metadata['varName'] as String?;
+          final inputType = node.metadata['inputType'] as String? ?? 'int';
+          if (varName != null) {
+            final fmt = inputType == 'float'
+                ? '%f'
+                : inputType == 'char'
+                    ? ' %c'
+                    : inputType == 'string'
+                        ? '%s'
+                        : '%d';
+            final addr = (inputType == 'string') ? varName : '&$varName';
+            code.writeln("${indent}// Entrada: ${node.text}");
+            code.writeln('${indent}scanf("$fmt", $addr);');
+          } else {
+            code.writeln("${indent}// Entrada: ${node.text}");
+            code.writeln("${indent}${_formatCInputStatement(node.text, node.metadata['inputType'] as String?)};");
+          }
+        } else if (isOutput) {
+          code.writeln("${indent}// Salida: ${node.text}");
+          code.writeln("${indent}${_formatCOutputStatement(node.text)};");
+        } else {
+          code.writeln("${indent}// Dato: ${node.text}");
+          code.writeln("${indent}${_formatCOutputStatement(node.text)};");
+        }
+        break;
+
+      case NodeType.process:
+        code.writeln("${indent}// Proceso: ${node.text}");
+        code.writeln("${indent}${_formatCProcessStatement(node.text)};");
+        break;
+
+      case NodeType.predefinedProcess:
+        code.writeln("${indent}${_formatSubprocessCall(node.text)};");
+        break;
+
+      default:
+        // Terminales, conectores, etc. no generan código en el cuerpo del bucle
+        break;
+    }
+  }
+
+    /// Procesa la salida de un nodo condición do-while
   static void _processDoWhileExit(
     DiagramNode conditionNode,
     List<DiagramNode> allNodes,
@@ -667,7 +764,7 @@ class CodeGenerator {
           final returnValue = _extractReturnValue(node.text);
           code.writeln("${indent}return $returnValue;");
         } else if (dataText.contains('leer') || dataText.contains('input')) {
-          code.writeln("${indent}${_formatCInputStatement(node.text)};");
+          code.writeln("${indent}${_formatCInputStatement(node.text, node.metadata['inputType'] as String?)};");
           _processSubprocessNextNodes(
               node, allNodes, connections, code, indent, processedNodes);
         } else {
@@ -952,6 +1049,16 @@ class CodeGenerator {
         break;
 
       case NodeType.data:
+        // ── BUG FIX: Detectar si este nodo data es el inicio de un do-while ──
+        // El bodyNode del do-while puede ser NodeType.data (paralelogramo),
+        // no solo NodeType.process. Sin este check, el do-while nunca se detecta.
+        if (_isDoWhileBodyNode(node)) {
+          _generateDoWhileFromBodyNode(
+              node, allNodes, connections, code, indent, processedNodes);
+          break;
+        }
+        // ─────────────────────────────────────────────────────────────────────
+
         // Detectar si es entrada o salida basándose en el texto
         final dataText = node.text.toLowerCase();
         final isInput = dataText.contains('leer') ||
@@ -966,7 +1073,7 @@ class CodeGenerator {
 
         if (isInput) {
           code.writeln("${indent}// Entrada: ${node.text}");
-          code.writeln("${indent}${_formatCInputStatement(node.text)};");
+          code.writeln("${indent}${_formatCInputStatement(node.text, node.metadata['inputType'] as String?)};");
         } else if (isOutput) {
           code.writeln("${indent}// Salida: ${node.text}");
           code.writeln("${indent}${_formatCOutputStatement(node.text)};");
@@ -1305,7 +1412,7 @@ class CodeGenerator {
 
         if (isInput) {
           code.writeln("${indent}// Entrada: ${currentNode.text}");
-          code.writeln("${indent}${_formatCInputStatement(currentNode.text)};");
+          code.writeln("${indent}${_formatCInputStatement(currentNode.text, currentNode.metadata['inputType'] as String?)};");
         } else if (isOutput) {
           code.writeln("${indent}// Salida: ${currentNode.text}");
           code.writeln(
@@ -1567,7 +1674,7 @@ class CodeGenerator {
   }
 
   // Formatea una declaración de entrada para C
-  static String _formatCInputStatement(String text) {
+  static String _formatCInputStatement(String text, [String? explicitDataType]) {
     String trimmedText = text.trim();
 
     // Si ya es una sentencia scanf completa, devolverla tal cual
@@ -1581,7 +1688,7 @@ class CodeGenerator {
 
     // Extraer el nombre de la variable del texto
     String varName = _extractVariableNameFromInput(trimmedText);
-    String dataType = _detectDataType(trimmedText);
+    String dataType = explicitDataType ?? _detectDataType(trimmedText);
 
     // Si el texto contiene una asignación o especificación de variable
     if (text.contains('=')) {

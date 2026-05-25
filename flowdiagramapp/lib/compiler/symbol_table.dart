@@ -556,28 +556,44 @@ class SymbolTable {
     _initializeGlobalScope();
   }
 
-  /// Generate C variable declarations for all symbols
-  String generateCDeclarations() {
+  /// Generate C variable declarations for all symbols.
+  /// [excludeVars] allows the caller to skip variables that will be declared
+  /// inline (e.g., arrays with brace-initializers like `int arr[5] = {1,2,3}`).
+  String generateCDeclarations({Set<String>? excludeVars}) {
     final buffer = StringBuffer();
 
-    // Group by type for cleaner output
+    // Emit array declarations individually with their size
+    for (final symbol in _allSymbols) {
+      if (symbol.category == SymbolCategory.array) {
+        // Skip excluded variables (they'll be declared inline with initializer)
+        if (excludeVars != null && excludeVars.contains(symbol.name)) continue;
+        final typeStr = symbol.dataType.cRepresentation;
+        final dims = symbol.arrayDimensions;
+        if (dims != null && dims.isNotEmpty) {
+          final sizeSuffix = dims.map((d) => '[$d]').join();
+          buffer.writeln('$typeStr ${symbol.name}$sizeSuffix;');
+        } else {
+          buffer.writeln('$typeStr ${symbol.name}[];');
+        }
+      }
+    }
+
+    // Group scalar variables by type for cleaner output
     final groupedByType = <DataType, List<SymbolInfo>>{};
     for (final symbol in _allSymbols) {
       if (symbol.category == SymbolCategory.variable ||
           symbol.category == SymbolCategory.constant) {
+        // Skip excluded variables
+        if (excludeVars != null && excludeVars.contains(symbol.name)) continue;
         groupedByType.putIfAbsent(symbol.dataType, () => []).add(symbol);
       }
     }
 
-    // Generate declarations
+    // Generate scalar declarations (without initial values — assignments are emitted
+    // separately in the main body from the process nodes, to avoid duplication).
     for (final entry in groupedByType.entries) {
       final typeStr = entry.key.cRepresentation;
-      final names = entry.value.map((s) {
-        if (s.isInitialized && s.initialValue != null) {
-          return '${s.name} = ${s.initialValue}';
-        }
-        return s.name;
-      }).join(', ');
+      final names = entry.value.map((s) => s.name).join(', ');
 
       if (entry.value.any((s) => s.category == SymbolCategory.constant)) {
         buffer.writeln('const $typeStr $names;');

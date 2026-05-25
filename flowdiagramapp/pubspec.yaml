@@ -1,7 +1,6 @@
 name: flowdiagramapp
 description: "Flow diagram generator application"
 
-# Prevent accidental publishing to pub.dev.
 publish_to: 'none'
 
 version: 1.0.0+1
@@ -12,50 +11,60 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+
+  # ── Base ────────────────────────────────────────────────────────────────────
   sqflite: ^2.3.0
   path: ^1.8.3
   path_provider: ^2.1.1
   image_picker: ^1.1.2
   provider: ^6.1.1
-  intl: ^0.18.1  # Firebase dependencies
+  intl: ^0.18.1
+
+  # ── Firebase ────────────────────────────────────────────────────────────────
   firebase_core: ^2.32.0
   firebase_auth: ^4.17.8
   cloud_firestore: ^4.15.8
-  shared_preferences: ^2.2.2
-  connectivity_plus: ^5.0.2
-  fl_chart: ^0.68.0  # Para gráficos y visualización de métricas
-  confetti: ^0.7.0  # Para animaciones de celebración en ejercicios
-  tutorial_coach_mark: ^1.2.11  # Tutorial guiado con foco por elemento
-  flutter_animate: ^4.5.0  # Animaciones fluidas para onboarding
-  lottie: ^3.1.2  # Animaciones vectoriales para experiencia de tutorial
+  firebase_analytics: ^10.10.7
+  firebase_crashlytics: ^3.5.7
 
-  # Para generar archivos PDF, PNG y JPG
+  # ── Almacenamiento seguro (reemplaza SharedPreferences para datos de sesión)
+  # Usa Android Keystore / iOS Secure Enclave. Cifrado en reposo.
+  flutter_secure_storage: ^9.2.2
+
+  # ── Red ─────────────────────────────────────────────────────────────────────
+  connectivity_plus: ^5.0.2
+
+  # ── UI / UX ─────────────────────────────────────────────────────────────────
+  fl_chart: ^0.68.0
+  confetti: ^0.7.0
+  tutorial_coach_mark: ^1.2.11
+  flutter_animate: ^4.5.0
+  lottie: ^3.1.2
+  cupertino_icons: ^1.0.2
+
+  # ── Exportación ─────────────────────────────────────────────────────────────
   pdf: ^3.10.7
   printing: ^5.12.0
   image: ^4.1.7
   permission_handler: ^11.3.0
-  
-  device_info_plus: ^10.1.0  # Para detectar versión de Android
+  device_info_plus: ^10.1.0
   package_info_plus: ^6.0.0
-  saver_gallery: ^3.0.6  # Para guardar imágenes en la galería/descargas
+  saver_gallery: ^3.0.6
   url_launcher: ^6.3.0
-  
-  # Los iconos de la aplicación
-  cupertino_icons: ^1.0.2
-  firebase_analytics: ^10.10.7
-  firebase_crashlytics: ^3.5.7
+  webview_flutter: ^4.10.0
+
+  # shared_preferences ya no se usa para sesión de usuario.
+  # Si otros módulos lo necesitan para preferencias NO sensibles, mantenlo:
+  shared_preferences: ^2.2.2
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-
   flutter_lints: ^2.0.0
   flutter_launcher_icons: ^0.14.4
 
 flutter:
   uses-material-design: true
-  
-  # Para agregar activos a tu aplicación, añade una sección de activos, como esta:
   assets:
     - assets/templates/
 

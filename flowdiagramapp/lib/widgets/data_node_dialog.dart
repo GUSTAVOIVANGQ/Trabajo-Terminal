@@ -12,8 +12,8 @@ class DataNodeDialog extends StatefulWidget {
 }
 
 class _DataNodeDialogState extends State<DataNodeDialog> {
-  // Solo dos modos: entrada o salida
   bool _isInput = true;
+  String _selectedDataType = 'auto';
   late TextEditingController _inputController;
   late TextEditingController _messageController;
   late TextEditingController _variablesController;
@@ -29,6 +29,7 @@ class _DataNodeDialogState extends State<DataNodeDialog> {
     _inputController = TextEditingController();
     _messageController = TextEditingController();
     _variablesController = TextEditingController();
+    _selectedDataType = widget.node.metadata['inputType'] as String? ?? 'auto';
 
     // Detectar si era salida por palabras clave comunes
     final outputKeywords = [
@@ -163,6 +164,31 @@ class _DataNodeDialogState extends State<DataNodeDialog> {
                 ),
                 onChanged: (_) => setState(() {}),
               ),
+              const SizedBox(height: 16),
+              const Text(
+                'Tipo de dato',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+              ),
+              const SizedBox(height: 8),
+              DropdownButtonFormField<String>(
+                value: _selectedDataType,
+                decoration: const InputDecoration(
+                  border: OutlineInputBorder(),
+                  contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                ),
+                items: const [
+                  DropdownMenuItem(value: 'auto', child: Text('Auto (Inferir)')),
+                  DropdownMenuItem(value: 'int', child: Text('Entero (int)')),
+                  DropdownMenuItem(value: 'float', child: Text('Decimal (float)')),
+                  DropdownMenuItem(value: 'char', child: Text('Carácter (char)')),
+                  DropdownMenuItem(value: 'string', child: Text('Texto (string)')),
+                ],
+                onChanged: (val) {
+                  if (val != null) {
+                    setState(() => _selectedDataType = val);
+                  }
+                },
+              ),
             ] else ...[
               const Text(
                 'Mensaje a mostrar',
@@ -242,6 +268,13 @@ class _DataNodeDialogState extends State<DataNodeDialog> {
           onPressed: preview.isEmpty
               ? null
               : () {
+                  if (_isInput) {
+                    if (_selectedDataType == 'auto') {
+                      widget.node.metadata.remove('inputType');
+                    } else {
+                      widget.node.updateMetadata('inputType', _selectedDataType);
+                    }
+                  }
                   Navigator.of(context).pop(NodeDialogResult.simple(preview));
                 },
           child: const Text('Guardar'),

@@ -526,11 +526,12 @@ lib/
 - [X] Aceptación de Aviso de Privacidad
 - [X] Agregar la opcion de exportación de código a archivos .c ademas de exportacion a imagen.
 - [X] Implementar un sistema de tutoriales interactivos dentro de la aplicación
+- [X] Agregar optimizaciones específicas para diagramas de flujo (detección de bucles)
 
 ## 🔄 En Desarrollo
 
-- [ ] Arreglar la sincronización de diagramas de flujo con Firebase Storage. Firebase console debe habilitar el almacenamiento en la nube.
-- [ ] Agregar optimizaciones específicas para diagramas de flujo (detección de bucles)
+- [ ] Corregir la estructura de todas las plantillas de los diagramas C:\Users\ivan-\Documents\GitHub\Trabajo-Terminal\flowdiagramapp\lib\services\template_definitions.dart ya que algunos no siguen las reglas que marca el compilador.
+
 
 ### 🎯 Próximas Funcionalidades
 

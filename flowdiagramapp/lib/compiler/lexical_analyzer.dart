@@ -363,14 +363,23 @@ class DiagramLexicalAnalyzer {
           final nameToken = tokens[j];
           j++;
 
-          // Check for array brackets
+          // Check for array brackets: name[size]
+          int? arraySize;
           if (j < tokens.length && tokens[j].type == TokenType.leftBracket) {
-            // Skip array size and closing bracket
+            j++; // skip [
+            // Read the size token (integer literal)
+            if (j < tokens.length &&
+                tokens[j].type == TokenType.integerLiteral) {
+              arraySize = (tokens[j].value as int?) ??
+                  int.tryParse(tokens[j].lexeme);
+              j++; // skip size
+            }
+            // Skip any remaining tokens until ]
             while (
                 j < tokens.length && tokens[j].type != TokenType.rightBracket) {
               j++;
             }
-            if (j < tokens.length) j++; // Skip ]
+            if (j < tokens.length) j++; // skip ]
           }
 
           // Check if it's an initialization
@@ -393,15 +402,31 @@ class DiagramLexicalAnalyzer {
             }
           }
 
-          _symbolTable.declareSymbol(
-            name: nameToken.lexeme,
-            dataType: dataType,
-            nodeId: node.id,
-            line: nameToken.line,
-            column: nameToken.column,
-            isInitialized: isInitialized,
-            initialValue: initialValue,
-          );
+          if (arraySize != null) {
+            // Register as an array with its dimension
+            _symbolTable.declareSymbol(
+              name: nameToken.lexeme,
+              dataType: dataType,
+              category: SymbolCategory.array,
+              nodeId: node.id,
+              line: nameToken.line,
+              column: nameToken.column,
+              isInitialized: isInitialized,
+              initialValue: initialValue,
+              arrayDimensions: [arraySize],
+            );
+          } else {
+            // Regular scalar variable
+            _symbolTable.declareSymbol(
+              name: nameToken.lexeme,
+              dataType: dataType,
+              nodeId: node.id,
+              line: nameToken.line,
+              column: nameToken.column,
+              isInitialized: isInitialized,
+              initialValue: initialValue,
+            );
+          }
 
           // Check for comma (more variables follow)
           if (j < tokens.length && tokens[j].type == TokenType.comma) {

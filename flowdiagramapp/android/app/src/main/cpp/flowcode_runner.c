@@ -113,11 +113,28 @@ typedef struct {
     int   exit_code;
 } ExecThreadArgs;
 
+/*
+ * Forward declaration of the header registration function defined in
+ * flowcode_stdlib_android.c (only compiled when BUILTIN_MINI_STDLIB).
+ */
+#ifdef BUILTIN_MINI_STDLIB
+extern void FlowCodeRegisterHeaders(Picoc *pc);
+#endif
+
 static void *exec_thread_func(void *arg) {
     ExecThreadArgs *args = (ExecThreadArgs *)arg;
 
     Picoc pc;
     PicocInitialise(&pc, STACK_SIZE > 0 ? STACK_SIZE : 65536);
+
+    /* Register built-in headers so #include <stdio.h> etc. resolve.         */
+    /* CLibrary functions (printf, getchar, strlen, etc.) are already set up */
+    /* by PicocInitialise. This call only makes the includes work and adds   */
+    /* custom scanf/putchar/puts implementations that route through our I/O  */
+    /* callbacks instead of the real system stdin/stdout.                    */
+#ifdef BUILTIN_MINI_STDLIB
+    FlowCodeRegisterHeaders(&pc);
+#endif
 
     /* Allow platform overrides to access the Picoc instance */
     g_state.picoc_instance = &pc;

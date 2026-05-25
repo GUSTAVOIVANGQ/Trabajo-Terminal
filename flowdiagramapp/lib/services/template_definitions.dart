@@ -1110,6 +1110,12 @@ class TemplateDefinitions {
       type: NodeType.decision,
       position: const Offset(280, 430),
       text: "contador <= limite",
+      metadata: {
+        'structureType': 'loop',
+        'loopType': 'while',
+        'role': 'loop-condition',
+        'condition': 'contador <= limite'
+      },
     );
 
     // Cuerpo del ciclo: Escribir contador
@@ -1215,23 +1221,19 @@ class TemplateDefinitions {
       text: "Inicio",
     );
 
-    // Declaración de variable
-    final declareVarNode = DiagramNode(
-      id: "process_${baseId}_2",
-      type: NodeType.process,
+    // Nodo para mostrar el prompt (reemplaza la declaración)
+    final promptNode = DiagramNode(
+      id: "output_${baseId}_2",
+      type: NodeType.data,
       position: const Offset(280, 140),
-      text: "int numero",
-      metadata: {
-        'processType': 'declaration',
-        'varType': 'int',
-        'varName': 'numero'
-      },
+      text: "Mostrar \"Ingresar numero:\"",
+      metadata: {'isOutput': true, 'outputType': 'string'},
     );
 
-    // Cuerpo del do-while: Pedir entrada (este nodo se ejecuta primero)
+    // Cuerpo del do-while: Pedir entrada (este nodo se ejecuta primero en el bucle)
     final bodyNode = DiagramNode(
-      id: "process_${baseId}_3",
-      type: NodeType.process,
+      id: "input_${baseId}_3",
+      type: NodeType.data,
       position: const Offset(280, 240),
       text: "Leer numero",
       metadata: {
@@ -1276,7 +1278,7 @@ class TemplateDefinitions {
     final nodes = [
       commentNode,
       startNode,
-      declareVarNode,
+      promptNode,
       bodyNode,
       conditionNode,
       outputSuccessNode,
@@ -1284,14 +1286,14 @@ class TemplateDefinitions {
     ];
 
     final connections = [
-      Connection(source: startNode, target: declareVarNode, label: ""),
-      Connection(source: declareVarNode, target: bodyNode, label: ""),
+      Connection(source: startNode, target: promptNode, label: ""),
+      Connection(source: promptNode, target: bodyNode, label: ""),
       Connection(source: bodyNode, target: conditionNode, label: ""),
       // Verdadero: la condición se cumple, repetir (loop back al cuerpo)
       Connection(
           source: conditionNode,
           target: bodyNode,
-          label: "Sí",
+          label: "",
           isLoopBack: true),
       // Falso: la condición no se cumple, salir del bucle
       Connection(source: conditionNode, target: outputSuccessNode, label: "No"),
@@ -1725,15 +1727,15 @@ class TemplateDefinitions {
     final commentNode = DiagramNode(
       id: "comment_${baseId}_0",
       type: NodeType.comment,
-      position: const Offset(550, 50),
+      position: const Offset(550, 150),
       text:
-          "/* Busca un elemento en un arreglo (búsqueda lineal).\nConcepto: Recorrido con bandera de búsqueda */",
+          "/* Busca un elemento\nen un arreglo\n(búsqueda lineal).\nConcepto: Recorrido\ncon bandera de\nbúsqueda */",
     );
 
     final startNode = DiagramNode(
       id: "start_${baseId}_1",
       type: NodeType.terminal,
-      position: const Offset(280, 50),
+      position: const Offset(300, 50),
       text: "Inicio",
     );
 
@@ -1741,8 +1743,8 @@ class TemplateDefinitions {
     final declareVarsNode = DiagramNode(
       id: "process_${baseId}_2",
       type: NodeType.process,
-      position: const Offset(280, 130),
-      text: "int valorBuscado, encontrado, posicion, i",
+      position: const Offset(300, 140),
+      text: "int valorBuscado,\nencontrado, posicion, i",
       metadata: {
         'processType': 'declaration',
         'varType': 'int',
@@ -1753,15 +1755,15 @@ class TemplateDefinitions {
     final declareArrNode = DiagramNode(
       id: "process_${baseId}_3",
       type: NodeType.process,
-      position: const Offset(280, 210),
-      text: "int arr[5] = {10, 25, 8, 42, 17}",
+      position: const Offset(300, 240),
+      text: "int arr[5] = {10, 25, 8, 42,\n17}",
       metadata: {'processType': 'array_init'},
     );
 
     final inputNode = DiagramNode(
       id: "input_${baseId}_4",
       type: NodeType.data,
-      position: const Offset(280, 290),
+      position: const Offset(100, 320),
       text: "Leer valorBuscado",
       metadata: {
         'isOutput': false,
@@ -1770,18 +1772,26 @@ class TemplateDefinitions {
       },
     );
 
-    final initVarsNode = DiagramNode(
-      id: "process_${baseId}_5",
+    final initEncontradoNode = DiagramNode(
+      id: "process_${baseId}_5a",
       type: NodeType.process,
-      position: const Offset(280, 370),
-      text: "encontrado = 0, posicion = -1",
+      position: const Offset(100, 420),
+      text: "encontrado = 0",
+      metadata: {'processType': 'assignment'},
+    );
+
+    final initPosicionNode = DiagramNode(
+      id: "process_${baseId}_5b",
+      type: NodeType.process,
+      position: const Offset(300, 420),
+      text: "posicion = -1",
       metadata: {'processType': 'assignment'},
     );
 
     final forNode = DiagramNode(
       id: "loop_${baseId}_6",
       type: NodeType.preparation,
-      position: const Offset(280, 460),
+      position: const Offset(300, 530),
       text: "for (i = 0; i < 5; i++)",
       metadata: {
         'loopType': 'for',
@@ -1794,29 +1804,37 @@ class TemplateDefinitions {
     final decisionNode = DiagramNode(
       id: "decision_${baseId}_7",
       type: NodeType.decision,
-      position: const Offset(500, 460),
-      text: "arr[i] == valorBuscado",
+      position: const Offset(650, 530),
+      text: "arr[i] ==\nvalorBuscado",
     );
 
-    final foundNode = DiagramNode(
-      id: "process_${baseId}_8",
+    final foundEncontradoNode = DiagramNode(
+      id: "process_${baseId}_8a",
       type: NodeType.process,
-      position: const Offset(700, 460),
-      text: "encontrado = 1\nposicion = i",
+      position: const Offset(650, 420),
+      text: "encontrado = 1",
+      metadata: {'processType': 'assignment'},
+    );
+
+    final foundPosicionNode = DiagramNode(
+      id: "process_${baseId}_8b",
+      type: NodeType.process,
+      position: const Offset(480, 420),
+      text: "posicion = i",
       metadata: {'processType': 'assignment'},
     );
 
     final checkFoundNode = DiagramNode(
       id: "decision_${baseId}_9",
       type: NodeType.decision,
-      position: const Offset(280, 580),
+      position: const Offset(300, 650),
       text: "encontrado == 1",
     );
 
     final outputFoundNode = DiagramNode(
       id: "output_${baseId}_10",
       type: NodeType.data,
-      position: const Offset(500, 580),
+      position: const Offset(550, 650),
       text: "Escribir \"Encontrado en posición:\", posicion",
       metadata: {'isOutput': true},
     );
@@ -1824,7 +1842,7 @@ class TemplateDefinitions {
     final outputNotFoundNode = DiagramNode(
       id: "output_${baseId}_11",
       type: NodeType.data,
-      position: const Offset(280, 700),
+      position: const Offset(300, 770),
       text: "Escribir \"No encontrado\"",
       metadata: {'isOutput': true, 'outputType': 'string'},
     );
@@ -1832,7 +1850,7 @@ class TemplateDefinitions {
     final endNode = DiagramNode(
       id: "end_${baseId}_12",
       type: NodeType.terminal,
-      position: const Offset(380, 800),
+      position: const Offset(300, 880),
       text: "Fin",
     );
 
@@ -1842,10 +1860,12 @@ class TemplateDefinitions {
       declareVarsNode,
       declareArrNode,
       inputNode,
-      initVarsNode,
+      initEncontradoNode,
+      initPosicionNode,
       forNode,
       decisionNode,
-      foundNode,
+      foundEncontradoNode,
+      foundPosicionNode,
       checkFoundNode,
       outputFoundNode,
       outputNotFoundNode,
@@ -1856,18 +1876,17 @@ class TemplateDefinitions {
       Connection(source: startNode, target: declareVarsNode, label: ""),
       Connection(source: declareVarsNode, target: declareArrNode, label: ""),
       Connection(source: declareArrNode, target: inputNode, label: ""),
-      Connection(source: inputNode, target: initVarsNode, label: ""),
-      Connection(source: initVarsNode, target: forNode, label: ""),
+      Connection(source: inputNode, target: initEncontradoNode, label: ""),
+      Connection(source: initEncontradoNode, target: initPosicionNode, label: ""),
+      Connection(source: initPosicionNode, target: forNode, label: ""),
       Connection(source: forNode, target: decisionNode, label: "Verdadero"),
-      Connection(source: decisionNode, target: foundNode, label: "Sí"),
-      Connection(
-          source: decisionNode, target: forNode, label: "No", isLoopBack: true),
-      Connection(
-          source: foundNode, target: forNode, label: "", isLoopBack: true),
+      Connection(source: decisionNode, target: forNode, label: "Falso", isLoopBack: true),
+      Connection(source: decisionNode, target: foundEncontradoNode, label: "Verdadero"),
+      Connection(source: foundEncontradoNode, target: foundPosicionNode, label: ""),
+      Connection(source: foundPosicionNode, target: forNode, label: "", isLoopBack: true),
       Connection(source: forNode, target: checkFoundNode, label: "Falso"),
       Connection(source: checkFoundNode, target: outputFoundNode, label: "Sí"),
-      Connection(
-          source: checkFoundNode, target: outputNotFoundNode, label: "No"),
+      Connection(source: checkFoundNode, target: outputNotFoundNode, label: "No"),
       Connection(source: outputFoundNode, target: endNode, label: ""),
       Connection(source: outputNotFoundNode, target: endNode, label: ""),
     ];

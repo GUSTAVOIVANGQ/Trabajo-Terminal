@@ -442,5 +442,164 @@ void main() {
       expect(code.contains('int arr[5]'), isTrue);
       expect(code.contains('int temp, i, j'), isTrue);
     });
+
+    test('Nodo proceso con múltiples asignaciones en líneas separadas', () {
+      // Test para el caso del bubble sort: un nodo proceso con 3 asignaciones
+      // separadas por newlines: "temp = arr[j]\narr[j] = arr[j+1]\narr[j+1] = temp"
+      final startNode = DiagramNode(
+        id: "start_multi_assign",
+        type: NodeType.terminal,
+        position: const Offset(100, 50),
+        text: "Inicio",
+      );
+
+      final declareNode = DiagramNode(
+        id: "declare_vars",
+        type: NodeType.process,
+        position: const Offset(100, 150),
+        text: "int temp, i, j",
+      );
+
+      final declareArrNode = DiagramNode(
+        id: "declare_arr",
+        type: NodeType.process,
+        position: const Offset(100, 250),
+        text: "int arr[5]",
+      );
+
+      // Multi-assignment node (the key test case)
+      final swapNode = DiagramNode(
+        id: "swap_process",
+        type: NodeType.process,
+        position: const Offset(100, 350),
+        text: "temp = arr[j]\narr[j] = arr[j+1]\narr[j+1] = temp",
+      );
+
+      final endNode = DiagramNode(
+        id: "end_multi_assign",
+        type: NodeType.terminal,
+        position: const Offset(100, 450),
+        text: "Fin",
+      );
+
+      final nodes = [
+        startNode,
+        declareNode,
+        declareArrNode,
+        swapNode,
+        endNode,
+      ];
+      final connections = [
+        Connection(source: startNode, target: declareNode, label: ""),
+        Connection(source: declareNode, target: declareArrNode, label: ""),
+        Connection(source: declareArrNode, target: swapNode, label: ""),
+        Connection(source: swapNode, target: endNode, label: ""),
+      ];
+
+      final compiler = DiagramCompilerPipeline();
+      final result = compiler.compile(nodes, connections);
+
+      expect(result.success, isTrue, reason: 'La compilación debe ser exitosa');
+      expect(result.generatedCode, isNotNull,
+          reason: 'Debe generarse código C');
+
+      final code = result.generatedCode!;
+      print('Código generado (múltiples asignaciones):');
+      print(code);
+
+      // Each assignment must be on its own line with a semicolon
+      expect(code.contains('temp = arr[j];'), isTrue,
+          reason: 'Debe generar "temp = arr[j];" como línea separada');
+      expect(code.contains('arr[j] = arr[j+1];'), isTrue,
+          reason: 'Debe generar "arr[j] = arr[j+1];" como línea separada');
+      expect(code.contains('arr[j+1] = temp;'), isTrue,
+          reason: 'Debe generar "arr[j+1] = temp;" como línea separada');
+
+      // Must NOT have the broken collapsed form in actual code (not in comments)
+      // The comment may contain the collapsed text, that's fine.
+      // Verify there's no line that has the broken pattern as actual code:
+      final codeLines = code.split('\n')
+          .where((line) => !line.trim().startsWith('//'))
+          .join('\n');
+      expect(
+        codeLines.contains('temp = arr[j] arr[j]'),
+        isFalse,
+        reason:
+            'No debe colapsar las asignaciones en una sola línea sin semicolons',
+      );
+    });
+
+    test('Salida de variable tipo arreglo genera printf con formato correcto', () {
+      // Test para verificar que "Escribir arr[i]" genera printf("%d\n", arr[i])
+      // y NO printf("arr[i]\n")
+      final startNode = DiagramNode(
+        id: "start_arr_out",
+        type: NodeType.terminal,
+        position: const Offset(100, 50),
+        text: "Inicio",
+      );
+
+      final declareArrNode = DiagramNode(
+        id: "declare_arr_out",
+        type: NodeType.process,
+        position: const Offset(100, 150),
+        text: "int arr[5]",
+      );
+
+      final declareINode = DiagramNode(
+        id: "declare_i_out",
+        type: NodeType.process,
+        position: const Offset(100, 250),
+        text: "int i",
+      );
+
+      final outputArrNode = DiagramNode(
+        id: "output_arr_elem",
+        type: NodeType.data,
+        position: const Offset(100, 350),
+        text: "Escribir arr[i]",
+        metadata: {'isOutput': true},
+      );
+
+      final endNode = DiagramNode(
+        id: "end_arr_out",
+        type: NodeType.terminal,
+        position: const Offset(100, 450),
+        text: "Fin",
+      );
+
+      final nodes = [
+        startNode,
+        declareArrNode,
+        declareINode,
+        outputArrNode,
+        endNode,
+      ];
+      final connections = [
+        Connection(source: startNode, target: declareArrNode, label: ""),
+        Connection(source: declareArrNode, target: declareINode, label: ""),
+        Connection(source: declareINode, target: outputArrNode, label: ""),
+        Connection(source: outputArrNode, target: endNode, label: ""),
+      ];
+
+      final compiler = DiagramCompilerPipeline();
+      final result = compiler.compile(nodes, connections);
+
+      expect(result.success, isTrue, reason: 'La compilación debe ser exitosa');
+      expect(result.generatedCode, isNotNull,
+          reason: 'Debe generarse código C');
+
+      final code = result.generatedCode!;
+      print('Código generado (salida arr[i]):');
+      print(code);
+
+      // Must generate printf with format specifier and variable, NOT literal text
+      expect(code.contains('printf("%d\\n", arr[i]);'), isTrue,
+          reason: 'Debe generar printf("%d\\n", arr[i]) para arreglos int');
+
+      // Must NOT treat arr[i] as literal text
+      expect(code.contains('printf("arr[i]\\n")'), isFalse,
+          reason: 'No debe tratar arr[i] como texto literal');
+    });
   });
 }

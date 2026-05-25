@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../models/diagram_node.dart';
 import '../themes/app_themes.dart';
 import '../services/theme_service.dart';
@@ -443,7 +444,7 @@ class _FlowDiagramCanvasState extends State<FlowDiagramCanvas>
     final pts = sel.getConnectionPoints();
     if (pts.length < 2) return null;
 
-    final hitRadius = 18.0 / widget.scale;
+    final hitRadius = 30.0 / widget.scale;
 
     if ((scaledPos - pts[0]).distance <= hitRadius) return 'source';
     if ((scaledPos - pts[1]).distance <= hitRadius) return 'target';
@@ -583,6 +584,26 @@ class _FlowDiagramCanvasState extends State<FlowDiagramCanvas>
             isDragging = false;
           });
           return;
+        }
+
+        // ── Detectar inicio de drag sobre endpoint handle (reconexión) ──
+        if (widget.selectedConnection != null) {
+          final endpointSide = _findEndpointHandleAtPosition(details.localFocalPoint);
+          if (endpointSide != null) {
+            HapticFeedback.lightImpact(); // Agregar vibración aquí
+            final conn = widget.selectedConnection!;
+            final pts = conn.getConnectionPoints();
+            setState(() {
+              _isDraggingEndpoint = true;
+              _draggingEndpointConnection = conn;
+              _isDraggingSourceEndpoint = endpointSide == 'source';
+              _endpointDragCurrentPos = _isDraggingSourceEndpoint ? pts[0] : pts[1];
+              _endpointLongPressStart = details.localFocalPoint;
+              dragStart = details.localFocalPoint;
+              isDragging = false;
+            });
+            return;
+          }
         }
 
         // ── Detectar inicio de drag sobre handle de flecha ──
@@ -863,23 +884,6 @@ class _FlowDiagramCanvasState extends State<FlowDiagramCanvas>
       },
 
       onLongPress: () {
-        // ── Long-press sobre endpoint handle → iniciar reconexión ──
-        if (dragStart != null && widget.selectedConnection != null) {
-          final endpointSide = _findEndpointHandleAtPosition(dragStart!);
-          if (endpointSide != null) {
-            final conn = widget.selectedConnection!;
-            final pts = conn.getConnectionPoints();
-            setState(() {
-              _isDraggingEndpoint = true;
-              _draggingEndpointConnection = conn;
-              _isDraggingSourceEndpoint = endpointSide == 'source';
-              _endpointDragCurrentPos = _isDraggingSourceEndpoint ? pts[0] : pts[1];
-              _endpointLongPressStart = dragStart;
-            });
-            return;
-          }
-        }
-
         // Para iniciar conexión entre nodos
         if (dragStart != null) {
           final node = _findNodeAtPosition(dragStart!);

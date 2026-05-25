@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
-import '../models/user_model.dart';
 import 'login_screen.dart';
 import 'privacy_notice_screen.dart';
 
@@ -68,8 +67,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
         email: _emailController.text.trim(),
         password: _passwordController.text,
         displayName: _nameController.text.trim(),
-        // Rol forzado para registros desde Play Store.
-        role: UserRole.user,
         telemetryOptIn: _telemetryConsent,
         crashReportsOptIn: _crashReportsConsent,
       );

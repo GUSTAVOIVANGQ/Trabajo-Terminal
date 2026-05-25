@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../compiler/compiler.dart';
 import '../models/diagram_validator.dart';
-import 'execution_tab.dart';
+import 'onlinegdb_tab.dart';
 
 /// Dialog that displays comprehensive compiler results with tabs for each phase
 class CompilerResultsDialog extends StatefulWidget {
@@ -24,11 +24,17 @@ class CompilerResultsDialog extends StatefulWidget {
 class _CompilerResultsDialogState extends State<CompilerResultsDialog>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  final GlobalKey<OnlineGdbTabState> _gdbTabKey = GlobalKey<OnlineGdbTabState>();
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 7, vsync: this);
+    _tabController.addListener(() {
+      if (mounted) {
+        setState(() {});
+      }
+    });
   }
 
   @override
@@ -99,7 +105,7 @@ class _CompilerResultsDialogState extends State<CompilerResultsDialog>
                     text: 'Código',
                   ),
                   Tab(
-                    icon: Icon(Icons.play_circle_outline, size: 20),
+                    icon: Icon(Icons.open_in_browser, size: 20),
                     text: 'Ejecutar',
                   ),
                 ],
@@ -117,7 +123,8 @@ class _CompilerResultsDialogState extends State<CompilerResultsDialog>
                   _buildSemanticTab(theme, isDark),
                   _buildOptimizationTab(theme, isDark),
                   _buildCodeTab(theme, isDark),
-                  ExecutionTab(
+                  OnlineGdbTab(
+                    key: _gdbTabKey,
                     cCode: widget.result.generatedCode ?? '',
                     compilationSuccess: widget.result.success &&
                         (widget.structuralResult?.isValid ?? true),
@@ -1423,6 +1430,8 @@ class _CompilerResultsDialogState extends State<CompilerResultsDialog>
   }
 
   Widget _buildFooter(ThemeData theme) {
+    final showInsertCode = _tabController.index == 6;
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -1440,21 +1449,30 @@ class _CompilerResultsDialogState extends State<CompilerResultsDialog>
       child: Row(
         mainAxisAlignment: MainAxisAlignment.end,
         children: [
-          OutlinedButton.icon(
-            onPressed: () {
-              // Copy full report
-              final report = widget.result.generateReport();
-              Clipboard.setData(ClipboardData(text: report));
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Reporte copiado al portapapeles'),
-                  duration: Duration(seconds: 2),
-                ),
-              );
-            },
-            icon: const Icon(Icons.description),
-            label: const Text('Copiar Reporte'),
-          ),
+          if (showInsertCode)
+            OutlinedButton.icon(
+              onPressed: () {
+                _gdbTabKey.currentState?.reinjectCode();
+              },
+              icon: const Icon(Icons.upload_rounded),
+              label: const Text('Insertar código'),
+            )
+          else
+            OutlinedButton.icon(
+              onPressed: () {
+                // Copy full report
+                final report = widget.result.generateReport();
+                Clipboard.setData(ClipboardData(text: report));
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Reporte copiado al portapapeles'),
+                    duration: Duration(seconds: 2),
+                  ),
+                );
+              },
+              icon: const Icon(Icons.description),
+              label: const Text('Copiar Reporte'),
+            ),
           const SizedBox(width: 12),
           FilledButton(
             onPressed: () => Navigator.of(context).pop(),

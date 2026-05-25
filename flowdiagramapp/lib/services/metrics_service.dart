@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import '../models/metric_model.dart';
+import '../models/user_model.dart';
 import 'auth_service.dart';
 import 'analytics_service.dart';
 
@@ -245,7 +246,11 @@ class MetricsService {
     }
 
     try {
-      final users = await _authService.getAllUsers();
+      // Consulta directa a Firestore (getAllUsers() fue eliminado de AuthService)
+      final snapshot = await _firestore.collection('users').get();
+      final users = snapshot.docs
+          .map((doc) => UserModel.fromSnapshot(doc))
+          .toList();
 
       return users.map((user) {
         final summary = MetricsSummary.fromUserMetrics(user.metrics);
@@ -346,7 +351,11 @@ class MetricsService {
   /// Genera métricas globales desde cero
   Future<GlobalMetrics> _generateGlobalMetrics() async {
     try {
-      final users = await _authService.getAllUsers();
+      // Consulta directa a Firestore (getAllUsers() fue eliminado de AuthService)
+      final snapshot = await _firestore.collection('users').get();
+      final users = snapshot.docs
+          .map((doc) => UserModel.fromSnapshot(doc))
+          .toList();
 
       int totalDiagrams = 0;
       int totalValidations = 0;

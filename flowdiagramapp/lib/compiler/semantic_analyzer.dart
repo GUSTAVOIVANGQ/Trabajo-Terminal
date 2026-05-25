@@ -455,8 +455,44 @@ class DiagramSemanticAnalyzer {
   }
 
   /// Extract declarations from process nodes
-  /// Handles patterns like "int x", "int retorno", "float resultado"
+  /// Handles patterns like "int x", "int retorno", "float resultado", "int arr[5]"
   void _extractDeclarationFromProcess(String text, String nodeId) {
+    // First, check for array declaration pattern: "tipo nombre[N]" or "tipo nombre[N], ..."
+    final baseType = _getBaseTypeFromText(text);
+    if (baseType != null) {
+      // Check each comma-separated part for array syntax
+      final typeMatch = RegExp(r'^(?:int|float|double|char|bool)\s+(.+)$',
+              caseSensitive: false)
+          .firstMatch(text.trim());
+      if (typeMatch != null) {
+        final varsPart = typeMatch.group(1)!.trim();
+        for (final rawPart in varsPart.split(',')) {
+          final part = rawPart.trim();
+          // Detect array declaration: name[size]
+          final arrayMatch =
+              RegExp(r'^([a-zA-Z_][a-zA-Z0-9_]*)\s*\[\s*(\d+)\s*\]$')
+                  .firstMatch(part);
+          if (arrayMatch != null) {
+            final arrName = arrayMatch.group(1)!;
+            final arrSize = int.tryParse(arrayMatch.group(2)!) ?? 0;
+            if (!_symbolTable.symbolExists(arrName)) {
+              _symbolTable.declareSymbol(
+                name: arrName,
+                dataType: baseType,
+                category: SymbolCategory.array,
+                nodeId: nodeId,
+                isInitialized: false,
+                arrayDimensions: [arrSize],
+              );
+              _variableTypes[arrName] = baseType;
+              _arrayElementTypes[arrName] = baseType;
+            }
+          }
+        }
+      }
+    }
+
+    // Then handle regular (non-array) variables via token-based extraction
     final tokens = _lexer.tokenize(text, nodeId: nodeId);
 
     if (tokens.isEmpty) return;
@@ -473,8 +509,21 @@ class DiagramSemanticAnalyzer {
       if (token.type == TokenType.identifier) {
         final varName = token.lexeme;
 
-        // Skip array size specifiers
+        // Skip array size specifiers (number inside brackets)
         if (i > 1 && tokens[i - 1].type == TokenType.leftBracket) {
+          continue;
+        }
+
+        // Skip if the next token is '[' → this is an array name already handled above
+        final nextIdx = i + 1;
+        if (nextIdx < tokens.length &&
+            tokens[nextIdx].type == TokenType.leftBracket) {
+          // Move past the closing bracket
+          while (i < tokens.length &&
+              tokens[i].type != TokenType.rightBracket &&
+              tokens[i].type != TokenType.comma) {
+            i++;
+          }
           continue;
         }
 
@@ -502,6 +551,14 @@ class DiagramSemanticAnalyzer {
         }
       }
     }
+  }
+
+  /// Get the base DataType from a declaration text like "int arr[5]" → DataType.integer
+  DataType? _getBaseTypeFromText(String text) {
+    final m = RegExp(r'^(int|float|double|char|bool)\b', caseSensitive: false)
+        .firstMatch(text.trim());
+    if (m == null) return null;
+    return _stringToDataType(m.group(1)!);
   }
 
   /// Extract implicit declarations from data input nodes
@@ -556,12 +613,26 @@ class DiagramSemanticAnalyzer {
   void _gatherDeclarationsFromAST(ProgramNode ast) {
     // Process global declarations
     for (final decl in ast.globalDeclarations) {
-      _registerDeclaration(
-        decl.variableName,
-        decl.dataType,
-        decl.initializer != null,
-        null,
-      );
+      if (decl.isArray) {
+        // Register as array with dimensions
+        _symbolTable.declareSymbol(
+          name: decl.variableName,
+          dataType: decl.dataType,
+          category: SymbolCategory.array,
+          nodeId: null,
+          isInitialized: decl.initializer != null,
+          arrayDimensions: decl.arraySize != null ? [decl.arraySize!] : null,
+        );
+        _variableTypes[decl.variableName] = decl.dataType;
+        _arrayElementTypes[decl.variableName] = decl.dataType;
+      } else {
+        _registerDeclaration(
+          decl.variableName,
+          decl.dataType,
+          decl.initializer != null,
+          null,
+        );
+      }
     }
 
     // Process node-level declarations and function parameters
@@ -573,7 +644,7 @@ class DiagramSemanticAnalyzer {
       }
 
       // Check for declarations in process nodes
-      // e.g., "int retorno" or "int a, b, c"
+      // e.g., "int retorno" or "int a, b, c" or "int arr[5]"
       if (diagNode.nodeType == 'process' && diagNode.label != null) {
         _extractDeclarationFromProcess(diagNode.label!, diagNode.diagramNodeId);
       }
@@ -581,12 +652,29 @@ class DiagramSemanticAnalyzer {
       // Process statement-level declarations
       for (final stmt in diagNode.statements) {
         if (stmt is DeclarationStatementNode) {
-          _registerDeclaration(
-            stmt.variableName,
-            stmt.dataType,
-            stmt.initializer != null,
-            diagNode.diagramNodeId,
-          );
+          if (stmt.isArray) {
+            // Register as array if not already declared
+            if (!_symbolTable.symbolExists(stmt.variableName)) {
+              _symbolTable.declareSymbol(
+                name: stmt.variableName,
+                dataType: stmt.dataType,
+                category: SymbolCategory.array,
+                nodeId: diagNode.diagramNodeId,
+                isInitialized: stmt.initializer != null,
+                arrayDimensions:
+                    stmt.arraySize != null ? [stmt.arraySize!] : null,
+              );
+              _variableTypes[stmt.variableName] = stmt.dataType;
+              _arrayElementTypes[stmt.variableName] = stmt.dataType;
+            }
+          } else {
+            _registerDeclaration(
+              stmt.variableName,
+              stmt.dataType,
+              stmt.initializer != null,
+              diagNode.diagramNodeId,
+            );
+          }
         } else if (stmt is InputStatementNode) {
           for (final varNode in stmt.variables) {
             if (!_symbolTable.symbolExists(varNode.name)) {
@@ -1075,15 +1163,22 @@ class DiagramSemanticAnalyzer {
       if (isInput) {
         // Auto-declare if it doesn't exist (implicit declaration for inputs)
         if (!_symbolTable.symbolExists(varName)) {
+          DataType explicitType = DataType.integer;
+          final inputTypeStr = node.metadata['inputType'];
+          if (inputTypeStr == 'int') explicitType = DataType.integer;
+          else if (inputTypeStr == 'float') explicitType = DataType.float;
+          else if (inputTypeStr == 'char') explicitType = DataType.char;
+          else if (inputTypeStr == 'string') explicitType = DataType.string;
+          else if (inputTypeStr == 'bool') explicitType = DataType.boolean;
+
           _symbolTable.declareSymbol(
             name: varName,
-            // We use DataType.unknown to let the code generator infer from name,
-            // or integer as fallback since the generator defaults to int.
-            dataType: DataType.integer, 
+            // We use the explicit type from metadata, or integer as fallback.
+            dataType: explicitType, 
             nodeId: node.id,
             isInitialized: true,
           );
-          _variableTypes[varName] = DataType.integer;
+          _variableTypes[varName] = explicitType;
         }
         modifiedVars.add(varName);
         _symbolTable.markAsInitialized(varName);
