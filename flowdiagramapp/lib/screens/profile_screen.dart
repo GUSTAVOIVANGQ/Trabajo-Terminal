@@ -139,7 +139,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     TutorialCoachMark(
       targets: targets,
-      colorShadow: Theme.of(context).primaryColor,
+      colorShadow: Colors.black,
       textSkip: "SALTAR",
       paddingFocus: 10,
       opacityShadow: 0.8,
@@ -550,64 +550,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
-  /// Muestra opciones de sincronización
-  void _showSyncOptions() {
-    showModalBottomSheet(
-      context: context,
-      builder: (context) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Padding(
-                padding: EdgeInsets.all(16),
-                child: Text(
-                  'Opciones de Sincronización',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-              ),
-              ListTile(
-                leading: const Icon(Icons.sync, color: Colors.blue),
-                title: const Text('Sincronización inteligente'),
-                subtitle:
-                    const Text('Sincroniza cambios (los más recientes ganan)'),
-                onTap: () {
-                  Navigator.pop(context);
-                  _performSync();
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.cloud_upload, color: Colors.green),
-                title: const Text('Subir todo a la nube'),
-                subtitle: const Text(
-                    'Sobrescribe los datos en la nube con los locales'),
-                onTap: () {
-                  Navigator.pop(context);
-                  _uploadAll();
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.cloud_download, color: Colors.orange),
-                title: const Text('Descargar todo de la nube'),
-                subtitle: const Text(
-                    'Sobrescribe los datos locales con los de la nube'),
-                onTap: () {
-                  Navigator.pop(context);
-                  _downloadAll();
-                },
-              ),
-              const SizedBox(height: 8),
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('Cancelar'),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
+
 
   /// Ejecuta sincronización inteligente
   Future<void> _performSync() async {
@@ -626,121 +569,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
             backgroundColor: result.success ? Colors.green : Colors.orange,
             duration: const Duration(seconds: 4),
-          ),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: ${e.toString()}'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _isSyncing = false);
-      }
-    }
-  }
-
-  /// Sube todos los diagramas a la nube
-  Future<void> _uploadAll() async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Subir a la nube'),
-        content: const Text(
-          '¿Estás seguro? Esto sobrescribirá los diagramas en la nube con tus diagramas locales.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancelar'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Subir'),
-          ),
-        ],
-      ),
-    );
-
-    if (confirmed != true) return;
-
-    setState(() => _isSyncing = true);
-
-    try {
-      final result = await _syncService.uploadAllDiagrams();
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              result.success
-                  ? '✓ ${result.uploaded} diagramas subidos a la nube'
-                  : '⚠ Error: ${result.errors.join(", ")}',
-            ),
-            backgroundColor: result.success ? Colors.green : Colors.red,
-          ),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: ${e.toString()}'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _isSyncing = false);
-      }
-    }
-  }
-
-  /// Descarga todos los diagramas de la nube
-  Future<void> _downloadAll() async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Descargar de la nube'),
-        content: const Text(
-          '¿Estás seguro? Esto eliminará tus diagramas locales y los reemplazará con los de la nube.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancelar'),
-          ),
-          FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: Colors.orange),
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Descargar'),
-          ),
-        ],
-      ),
-    );
-
-    if (confirmed != true) return;
-
-    setState(() => _isSyncing = true);
-
-    try {
-      final result = await _syncService.downloadAllDiagrams();
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              result.success
-                  ? '✓ ${result.downloaded} diagramas descargados de la nube'
-                  : '⚠ Error: ${result.errors.join(", ")}',
-            ),
-            backgroundColor: result.success ? Colors.green : Colors.red,
           ),
         );
       }
@@ -985,475 +813,480 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
+  void _showSubscriptionModal() {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'Suscripción Pro',
+                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 16),
+              ListTile(
+                leading: const Icon(Icons.star_border, color: Colors.blue),
+                title: const Text('Gratuita'),
+                subtitle: const Text('Funciones básicas'),
+                trailing: const Icon(Icons.check, color: Colors.green),
+              ),
+              ListTile(
+                leading: const Icon(Icons.star, color: Colors.purple),
+                title: const Text('Premium Mensual'),
+                subtitle: const Text('\$49 MXN / mes'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _showComingSoonToast('Suscripción Mensual');
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.workspace_premium, color: Colors.orange),
+                title: const Text('Premium Anual'),
+                subtitle: const Text('\$499 MXN / año'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _showComingSoonToast('Suscripción Anual');
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showComingSoonToast(String feature) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('${feature}: Próximamente'),
+        backgroundColor: Theme.of(context).primaryColor,
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final user = _authService.currentUser;
     if (user == null) {
       return const LoginScreen();
     }
+    
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Mi Perfil'),
+        title: const Text('Mi Perfil', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        elevation: 0,
+        iconTheme: const IconThemeData(color: Colors.white),
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Color(0xFF4A00E0), Color(0xFF8E2DE2), Color(0xFF4CA1AF)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.settings),
+            onPressed: () {
+              if (_settingsKey.currentContext != null) {
+                Scrollable.ensureVisible(_settingsKey.currentContext!, duration: const Duration(milliseconds: 500));
+              }
+            },
+          )
+        ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
-          children: [
-            // Avatar y información básica
-            Container(
-              key: _avatarKey,
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                color: Theme.of(context).primaryColor.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Column(
-                children: [
-                  Stack(
-                    clipBehavior: Clip.none,
-                    children: [
-                      GestureDetector(
-                        onTap:
-                            _isPickingImage ? null : _pickAndSaveProfileImage,
-                        child: CircleAvatar(
-                          radius: 50,
-                          backgroundColor:
-                              user.isAdmin ? Colors.purple : Colors.blue,
-                          foregroundImage: _profileImagePath != null
-                              ? FileImage(File(_profileImagePath!))
-                              : null,
-                          child: _profileImagePath == null
-                              ? Text(
-                                  user.displayName.isNotEmpty
-                                      ? user.displayName
-                                          .substring(0, 1)
-                                          .toUpperCase()
-                                      : 'U',
-                                  style: const TextStyle(
-                                    fontSize: 32,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.white,
-                                  ),
-                                )
-                              : null,
-                        ),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: isDark 
+                ? const [Color(0xFF0F172A), Color(0xFF1E293B)]
+                : const [Color(0xFFE0C3FC), Color(0xFF8EC5FC)],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
+        ),
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.only(top: 32.0, left: 16, right: 16, bottom: 24),
+            child: Column(
+              children: [
+                // Tarjeta de perfil con avatar superpuesto
+                Stack(
+                  alignment: Alignment.topCenter,
+                  children: [
+                    Container(
+                      margin: const EdgeInsets.only(top: 50),
+                      width: double.infinity,
+                      padding: const EdgeInsets.only(top: 60, left: 24, right: 24, bottom: 24),
+                      decoration: BoxDecoration(
+                        color: isDark ? const Color(0xFF1E293B) : Colors.white,
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(isDark ? 0.3 : 0.05),
+                            blurRadius: 10,
+                            offset: const Offset(0, 5),
+                          ),
+                        ],
                       ),
-                      Positioned(
-                        right: -2,
-                        bottom: -2,
-                        child: Material(
-                          color: Theme.of(context).colorScheme.primary,
-                          shape: const CircleBorder(),
-                          child: InkWell(
-                            customBorder: const CircleBorder(),
-                            onTap: _isPickingImage
-                                ? null
-                                : _pickAndSaveProfileImage,
-                            child: Padding(
-                              padding: const EdgeInsets.all(8),
-                              child: _isPickingImage
-                                  ? const SizedBox(
-                                      width: 18,
-                                      height: 18,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
+                      child: Column(
+                        children: [
+                          const SizedBox(height: 8),
+                          Text(
+                            user.displayName.isEmpty ? 'Usuario' : user.displayName,
+                            style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: isDark ? Colors.white : Colors.black87),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            '@${user.email.split("@")[0]}',
+                            style: TextStyle(fontSize: 16, color: isDark ? Colors.grey[400] : Colors.grey[600]),
+                          ),
+                        ],
+                      ),
+                    ),
+                    // Imagen de perfil circular sobresaliendo arriba
+                    Container(
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(color: isDark ? const Color(0xFF1E293B) : Colors.white, width: 4),
+                      ),
+                      child: Stack(
+                        clipBehavior: Clip.none,
+                        children: [
+                          GestureDetector(
+                            onTap: _isPickingImage ? null : _pickAndSaveProfileImage,
+                            child: CircleAvatar(
+                              radius: 50,
+                              backgroundColor: user.isAdmin ? Colors.purple : Colors.blue,
+                              foregroundImage: _profileImagePath != null
+                                  ? FileImage(File(_profileImagePath!))
+                                  : null,
+                              child: _profileImagePath == null
+                                  ? Text(
+                                      user.displayName.isNotEmpty
+                                          ? user.displayName.substring(0, 1).toUpperCase()
+                                          : 'U',
+                                      style: const TextStyle(
+                                        fontSize: 32,
+                                        fontWeight: FontWeight.bold,
                                         color: Colors.white,
                                       ),
                                     )
-                                  : const Icon(
-                                      Icons.photo_camera,
-                                      size: 18,
-                                      color: Colors.white,
-                                    ),
+                                  : null,
                             ),
                           ),
-                        ),
+                          Positioned(
+                            right: -4,
+                            bottom: -4,
+                            child: Material(
+                              color: Theme.of(context).primaryColor,
+                              shape: const CircleBorder(),
+                              child: InkWell(
+                                customBorder: const CircleBorder(),
+                                onTap: _isPickingImage ? null : _pickAndSaveProfileImage,
+                                child: Padding(
+                                  padding: const EdgeInsets.all(8),
+                                  child: _isPickingImage
+                                      ? const SizedBox(
+                                          width: 18,
+                                          height: 18,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                            color: Colors.white,
+                                          ),
+                                        )
+                                      : const Icon(
+                                          Icons.photo_camera,
+                                          size: 18,
+                                          color: Colors.white,
+                                        ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Cambiar foto',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Theme.of(context).colorScheme.primary,
-                          fontWeight: FontWeight.w600,
-                        ),
-                  ),
-                  if (_profileImagePath != null) ...[
-                    const SizedBox(height: 4),
-                    TextButton.icon(
-                      onPressed: _isPickingImage ? null : _resetProfileImage,
-                      icon: const Icon(Icons.refresh),
-                      label: const Text('Restablecer foto'),
                     ),
                   ],
-                  const SizedBox(height: 8),
-                  Text(
-                    user.displayName,
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    user.email,
-                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                          color: Colors.grey[600],
-                        ),
-                  ),
-                  const SizedBox(height: 8),
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: user.isAdmin
-                          ? Colors.purple.withOpacity(0.1)
-                          : Colors.blue.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: user.isAdmin
-                            ? Colors.purple.withOpacity(0.3)
-                            : Colors.blue.withOpacity(0.3),
-                      ),
-                    ),
-                    child: Text(
-                      user.isAdmin ? 'Administrador' : 'Usuario',
-                      style: TextStyle(
-                        color: user.isAdmin
-                            ? Colors.purple[700]
-                            : Colors.blue[700],
-                        fontWeight: FontWeight.bold,
-                        fontSize: 12,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
+                ),
 
-            const SizedBox(height: 32),
+                const SizedBox(height: 16),
 
-            // Información detallada
-            Expanded(
-              child: ListView(
-                children: [
-                  _buildInfoCard(
-                    title: 'Información de la cuenta',
-                    items: [
-                      _buildInfoItem(
-                        icon: Icons.email_outlined,
-                        label: 'Correo electrónico',
-                        value: user.email,
-                      ),
-                      _buildInfoItem(
-                        icon: Icons.person_outline,
-                        label: 'Nombre',
-                        value: user.displayName,
-                      ),
-                      _buildInfoItem(
-                        icon: Icons.admin_panel_settings_outlined,
-                        label: 'Tipo de cuenta',
-                        value: user.isAdmin ? 'Administrador' : 'Usuario',
-                      ),
-                      _buildInfoItem(
-                        icon: Icons.calendar_today_outlined,
-                        label: 'Fecha de registro',
-                        value: DateFormat('dd/MM/yyyy').format(user.createdAt),
-                      ),
-                      _buildInfoItem(
-                        icon: Icons.access_time_outlined,
-                        label: 'Último acceso',
-                        value: DateFormat('dd/MM/yyyy HH:mm')
-                            .format(user.lastLogin),
-                      ),
-                    ],
-                  ),
+                _buildGradientButton(
+                  text: 'Editar Perfil',
+                  colors: [const Color(0xFF6A11CB), const Color(0xFF2575FC)],
+                  onTap: () => _showComingSoonToast('Editar Perfil'),
+                ),
+                const SizedBox(height: 12),
+                _buildGradientButton(
+                  text: 'Suscripción',
+                  colors: [const Color(0xFF00B4DB), const Color(0xFF0083B0)],
+                  onTap: _showSubscriptionModal,
+                ),
 
-                  const SizedBox(height: 16),
+                const SizedBox(height: 24),
 
-                  // Botón para ver métricas personales
-                  Card(
-                    child: ListTile(
+                _buildSectionCard(
+                  title: 'Información de la cuenta',
+                  children: [
+                    _buildListTile(icon: Icons.email_outlined, title: user.email, subtitle: 'Correo electrónico'),
+                    _buildListTile(icon: Icons.admin_panel_settings_outlined, title: user.isAdmin ? 'Administrador' : 'Usuario', subtitle: 'Tipo de cuenta'),
+                    _buildListTile(icon: Icons.calendar_today_outlined, title: DateFormat("dd/MM/yyyy").format(user.createdAt), subtitle: 'Fecha de registro'),
+                    _buildListTile(icon: Icons.access_time_outlined, title: DateFormat("dd/MM/yyyy HH:mm").format(user.lastLogin), subtitle: 'Último acceso'),
+                  ],
+                ),
+
+                _buildSectionCard(
+                  title: 'Mis Métricas',
+                  children: [
+                    ListTile(
                       leading: const Icon(Icons.analytics_outlined),
-                      title: const Text('Mis Métricas'),
-                      subtitle:
-                          const Text('Ver estadísticas de uso y progreso'),
-                      trailing: const Icon(Icons.arrow_forward_ios),
+                      title: const Text('Ver estadísticas de uso y progreso'),
+                      trailing: const Icon(Icons.chevron_right),
                       onTap: () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (context) => const MetricsScreen(),
-                          ),
-                        );
+                        Navigator.of(context).push(MaterialPageRoute(builder: (context) => const MetricsScreen()));
                       },
                     ),
-                  ),
-
-                  const SizedBox(height: 16),
-
-                  // Métricas resumidas (si existen)
-                  if (user.metrics.isNotEmpty)
-                    _buildInfoCard(
-                      title: 'Resumen de actividad',
-                      items: [
-                        if (user.metrics['diagramas_creados'] != null)
-                          _buildInfoItem(
-                            icon: Icons.account_tree,
-                            label: 'Diagramas creados',
-                            value: user.metrics['diagramas_creados'].toString(),
-                          ),
-                        if (user.metrics['codigo_generado'] != null)
-                          _buildInfoItem(
-                            icon: Icons.code,
-                            label: 'Código generado',
-                            value: user.metrics['codigo_generado'].toString(),
-                          ),
-                        if (user.metrics['total_validaciones'] != null)
-                          _buildInfoItem(
-                            icon: Icons.check_circle,
-                            label: 'Validaciones realizadas',
-                            value:
-                                user.metrics['total_validaciones'].toString(),
-                          ),
-                      ],
-                    ),
-
-                  const SizedBox(height: 24),
-
-                  // Opciones administrativas
-                  if (user.isAdmin) ...[
-                    Card(
-                      color: Colors.purple.shade50,
-                      child: ListTile(
-                        leading: const Icon(Icons.admin_panel_settings,
-                            color: Colors.purple),
-                        title: const Text('Panel de Administración'),
-                        subtitle: const Text(
-                            'Ver métricas globales y gestionar usuarios'),
-                        trailing: const Icon(Icons.arrow_forward_ios),
-                        onTap: () {
-                          Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (context) => const AdminMetricsScreen(),
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-                    const SizedBox(height: 16),
+                    if (user.metrics.isNotEmpty) ...[
+                      const Divider(height: 1),
+                      if (user.metrics.containsKey("diagramas_creados"))
+                        _buildListTile(icon: Icons.account_tree, title: user.metrics["diagramas_creados"].toString(), subtitle: 'Diagramas creados'),
+                      if (user.metrics.containsKey("codigo_generado"))
+                        _buildListTile(icon: Icons.code, title: user.metrics["codigo_generado"].toString(), subtitle: 'Código generado'),
+                      if (user.metrics.containsKey("total_validaciones"))
+                        _buildListTile(icon: Icons.check_circle, title: user.metrics["total_validaciones"].toString(), subtitle: 'Validaciones realizadas'),
+                    ]
                   ],
+                ),
 
-                  // Configuración de tema
-                  Container(
-                    key: _settingsKey,
-                    child: _buildInfoCard(
-                      title: 'Configuración de la aplicación',
-                      items: [
+                _buildSectionCard(
+                  title: 'Estado de suscripción',
+                  children: [
+                    _buildListTile(icon: Icons.workspace_premium_outlined, title: 'Plan Gratuito', subtitle: 'Actualiza para obtener más funciones'),
+                  ],
+                ),
+
+                _buildSectionCard(
+                  title: 'Seguridad',
+                  children: [
+                    ListTile(
+                      leading: const Icon(Icons.security_outlined),
+                      title: const Text('Cambiar contraseña, sesiones'),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: () => _showComingSoonToast('Seguridad'),
+                    ),
+                  ],
+                ),
+
+                _buildSectionCard(
+                  title: 'Cuentas conectadas',
+                  children: [
+                    ListTile(
+                      leading: const Icon(Icons.link_outlined),
+                      title: Row(
+                        children: [
+                          _buildIconBadge(Icons.code, isDark ? Colors.white : Colors.black),
+                          const SizedBox(width: 8),
+                          _buildIconBadge(Icons.brush, Colors.blue),
+                          const SizedBox(width: 8),
+                          _buildIconBadge(Icons.g_mobiledata, Colors.red),
+                        ],
+                      ),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: () => _showComingSoonToast('Cuentas conectadas'),
+                    ),
+                  ],
+                ),
+
+                _buildSectionCard(
+                  key: _settingsKey,
+                  title: 'Configuración general',
+                  children: [
+                    ListTile(
+                      leading: const Icon(Icons.palette_outlined),
+                      title: const Text('Tema'),
+                      subtitle: Text(ThemeService().getThemeName()),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: () {
+                        Navigator.of(context).push(MaterialPageRoute(builder: (context) => const ThemeSettingsScreen()));
+                      },
+                    ),
+                    const Divider(height: 1),
+                    SwitchListTile.adaptive(
+                      secondary: const Icon(Icons.save_as_outlined),
+                      title: const Text('Autoguardado (2s)'),
+                      subtitle: Text(_updatingAutoSavePreference ? 'Guardando...' : 'Guarda cambios automáticamente'),
+                      value: _autoSaveEnabled,
+                      onChanged: _updatingAutoSavePreference ? null : _updateAutoSavePreference,
+                    ),
+                    const Divider(height: 1),
+                    SwitchListTile.adaptive(
+                      secondary: const Icon(Icons.analytics_outlined),
+                      title: const Text('Telemetría de uso'),
+                      value: user.isGuest ? false : _telemetryConsent,
+                      onChanged: user.isGuest || _updatingTelemetryConsent ? null : _updateTelemetryConsent,
+                    ),
+                    const Divider(height: 1),
+                    SwitchListTile.adaptive(
+                      secondary: const Icon(Icons.bug_report_outlined),
+                      title: const Text('Reportes de fallos'),
+                      value: user.isGuest ? false : _crashReportsConsent,
+                      onChanged: user.isGuest || _updatingCrashReportsConsent ? null : _updateCrashReportsConsent,
+                    ),
+                  ],
+                ),
+
+                _buildSectionCard(
+                  key: _syncKey,
+                  title: 'Datos',
+                  children: [
+                    ListTile(
+                      leading: _isSyncing
+                          ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2))
+                          : const Icon(Icons.cloud_sync, color: Colors.blue),
+                      title: const Text('Sincronizar datos'),
+                      subtitle: Text(user.isGuest ? 'No disponible para invitados' : 'Respalda tus diagramas en la nube'),
+                      trailing: user.isGuest ? const Icon(Icons.lock_outline, color: Colors.grey) : const Icon(Icons.chevron_right),
+                      enabled: !user.isGuest && !_isSyncing,
+                      onTap: user.isGuest ? null : _performSync,
+                    ),
+                    const Divider(height: 1),
+                    ListTile(
+                      leading: _isDeleting
+                          ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.red))
+                          : const Icon(Icons.delete_forever, color: Colors.red),
+                      title: Text(user.isGuest ? 'Eliminar datos locales' : 'Eliminar cuenta', style: const TextStyle(color: Colors.red)),
+                      trailing: const Icon(Icons.chevron_right, color: Colors.red),
+                      enabled: !_isDeleting,
+                      onTap: user.isGuest ? _deleteGuestData : _showDeleteAccountDialog,
+                    ),
+                  ],
+                ),
+
+                if (user.isAdmin) ...[
+                  _buildSectionCard(
+                    title: 'Administración',
+                    children: [
                       ListTile(
-                        leading: const Icon(Icons.palette_outlined),
-                        title: const Text('Tema'),
-                        subtitle: Text(ThemeService().getThemeName()),
+                        leading: const Icon(Icons.admin_panel_settings, color: Colors.purple),
+                        title: const Text('Panel de Administración'),
                         trailing: const Icon(Icons.chevron_right),
                         onTap: () {
-                          Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (context) => const ThemeSettingsScreen(),
-                            ),
-                          );
+                          Navigator.of(context).push(MaterialPageRoute(builder: (context) => const AdminMetricsScreen()));
                         },
                       ),
-                      const Divider(),
-                      SwitchListTile.adaptive(
-                        secondary: const Icon(Icons.save_as_outlined),
-                        title: const Text(
-                            'Autoguardado de diagramas (2 segundos)'),
-                        subtitle: Text(
-                          _updatingAutoSavePreference
-                              ? 'Guardando preferencia...'
-                              : 'Guarda automáticamente los cambios en el editor cada 2 segundos.',
-                        ),
-                        value: _autoSaveEnabled,
-                        onChanged: _updatingAutoSavePreference
-                            ? null
-                            : _updateAutoSavePreference,
-                      ),
-                      const Divider(),
-                      SwitchListTile.adaptive(
-                        secondary: const Icon(Icons.analytics_outlined),
-                        title: const Text('Permitir telemetría de uso'),
-                        subtitle: Text(
-                          user.isGuest
-                              ? 'No disponible en modo invitado'
-                              : (_updatingTelemetryConsent
-                                  ? 'Guardando cambios...'
-                                  : 'Puedes cambiar este consentimiento en cualquier momento'),
-                        ),
-                        value: user.isGuest ? false : _telemetryConsent,
-                        onChanged: user.isGuest || _updatingTelemetryConsent
-                            ? null
-                            : _updateTelemetryConsent,
-                      ),
-                      const Divider(),
-                      SwitchListTile.adaptive(
-                        secondary: const Icon(Icons.bug_report_outlined),
-                        title: const Text(
-                            'Permitir reportes de fallos (Crash Report)'),
-                        subtitle: Text(
-                          user.isGuest
-                              ? 'No disponible en modo invitado'
-                              : (_updatingCrashReportsConsent
-                                  ? 'Guardando cambios...'
-                                  : 'Envía errores técnicos para diagnóstico'),
-                        ),
-                        value: user.isGuest ? false : _crashReportsConsent,
-                        onChanged: user.isGuest || _updatingCrashReportsConsent
-                            ? null
-                            : _updateCrashReportsConsent,
-                      ),
                     ],
-                  ),
-                ),
-
-                  const SizedBox(height: 16),
-
-                  // Sección de Sincronización y Gestión de Datos
-                  Container(
-                    key: _syncKey,
-                    child: _buildInfoCard(
-                      title: 'Sincronización y datos',
-                      items: [
-                      // Botón de sincronización
-                      ListTile(
-                        leading: _isSyncing
-                            ? const SizedBox(
-                                width: 24,
-                                height: 24,
-                                child:
-                                    CircularProgressIndicator(strokeWidth: 2),
-                              )
-                            : const Icon(Icons.cloud_sync, color: Colors.blue),
-                        title: const Text('Sincronizar con la nube'),
-                        subtitle: Text(
-                          user.isGuest
-                              ? 'No disponible para usuarios invitados'
-                              : 'Sincroniza tus diagramas con Firebase',
-                        ),
-                        trailing: user.isGuest
-                            ? const Icon(Icons.lock_outline, color: Colors.grey)
-                            : const Icon(Icons.chevron_right),
-                        enabled: !user.isGuest && !_isSyncing,
-                        onTap: user.isGuest ? null : _showSyncOptions,
-                      ),
-                      const Divider(),
-                      // Botón de eliminar cuenta
-                      ListTile(
-                        leading: _isDeleting
-                            ? const SizedBox(
-                                width: 24,
-                                height: 24,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: Colors.red,
-                                ),
-                              )
-                            : const Icon(Icons.delete_forever,
-                                color: Colors.red),
-                        title: Text(
-                          user.isGuest
-                              ? 'Eliminar datos locales'
-                              : 'Eliminar cuenta',
-                          style: const TextStyle(color: Colors.red),
-                        ),
-                        subtitle: Text(
-                          user.isGuest
-                              ? 'Elimina todos los diagramas guardados localmente'
-                              : 'Elimina tu cuenta y todos los datos asociados',
-                        ),
-                        trailing:
-                            const Icon(Icons.chevron_right, color: Colors.red),
-                        enabled: !_isDeleting,
-                        onTap: user.isGuest
-                            ? _deleteGuestData
-                            : _showDeleteAccountDialog,
-                      ),
-                    ],
-                  ),
-                ),
-
-                  const SizedBox(height: 16),
-
-                  // Botón de cerrar sesión
-                  Card(
-                    color: Colors.red.shade50,
-                    child: ListTile(
-                      leading: const Icon(Icons.logout, color: Colors.red),
-                      title: const Text('Cerrar Sesión'),
-                      subtitle: const Text('Salir de la aplicación'),
-                      trailing: const Icon(Icons.arrow_forward_ios),
-                      onTap: _signOut,
-                    ),
                   ),
                 ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 
-  Widget _buildInfoCard({required String title, required List<Widget> items}) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              title,
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-            ),
-            const SizedBox(height: 12),
-            ...items,
-          ],
-        ),
-      ),
-    );
-  }
+                const SizedBox(height: 16),
 
-  Widget _buildInfoItem({
-    required IconData icon,
-    required String label,
-    required String value,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12.0),
-      child: Row(
-        children: [
-          Icon(icon, size: 20, color: Colors.grey[600]),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              label,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Colors.grey[600],
-                  ),
+                _buildGradientButton(
+                  text: 'Cerrar Sesión',
+                  colors: [Colors.red.shade400, Colors.red.shade700],
+                  onTap: _signOut,
+                ),
+                
+                const SizedBox(height: 32),
+              ],
             ),
           ),
-          Expanded(
-            child: Text(
-              value,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    fontWeight: FontWeight.w500,
-                  ),
-              textAlign: TextAlign.end,
-            ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildGradientButton({required String text, required List<Color> colors, required VoidCallback onTap}) {
+    return Container(
+      width: double.infinity,
+      height: 50,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(colors: colors),
+        borderRadius: BorderRadius.circular(25),
+        boxShadow: [
+          BoxShadow(
+            color: colors.last.withOpacity(0.3),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(25),
+          onTap: onTap,
+          child: Center(
+            child: Text(
+              text,
+              style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSectionCard({required String title, required List<Widget> children, Key? key}) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Container(
+      key: key,
+      margin: const EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF1E293B) : Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(isDark ? 0.3 : 0.02),
+            blurRadius: 5,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(left: 16, top: 16, right: 16, bottom: 8),
+            child: Text(
+              title,
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: isDark ? Colors.white : Colors.black87),
+            ),
+          ),
+          ...children,
+        ],
+      ),
+    );
+  }
+
+  Widget _buildListTile({required IconData icon, required String title, required String subtitle}) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return ListTile(
+      leading: Icon(icon, color: isDark ? Colors.grey[400] : Colors.grey[700]),
+      title: Text(title, style: TextStyle(fontWeight: FontWeight.w500, color: isDark ? Colors.white : Colors.black87)),
+      subtitle: Text(subtitle, style: TextStyle(color: isDark ? Colors.grey[400] : Colors.grey[600])),
+    );
+  }
+
+  Widget _buildIconBadge(IconData icon, Color color) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Container(
+      padding: const EdgeInsets.all(6),
+      decoration: BoxDecoration(
+        color: color.withOpacity(isDark ? 0.2 : 0.1),
+        shape: BoxShape.circle,
+      ),
+      child: Icon(icon, size: 20, color: color),
     );
   }
 }

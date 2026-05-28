@@ -108,6 +108,7 @@ class FlowDiagramCanvas extends StatefulWidget {
   final Connection? selectedConnection;
   final Offset panOffset;
   final double scale;
+  final bool showPageBoundary;
   final Function(DragUpdateDetails) onPanUpdate;
   final Function(ScaleStartDetails)? onScaleStart;
   final Function(ScaleUpdateDetails) onScaleUpdate;
@@ -131,6 +132,7 @@ class FlowDiagramCanvas extends StatefulWidget {
     this.selectedConnection,
     required this.panOffset,
     required this.scale,
+    this.showPageBoundary = false,
     required this.onPanUpdate,
     this.onScaleStart,
     required this.onScaleUpdate,
@@ -969,6 +971,7 @@ class _FlowDiagramCanvasState extends State<FlowDiagramCanvas>
                     currentDragPosition: currentDragPosition,
                     panOffset: widget.panOffset,
                     scale: widget.scale,
+                    showPageBoundary: widget.showPageBoundary,
                     context: context,
                     // Endpoint drag state
                     isDraggingEndpoint: _isDraggingEndpoint,
@@ -1000,6 +1003,7 @@ class FlowDiagramPainter extends CustomPainter {
   final Offset? currentDragPosition;
   final Offset panOffset;
   final double scale;
+  final bool showPageBoundary;
   final BuildContext? context;
   final ThemeData? themeOverride;
   final bool? isDarkModeOverride;
@@ -1036,6 +1040,7 @@ class FlowDiagramPainter extends CustomPainter {
     this.currentDragPosition,
     required this.panOffset,
     required this.scale,
+    this.showPageBoundary = false,
     this.context,
     this.themeOverride,
     this.isDarkModeOverride,
@@ -1106,6 +1111,11 @@ class FlowDiagramPainter extends CustomPainter {
 
     // Dibujar cuadrícula
     _drawGrid(canvas, size);
+
+    // Dibujar área de página
+    if (showPageBoundary) {
+      _drawPageBoundary(canvas);
+    }
 
     // Dibujar conexiones
     for (final connection in connections) {
@@ -1266,6 +1276,34 @@ class FlowDiagramPainter extends CustomPainter {
         gridPaint,
       );
     }
+  }
+
+  void _drawPageBoundary(Canvas canvas) {
+    double minX = 0;
+    double minY = 0;
+    double maxX = 1000;
+    double maxY = 1200; // Tamaño inicial por defecto
+
+    for (final node in nodes) {
+      if (node.position.dx < minX + 20) minX = node.position.dx - 20;
+      if (node.position.dy < minY + 20) minY = node.position.dy - 20;
+      if (node.position.dx + node.size.width > maxX - 20) {
+        maxX = node.position.dx + node.size.width + 20;
+      }
+      if (node.position.dy + node.size.height > maxY - 20) {
+        maxY = node.position.dy + node.size.height + 20;
+      }
+    }
+
+    final rect = Rect.fromLTRB(minX, minY, maxX, maxY);
+    final path = Path()..addRect(rect);
+
+    final boundaryPaint = Paint()
+      ..color = (isDarkMode ? Colors.white : Colors.black).withOpacity(0.4)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2.0;
+
+    _drawDashedPath(canvas, path, boundaryPaint);
   }
 
   /// Draws a dashed path for annotation/comment symbols per ISO 5807

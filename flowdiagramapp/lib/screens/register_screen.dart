@@ -167,12 +167,19 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 children: [
                   const SizedBox(height: 20),
 
-                  Text(
-                    'Únete a FlowCode',
-                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: Theme.of(context).primaryColor,
-                        ),
+                  ShaderMask(
+                    shaderCallback: (bounds) => const LinearGradient(
+                      colors: [Color(0xFF512DA8), Color(0xFF00C9B1)],
+                      begin: Alignment.centerLeft,
+                      end: Alignment.centerRight,
+                    ).createShader(bounds),
+                    child: Text(
+                      'Únete a FlowCode',
+                      style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                    ),
                   ),
 
                   const SizedBox(height: 8),
@@ -189,10 +196,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   // Campo de nombre
                   TextFormField(
                     controller: _nameController,
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       labelText: 'Nombre completo',
-                      prefixIcon: Icon(Icons.person_outlined),
-                      border: OutlineInputBorder(),
+                      prefixIcon: const Icon(Icons.person_outlined),
+                      filled: true,
+                      fillColor: Theme.of(context).brightness == Brightness.dark 
+                          ? Colors.grey[900] 
+                          : Colors.grey[100],
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: BorderSide.none,
+                      ),
                     ),
                     textInputAction: TextInputAction.next,
                     validator: (value) {
@@ -211,10 +225,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   // Campo de email
                   TextFormField(
                     controller: _emailController,
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       labelText: 'Correo electrónico',
-                      prefixIcon: Icon(Icons.email_outlined),
-                      border: OutlineInputBorder(),
+                      prefixIcon: const Icon(Icons.email_outlined),
+                      filled: true,
+                      fillColor: Theme.of(context).brightness == Brightness.dark 
+                          ? Colors.grey[900] 
+                          : Colors.grey[100],
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: BorderSide.none,
+                      ),
                     ),
                     keyboardType: TextInputType.emailAddress,
                     textInputAction: TextInputAction.next,
@@ -294,6 +315,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     decoration: InputDecoration(
                       labelText: 'Contraseña',
                       prefixIcon: const Icon(Icons.lock_outlined),
+                      filled: true,
+                      fillColor: Theme.of(context).brightness == Brightness.dark 
+                          ? Colors.grey[900] 
+                          : Colors.grey[100],
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: BorderSide.none,
+                      ),
                       suffixIcon: IconButton(
                         icon: Icon(
                           _obscurePassword
@@ -306,7 +335,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           });
                         },
                       ),
-                      border: const OutlineInputBorder(),
                     ),
                     obscureText: _obscurePassword,
                     textInputAction: TextInputAction.next,
@@ -329,6 +357,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     decoration: InputDecoration(
                       labelText: 'Confirmar contraseña',
                       prefixIcon: const Icon(Icons.lock_outlined),
+                      filled: true,
+                      fillColor: Theme.of(context).brightness == Brightness.dark 
+                          ? Colors.grey[900] 
+                          : Colors.grey[100],
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: BorderSide.none,
+                      ),
                       suffixIcon: IconButton(
                         icon: Icon(
                           _obscureConfirmPassword
@@ -341,7 +377,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           });
                         },
                       ),
-                      border: const OutlineInputBorder(),
                     ),
                     obscureText: _obscureConfirmPassword,
                     textInputAction: TextInputAction.done,
@@ -436,12 +471,34 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   const SizedBox(height: 32),
 
                   // Botón de registro
-                  SizedBox(
+                  Container(
                     width: double.infinity,
-                    height: 50,
-                    child: FilledButton(
+                    height: 54,
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFF00C9B1), Color(0xFF512DA8)],
+                        begin: Alignment.centerLeft,
+                        end: Alignment.centerRight,
+                      ),
+                      borderRadius: BorderRadius.circular(27),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFF00C9B1).withOpacity(0.3),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        )
+                      ],
+                    ),
+                    child: ElevatedButton(
                       onPressed:
                           (_isLoading || !_privacyAccepted) ? null : _register,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.transparent,
+                        shadowColor: Colors.transparent,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(27),
+                        ),
+                      ),
                       child: _isLoading
                           ? const SizedBox(
                               height: 20,
@@ -452,7 +509,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                     AlwaysStoppedAnimation<Color>(Colors.white),
                               ),
                             )
-                          : const Text('Crear Cuenta'),
+                          : const Text(
+                              'Crear Cuenta',
+                              style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold),
+                            ),
                     ),
                   ),
 

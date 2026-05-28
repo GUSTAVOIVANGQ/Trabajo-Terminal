@@ -15,9 +15,30 @@ class HelpScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Ayuda'),
+        title: const Text('Ayuda', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        elevation: 0,
+        iconTheme: const IconThemeData(color: Colors.white),
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Color(0xFF4A00E0), Color(0xFF8E2DE2), Color(0xFF4CA1AF)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+        ),
       ),
-      body: ListView(
+      body: Container(
+        width: double.infinity,
+        height: double.infinity,
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Color(0xFFE0C3FC), Color(0xFF8EC5FC)],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
+        ),
+        child: ListView(
         padding: const EdgeInsets.all(16),
         children: [
           const Card(
@@ -105,6 +126,7 @@ class HelpScreen extends StatelessWidget {
           const SizedBox(height: 12),
           const _ContactSection(supportEmail: supportEmail),
         ],
+      ),
       ),
     );
   }

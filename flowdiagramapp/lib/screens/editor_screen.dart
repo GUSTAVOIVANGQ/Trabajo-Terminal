@@ -90,6 +90,7 @@ class _EditorScreenState extends State<EditorScreen> {
   int _historyIndex = -1;
   int _savedHistoryIndex = -1;
   bool _isApplyingHistory = false;
+  bool _showPageBoundary = false; // Estado del límite de página
 
   bool get _canUndo => _historyIndex > 0;
   bool get _canRedo =>
@@ -322,7 +323,7 @@ class _EditorScreenState extends State<EditorScreen> {
 
     TutorialCoachMark(
       targets: targets,
-      colorShadow: Theme.of(context).primaryColor,
+      colorShadow: Colors.black,
       textSkip: "SALTAR",
       paddingFocus: 10,
       opacityShadow: 0.8,
@@ -457,7 +458,18 @@ class _EditorScreenState extends State<EditorScreen> {
         autofocus: true,
         child: Scaffold(
           appBar: AppBar(
-            title: Text(currentDiagram?.name ?? 'Diagrama de Flujo'),
+            title: Text(currentDiagram?.name ?? 'Diagrama de Flujo', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            elevation: 0,
+            iconTheme: const IconThemeData(color: Colors.white),
+            flexibleSpace: Container(
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Color(0xFF4A00E0), Color(0xFF8E2DE2), Color(0xFF4CA1AF)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+              ),
+            ),
             leading: IconButton(
               icon: const Icon(Icons.arrow_back),
               onPressed: () => _handleBackNavigation(context),
@@ -493,6 +505,16 @@ class _EditorScreenState extends State<EditorScreen> {
                 icon: const Icon(Icons.folder_open),
                 tooltip: 'Cargar diagrama',
                 onPressed: () => _navigateToLoadDiagram(context),
+              ),
+              // Botón para visualizar área de página
+              IconButton(
+                icon: Icon(_showPageBoundary ? Icons.border_clear : Icons.border_outer),
+                tooltip: _showPageBoundary ? 'Ocultar área de página' : 'Mostrar área de página',
+                onPressed: () {
+                  setState(() {
+                    _showPageBoundary = !_showPageBoundary;
+                  });
+                },
               ),
               // Botón de compilación: ejecuta el conversor completo (validación + análisis + generación)
               Container(
@@ -646,6 +668,7 @@ class _EditorScreenState extends State<EditorScreen> {
                       selectedConnection: selectedConnection,
                       panOffset: panOffset,
                       scale: currentScale,
+                      showPageBoundary: _showPageBoundary,
                       canvasKey: _canvasKey, // Agregar el GlobalKey
                       onPanUpdate: (details) {
                         if (!isConnecting) {
@@ -2409,7 +2432,7 @@ class _EditorScreenState extends State<EditorScreen> {
             source.text.toLowerCase().contains('terminar'));
 
     if (sourceIsEnd) {
-      // _showSnackBar('Un nodo terminal de fin no puede tener conexiones de salida');
+      _showSnackBar('Un nodo terminal de fin no puede tener conexiones de salida');
       return false;
     }
 
@@ -2420,7 +2443,7 @@ class _EditorScreenState extends State<EditorScreen> {
             target.text.isEmpty);
 
     if (targetIsStart) {
-      // _showSnackBar('Un nodo terminal de inicio no puede tener conexiones de entrada');
+      _showSnackBar('Un nodo terminal de inicio no puede tener conexiones de entrada');
       return false;
     }
 

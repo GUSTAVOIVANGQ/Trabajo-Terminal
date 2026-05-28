@@ -1,19 +1,19 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart'; // Ensure this import is present
+import 'package:intl/intl.dart';
 import '../models/saved_diagram.dart';
 import '../services/database_service.dart';
 import '../services/auth_service.dart';
-import '../services/metrics_service.dart'; // Nueva importación
-import '../services/tutorial_service.dart'; // Nueva importación para tutoriales
+import '../services/metrics_service.dart';
+import '../services/tutorial_service.dart';
 import 'editor_screen.dart';
 import 'help_screen.dart';
 import 'profile_screen.dart';
-import 'tutorial_list_screen.dart'; // Nueva importación para tutoriales
+import 'tutorial_list_screen.dart';
 import 'interactive_tutorials_screen.dart';
-import 'welcome_screen.dart'; // Nueva importación para pantalla de bienvenida
-// import 'exercises_screen.dart'; // Nueva importación para ejercicios
+import 'welcome_screen.dart';
 import '../widgets/theme_selector_widget.dart';
 import 'package:tutorial_coach_mark/tutorial_coach_mark.dart';
+import 'settings_screen.dart';
 
 class LoadDiagramScreen extends StatefulWidget {
   const LoadDiagramScreen({super.key});
@@ -22,42 +22,36 @@ class LoadDiagramScreen extends StatefulWidget {
   State<LoadDiagramScreen> createState() => _LoadDiagramScreenState();
 }
 
-class _LoadDiagramScreenState extends State<LoadDiagramScreen>
-    with SingleTickerProviderStateMixin {
-  late TabController _tabController;
+class _LoadDiagramScreenState extends State<LoadDiagramScreen> {
+  int _currentIndex = 0; // 0: Home (Mis diagramas), 1: Plantillas
   final DatabaseService _databaseService = DatabaseService();
-  final MetricsService _metricsService = MetricsService(); // Nuevo servicio
-  final TutorialService _tutorialService =
-      TutorialService(); // Servicio de tutoriales
-  final AuthService _authService = AuthService(); // Servicio de autenticación
+  final MetricsService _metricsService = MetricsService();
+  final TutorialService _tutorialService = TutorialService();
+  final AuthService _authService = AuthService();
   List<SavedDiagram> _diagrams = [];
   List<SavedDiagram> _templates = [];
   bool _isLoading = true;
   bool _hasShownWelcome = false;
 
-  final GlobalKey _tabBarKey = GlobalKey();
-  final GlobalKey _createFabKey = GlobalKey();
+  final GlobalKey _bottomNavKey = GlobalKey();
+  final GlobalKey _createBtnKey = GlobalKey();
   final GlobalKey _tutorialsFabKey = GlobalKey();
   final GlobalKey _interactiveTutorialsFabKey = GlobalKey();
   final GlobalKey _profileKey = GlobalKey();
-  final GlobalKey _themeKey = GlobalKey();
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
     _loadData();
     _checkFirstTime();
   }
 
-  /// Obtiene el ID del usuario actual (o 'guest' para invitados)
   String? _getCurrentUserId() {
     final user = _authService.currentUser;
     if (user == null) return null;
     return user.isGuest ? 'guest_${user.uid}' : user.uid;
   }
 
-  /// Obtiene la clave para tutoriales de bienvenida (estable por usuario).
   String _getTutorialUserKey() {
     final user = _authService.currentUser;
     if (user == null || user.isGuest) return 'guest';
@@ -65,25 +59,18 @@ class _LoadDiagramScreenState extends State<LoadDiagramScreen>
   }
 
   Future<void> _loadData() async {
-    setState(() {
-      _isLoading = true;
-    });
-
+    setState(() { _isLoading = true; });
     try {
       final userId = _getCurrentUserId();
-      // Cargar diagramas filtrados por usuario
       final diagrams = await _databaseService.getAllDiagrams(userId: userId);
       final templates = await _databaseService.getAllTemplates();
-
       setState(() {
         _diagrams = diagrams;
         _templates = templates;
         _isLoading = false;
       });
     } catch (e) {
-      setState(() {
-        _isLoading = false;
-      });
+      setState(() { _isLoading = false; });
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error cargando diagramas: ${e.toString()}')),
@@ -94,12 +81,9 @@ class _LoadDiagramScreenState extends State<LoadDiagramScreen>
 
   Future<void> _checkFirstTime() async {
     final tutorialUserKey = _getTutorialUserKey();
-    // Verificar si es la primera vez del usuario
-    final isFirstTime =
-        await _tutorialService.isFirstTime(userId: tutorialUserKey);
+    final isFirstTime = await _tutorialService.isFirstTime(userId: tutorialUserKey);
     if (isFirstTime && mounted && !_hasShownWelcome) {
       _hasShownWelcome = true;
-      // Esperar a que se cargue la pantalla
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
           Navigator.of(context).push(
@@ -108,11 +92,8 @@ class _LoadDiagramScreenState extends State<LoadDiagramScreen>
                 userId: tutorialUserKey,
                 onComplete: () {
                   Navigator.of(context).pop();
-                  // Esperar a que la animación de pop termine antes de mostrar el tour
                   Future.delayed(const Duration(milliseconds: 500), () {
-                    if (mounted) {
-                      _showAppTour();
-                    }
+                    if (mounted) _showAppTour();
                   });
                 },
               ),
@@ -123,38 +104,26 @@ class _LoadDiagramScreenState extends State<LoadDiagramScreen>
     }
   }
 
-  @override
-  void dispose() {
-    _tabController.dispose();
-    super.dispose();
-  }
-
   void _showAppTour() {
     List<TargetFocus> targets = [];
     
     targets.add(
       TargetFocus(
-        identify: "tabBar",
-        keyTarget: _tabBarKey,
+        identify: "bottomNav",
+        keyTarget: _bottomNavKey,
         alignSkip: Alignment.topRight,
         shape: ShapeLightFocus.RRect,
         contents: [
           TargetContent(
-            align: ContentAlign.bottom,
+            align: ContentAlign.top,
             builder: (context, controller) {
               return const Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    "Tus Diagramas y Plantillas",
-                    style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
-                  ),
+                  Text("Navegación Principal", style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
                   SizedBox(height: 10),
-                  Text(
-                    "Aquí podrás ver los diagramas que has guardado, o usar una plantilla prediseñada para empezar rápidamente.",
-                    style: TextStyle(color: Colors.white, fontSize: 16),
-                  ),
+                  Text("Alterna entre tus diagramas y las plantillas disponibles.", style: TextStyle(color: Colors.white, fontSize: 16)),
                 ],
               );
             },
@@ -165,26 +134,22 @@ class _LoadDiagramScreenState extends State<LoadDiagramScreen>
 
     targets.add(
       TargetFocus(
-        identify: "createFab",
-        keyTarget: _createFabKey,
+        identify: "createBtn",
+        keyTarget: _createBtnKey,
         alignSkip: Alignment.topRight,
+        shape: ShapeLightFocus.RRect,
+        radius: 16,
         contents: [
           TargetContent(
-            align: ContentAlign.top,
+            align: ContentAlign.bottom,
             builder: (context, controller) {
               return const Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    "Crear Nuevo Diagrama",
-                    style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
-                  ),
+                  Text("Nuevo Diagrama", style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
                   SizedBox(height: 10),
-                  Text(
-                    "Toca aquí para abrir el editor y comenzar a diseñar un algoritmo desde cero.",
-                    style: TextStyle(color: Colors.white, fontSize: 16),
-                  ),
+                  Text("Toca aquí para abrir el editor y comenzar a crear.", style: TextStyle(color: Colors.white, fontSize: 16)),
                 ],
               );
             },
@@ -206,15 +171,9 @@ class _LoadDiagramScreenState extends State<LoadDiagramScreen>
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    "Guías de Uso",
-                    style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
-                  ),
+                  Text("Guías de Uso", style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
                   SizedBox(height: 10),
-                  Text(
-                    "Aquí puedes leer sobre cómo funciona la aplicación y sus características principales.",
-                    style: TextStyle(color: Colors.white, fontSize: 16),
-                  ),
+                  Text("Aquí puedes leer sobre cómo funciona la aplicación.", style: TextStyle(color: Colors.white, fontSize: 16)),
                 ],
               );
             },
@@ -236,15 +195,9 @@ class _LoadDiagramScreenState extends State<LoadDiagramScreen>
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    "¡Aprende Jugando!",
-                    style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
-                  ),
+                  Text("Tutoriales Interactivos", style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
                   SizedBox(height: 10),
-                  Text(
-                    "Ahora te invitamos a experimentar y ver tutoriales automatizados de mi app. En esta sección puedes aprender paso a paso cómo armar algoritmos.",
-                    style: TextStyle(color: Colors.white, fontSize: 16),
-                  ),
+                  Text("Guías interactivas paso a paso para dominar el editor.", style: TextStyle(color: Colors.white, fontSize: 16)),
                 ],
               );
             },
@@ -255,7 +208,7 @@ class _LoadDiagramScreenState extends State<LoadDiagramScreen>
 
     TutorialCoachMark(
       targets: targets,
-      colorShadow: Theme.of(context).primaryColor,
+      colorShadow: Colors.black,
       textSkip: "SALTAR",
       paddingFocus: 10,
       opacityShadow: 0.8,
@@ -264,213 +217,407 @@ class _LoadDiagramScreenState extends State<LoadDiagramScreen>
 
   @override
   Widget build(BuildContext context) {
-    final appBarForeground =
-        Theme.of(context).appBarTheme.foregroundColor ?? Colors.white;
-
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Cargar diagrama'),
-        centerTitle: false,
-        actions: [
-          /*
-          // Botón de ejercicios
-          IconButton(
-            icon: const Icon(Icons.school),
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (context) => const ExercisesScreen(),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: isDark 
+              ? const [Color(0xFF0F172A), Color(0xFF1E1B4B), Color(0xFF020617)]
+              : const [Color(0xFFD8F2EE), Color(0xFFF3E7FC), Color(0xFFF0F6FF)],
+            stops: const [0.1, 0.6, 0.9],
+          ),
+        ),
+        child: SafeArea(
+          child: Stack(
+            children: [
+              Column(
+                children: [
+                  _buildHeader(),
+                  Expanded(
+                    child: _buildBodyContent(),
+                  ),
+                ],
+              ),
+              // Floating Action Buttons for tutorials
+              Positioned(
+                bottom: 16,
+                right: 16,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    FloatingActionButton.small(
+                      key: _interactiveTutorialsFabKey,
+                      heroTag: 'interactive_tutorials_fab',
+                      backgroundColor: Colors.teal,
+                      child: const Icon(Icons.play_lesson, color: Colors.white),
+                      onPressed: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(builder: (context) => const InteractiveTutorialsScreen()),
+                        );
+                      },
+                      tooltip: 'Tutoriales interactivos',
+                    ),
+                    const SizedBox(height: 8),
+                    FloatingActionButton.small(
+                      key: _tutorialsFabKey,
+                      heroTag: 'tutorials_fab',
+                      backgroundColor: Colors.deepPurple,
+                      child: const Icon(Icons.quiz, color: Colors.white),
+                      onPressed: () async {
+                        final result = await Navigator.of(context).push(
+                          MaterialPageRoute(builder: (context) => const TutorialListScreen()),
+                        );
+                        if (result == 'start_tour' && mounted) {
+                          Future.delayed(const Duration(milliseconds: 300), () {
+                            if (mounted) _showAppTour();
+                          });
+                        }
+                      },
+                      tooltip: 'Guías de Uso',
+                    ),
+                  ],
                 ),
-              );
-            },
-            tooltip: 'Ejercicios de comprensión',
+              ),
+            ],
           ),
-          */
-          // Botón para cambiar tema
-          Container(
-            key: _themeKey,
-            child: const ThemeToggleButton(),
-          ),
-
-          IconButton(
-            icon: const Icon(Icons.help_outline),
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (context) => const HelpScreen(),
-                ),
-              );
-            },
-            tooltip: 'Ayuda',
-          ),
-
-          IconButton(
-            key: _profileKey,
-            icon: const Icon(Icons.person),
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (context) => const ProfileScreen(),
-                ),
-              );
-            },
-            tooltip: 'Mi perfil',
-          ),
-        ],
-        bottom: TabBar(
-          key: _tabBarKey,
-          controller: _tabController,
-          labelColor: appBarForeground,
-          unselectedLabelColor: appBarForeground.withOpacity(0.75),
-          indicatorColor: appBarForeground,
-          dividerColor: Colors.transparent,
-          tabs: const [Tab(text: 'Mis diagramas'), Tab(text: 'Plantillas')],
         ),
       ),
-      body: TabBarView(
-        controller: _tabController,
-        children: [
-          // Pestaña de diagramas guardados
-          _isLoading
-              ? const Center(child: CircularProgressIndicator())
-              : _diagrams.isEmpty
-                  ? const Center(
-                      child: Text(
-                        'No hay diagramas guardados',
-                        style: TextStyle(fontSize: 16),
-                      ),
-                    )
-                  : _buildDiagramList(_diagrams, canDelete: true),
-
-          // Pestaña de plantillas
-          _isLoading
-              ? const Center(child: CircularProgressIndicator())
-              : _buildDiagramList(_templates),
-        ],
-      ),
-      floatingActionButton: Column(
-        mainAxisAlignment: MainAxisAlignment.end,
-        children: [
-          // Botón de tutoriales interactivos (nuevo)
-          FloatingActionButton(
-            key: _interactiveTutorialsFabKey,
-            onPressed: () {
+      bottomNavigationBar: Container(
+        key: _bottomNavKey,
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF1E293B) : Colors.white,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(isDark ? 0.3 : 0.05),
+              blurRadius: 10,
+              offset: const Offset(0, -5),
+            ),
+          ],
+        ),
+        child: BottomNavigationBar(
+          currentIndex: _currentIndex,
+          onTap: (index) {
+            if (index == 2) {
               Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (context) => const InteractiveTutorialsScreen(),
+                MaterialPageRoute(builder: (context) => const SettingsScreen()),
+              );
+            } else {
+              setState(() { _currentIndex = index; });
+            }
+          },
+          backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white,
+          elevation: 0,
+          selectedItemColor: isDark ? const Color(0xFF34D399) : Colors.teal,
+          unselectedItemColor: isDark ? Colors.grey[400] : Colors.grey,
+          items: const [
+            BottomNavigationBarItem(
+              icon: Icon(Icons.home_outlined),
+              activeIcon: Icon(Icons.home),
+              label: 'Mis Diagramas',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.file_copy_outlined),
+              activeIcon: Icon(Icons.file_copy),
+              label: 'Plantillas',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.settings_outlined),
+              activeIcon: Icon(Icons.settings),
+              label: 'Ajustes',
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHeader() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 10),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Flowcode',
+                style: TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.w900,
+                  color: isDark ? Colors.white : Colors.black87,
+                  letterSpacing: -0.5,
                 ),
+              ),
+              Row(
+                children: [
+                  const ThemeToggleButton(),
+                  const SizedBox(width: 8),
+                  GestureDetector(
+                    key: _profileKey,
+                    onTap: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(builder: (context) => const ProfileScreen()),
+                      );
+                    },
+                    child: CircleAvatar(
+                      radius: 18,
+                      backgroundColor: isDark ? Colors.grey[800] : Colors.black54,
+                      child: const Icon(Icons.person, color: Colors.white, size: 20),
+                    ),
+                  ),
+                ],
+              )
+            ],
+          ),
+          const SizedBox(height: 16),
+          // Search Bar
+          Container(
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF1E293B).withOpacity(0.9) : Colors.white.withOpacity(0.9),
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(isDark ? 0.3 : 0.05),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                )
+              ],
+            ),
+            child: TextField(
+              style: TextStyle(color: isDark ? Colors.white : Colors.black87),
+              decoration: InputDecoration(
+                hintText: 'Search',
+                hintStyle: TextStyle(color: isDark ? Colors.grey[400] : Colors.grey),
+                prefixIcon: Icon(Icons.search, color: isDark ? Colors.grey[400] : Colors.grey),
+                border: InputBorder.none,
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              ),
+            ),
+          ),
+          const SizedBox(height: 20),
+          // New Flowchart Button
+          GestureDetector(
+            key: _createBtnKey,
+            onTap: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (context) => const EditorScreen()),
               );
             },
-            heroTag: 'interactive_tutorials_fab',
-            tooltip: 'Tutoriales interactivos',
-            child: const Icon(Icons.play_lesson),
-            backgroundColor: Colors.teal,
-          ),
-          const SizedBox(height: 12),
-          // Botón de tutoriales (nuevo)
-          FloatingActionButton(
-            key: _tutorialsFabKey,
-            onPressed: () async {
-              final result = await Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (context) => const TutorialListScreen(),
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(16),
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF20B2AA), Color(0xFF9370DB)], // Teal a Morado
+                  begin: Alignment.centerLeft,
+                  end: Alignment.centerRight,
                 ),
-              );
-              if (result == 'start_tour' && mounted) {
-                // Pequeño delay para dejar que la pantalla termine de aparecer
-                Future.delayed(const Duration(milliseconds: 300), () {
-                  if (mounted) _showAppTour();
-                });
-              }
-            },
-            heroTag: 'tutorials_fab',
-            tooltip: 'Guías de Uso',
-            child: const Icon(Icons.quiz),
-            backgroundColor: Colors.deepPurple,
-          ),
-          const SizedBox(height: 12),
-          // Botón crear nuevo
-          FloatingActionButton(
-            key: _createFabKey,
-            onPressed: () {
-              // En lugar de cerrar la pantalla actual, navegamos a la pantalla del editor
-              Navigator.of(
-                context,
-              ).push(MaterialPageRoute(
-                  builder: (context) => const EditorScreen()));
-            },
-            heroTag: 'create_fab',
-            tooltip: 'Crear nuevo',
-            child: const Icon(Icons.add),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF9370DB).withOpacity(0.3),
+                    blurRadius: 12,
+                    offset: const Offset(0, 6),
+                  )
+                ],
+              ),
+              child: const Column(
+                children: [
+                  Icon(Icons.add_circle, color: Colors.white, size: 32),
+                  SizedBox(height: 4),
+                  Text(
+                    'Nuevo Diagrama',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildDiagramList(List<SavedDiagram> items, {bool canDelete = false}) {
-    return ListView.builder(
-      itemCount: items.length,
-      padding: const EdgeInsets.all(8.0),
-      itemBuilder: (context, index) {
-        final item = items[index];
-        return Card(
-          elevation: 2,
-          margin: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 4.0),
-          child: ListTile(
-            title: Text(
-              item.name,
-              style: const TextStyle(fontWeight: FontWeight.bold),
+  Widget _buildBodyContent() {
+    if (_isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isHome = _currentIndex == 0;
+    final items = isHome ? _diagrams : _templates;
+    final title = isHome ? 'Mis Diagramas' : 'Plantillas Disponibles';
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+          child: Text(
+            title,
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: isDark ? Colors.white : Colors.black87,
             ),
-            subtitle: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (item.description.isNotEmpty)
+          ),
+        ),
+        Expanded(
+          child: items.isEmpty
+              ? Center(
+                  child: Text(
+                    isHome ? 'No hay diagramas guardados' : 'No hay plantillas disponibles',
+                    style: TextStyle(color: isDark ? Colors.grey[400] : Colors.grey[700]),
+                  ),
+                )
+              : GridView.builder(
+                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 80), // 80 bottom padding for FABs
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    crossAxisSpacing: 16,
+                    mainAxisSpacing: 16,
+                    childAspectRatio: 0.85,
+                  ),
+                  itemCount: items.length,
+                  itemBuilder: (context, index) {
+                    return _buildDiagramCard(items[index], canDelete: isHome);
+                  },
+                ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDiagramCard(SavedDiagram item, {bool canDelete = false}) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return GestureDetector(
+      onTap: () {
+        if (!canDelete) {
+          _metricsService.trackUserAction(
+            action: 'plantilla_usada',
+            category: 'templates',
+            metadata: {
+              'template_name': item.name,
+              'template_id': item.id.toString(),
+            },
+          );
+        }
+        Navigator.of(context).push(
+          MaterialPageRoute(builder: (context) => EditorScreen(initialDiagram: item)),
+        );
+      },
+      child: Container(
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF1E293B).withOpacity(0.9) : Colors.white.withOpacity(0.9),
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(isDark ? 0.3 : 0.04),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            )
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Preview Area (simulated)
+            Expanded(
+              child: Container(
+                decoration: BoxDecoration(
+                  color: isDark ? const Color(0xFF334155) : Colors.grey[100],
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                ),
+                child: Stack(
+                  children: [
+                    Center(
+                      child: Icon(
+                        item.isTemplate ? Icons.article : Icons.account_tree,
+                        size: 48,
+                        color: item.isTemplate ? Colors.amber[300] : const Color(0xFF9370DB).withOpacity(0.5),
+                      ),
+                    ),
+                    if (canDelete)
+                      Positioned(
+                        top: 4,
+                        right: 4,
+                        child: Material(
+                          color: Colors.transparent,
+                          child: IconButton(
+                            icon: const Icon(Icons.more_vert, size: 20),
+                            color: isDark ? Colors.grey[400] : Colors.grey[600],
+                            onPressed: () {
+                              _showDiagramOptions(item);
+                            },
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ),
+            // Text Area
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
                   Text(
-                    item.description,
+                    item.name,
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                      color: isDark ? Colors.white : Colors.black87,
+                    ),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
-                Text(
-                  'Modificado: ${DateFormat('dd/MM/yyyy HH:mm').format(item.updatedAt)}',
-                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                ),
-              ],
-            ),
-            leading: CircleAvatar(
-              backgroundColor: item.isTemplate ? Colors.amber : Colors.blue,
-              child: Icon(
-                item.isTemplate ? Icons.article : Icons.insert_chart,
-                color: Colors.white,
+                  const SizedBox(height: 4),
+                  Text(
+                    DateFormat('dd/MM/yy').format(item.updatedAt),
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: isDark ? Colors.grey[400] : Colors.grey[600],
+                    ),
+                  ),
+                ],
               ),
             ),
-            trailing: canDelete
-                ? IconButton(
-                    icon: const Icon(Icons.delete),
-                    onPressed: () => _confirmDeleteDiagram(item),
-                  )
-                : null,
-            onTap: () {
-              // Registrar uso de plantilla si es una plantilla
-              if (!canDelete) {
-                // Las plantillas no se pueden eliminar
-                _metricsService.trackUserAction(
-                  action: 'plantilla_usada',
-                  category: 'templates',
-                  metadata: {
-                    'template_name': item.name,
-                    'template_id': item.id.toString(),
-                  },
-                );
-              }
+          ],
+        ),
+      ),
+    );
+  }
 
-              // En lugar de cerrar la pantalla, navegamos al editor con el diagrama seleccionado
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (context) => EditorScreen(initialDiagram: item),
-                ),
-              );
-            },
+  void _showDiagramOptions(SavedDiagram diagram) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (context) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.delete, color: Colors.red),
+                title: const Text('Eliminar diagrama', style: TextStyle(color: Colors.red)),
+                onTap: () {
+                  Navigator.pop(context);
+                  _confirmDeleteDiagram(diagram);
+                },
+              ),
+            ],
           ),
         );
       },
@@ -482,9 +629,7 @@ class _LoadDiagramScreenState extends State<LoadDiagramScreen>
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Eliminar diagrama'),
-        content: Text(
-          '¿Estás seguro de que deseas eliminar "${diagram.name}"?',
-        ),
+        content: Text('¿Estás seguro de que deseas eliminar "${diagram.name}"?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
@@ -505,9 +650,7 @@ class _LoadDiagramScreenState extends State<LoadDiagramScreen>
         setState(() {
           _diagrams.removeWhere((d) => d.id == diagram.id);
         });
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('Diagrama eliminado')));
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Diagrama eliminado')));
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error eliminando diagrama: ${e.toString()}')),

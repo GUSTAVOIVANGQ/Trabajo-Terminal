@@ -28,33 +28,31 @@ class AutoTutorialCatalogPage extends StatelessWidget {
     final tutorials = AutoTutorialScripts.all();
 
     return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: isDark
-            ? theme.appBarTheme.backgroundColor
-            : theme.colorScheme.primary,
+        title: const Text('Tutoriales animados', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
         elevation: 0,
-        title: Text(
-          'Tutoriales animados',
-          style: TextStyle(
-            color: isDark
-                ? theme.appBarTheme.foregroundColor
-                : Colors.white,
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
+        iconTheme: const IconThemeData(color: Colors.white),
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Color(0xFF4A00E0), Color(0xFF8E2DE2), Color(0xFF4CA1AF)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
           ),
-        ),
-        leading: IconButton(
-          icon: Icon(
-            Icons.arrow_back_rounded,
-            color: isDark
-                ? theme.appBarTheme.foregroundColor
-                : Colors.white,
-          ),
-          onPressed: () => Navigator.of(context).pop(),
         ),
       ),
-      body: Column(
+      body: Container(
+        width: double.infinity,
+        height: double.infinity,
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Color(0xFFE0C3FC), Color(0xFF8EC5FC)],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
+        ),
+        child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
@@ -82,6 +80,7 @@ class AutoTutorialCatalogPage extends StatelessWidget {
             ),
           ),
         ],
+      ),
       ),
     );
   }

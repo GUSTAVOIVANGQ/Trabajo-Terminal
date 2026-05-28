@@ -478,8 +478,11 @@ class _MiniNodeShapePainter extends CustomPainter {
 
     switch (type) {
       case NodeType.terminal:
-        // Oval
-        path.addOval(Rect.fromLTWH(0, 0, w, h));
+        // Pill/Capsule shape
+        path.addRRect(RRect.fromRectAndRadius(
+          Rect.fromLTWH(0, 0, w, h),
+          Radius.circular(h / 2),
+        ));
         break;
 
       case NodeType.process:

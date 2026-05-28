@@ -153,7 +153,7 @@ extension NodeTypeExtension on NodeType {
   String get shapeDescription {
     switch (this) {
       case NodeType.terminal:
-        return 'Óvalo';
+        return 'Cápsula';
       case NodeType.process:
         return 'Rectángulo';
       case NodeType.decision:
@@ -329,12 +329,15 @@ class DiagramNode {
       // BASIC SYMBOLS
       // ============================================
       case NodeType.terminal:
-        // Óvalo para terminal (inicio/fin)
-        path.addOval(
-          Rect.fromCenter(
-            center: Offset(size.width / 2, size.height / 2),
-            width: size.width,
-            height: size.height,
+        // Cápsula/píldora para terminal (inicio/fin)
+        path.addRRect(
+          RRect.fromRectAndRadius(
+            Rect.fromCenter(
+              center: Offset(size.width / 2, size.height / 2),
+              width: size.width,
+              height: size.height,
+            ),
+            Radius.circular(size.height / 2),
           ),
         );
         break;

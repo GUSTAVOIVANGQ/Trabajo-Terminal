@@ -172,25 +172,43 @@ class _LoginScreenState extends State<LoginScreen> {
 
                     // ── Logo ───────────────────────────────────────────────
                     Container(
-                      padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(
-                        color: primaryColor.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(20),
+                        borderRadius: BorderRadius.circular(24),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFF651FFF).withOpacity(0.3),
+                            blurRadius: 15,
+                            offset: const Offset(0, 5),
+                          )
+                        ],
                       ),
-                      child: Icon(Icons.account_tree,
-                          size: 60, color: primaryColor),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(24),
+                        child: Image.asset(
+                          'assets/icon/app_icon.png',
+                          width: 100,
+                          height: 100,
+                        ),
+                      ),
                     ),
 
                     const SizedBox(height: 24),
 
-                    Text(
-                      'FlowCode',
-                      style: Theme.of(context)
-                          .textTheme
-                          .headlineMedium
-                          ?.copyWith(
-                              fontWeight: FontWeight.bold,
-                              color: primaryColor),
+                    ShaderMask(
+                      shaderCallback: (bounds) => const LinearGradient(
+                        colors: [Color(0xFF651FFF), Color(0xFF00E5FF)],
+                        begin: Alignment.centerLeft,
+                        end: Alignment.centerRight,
+                      ).createShader(bounds),
+                      child: Text(
+                        'FlowCode',
+                        style: Theme.of(context)
+                            .textTheme
+                            .headlineMedium
+                            ?.copyWith(
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white),
+                      ),
                     ),
 
                     const SizedBox(height: 8),
@@ -213,10 +231,15 @@ class _LoginScreenState extends State<LoginScreen> {
                     // ── Email ─────────────────────────────────────────────
                     TextFormField(
                       controller: _emailController,
-                      decoration: const InputDecoration(
+                      decoration: InputDecoration(
                         labelText: 'Correo electrónico',
-                        prefixIcon: Icon(Icons.email_outlined),
-                        border: OutlineInputBorder(),
+                        prefixIcon: const Icon(Icons.email_outlined),
+                        filled: true,
+                        fillColor: isDark ? Colors.grey[900] : Colors.grey[100],
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          borderSide: BorderSide.none,
+                        ),
                       ),
                       keyboardType: TextInputType.emailAddress,
                       textInputAction: TextInputAction.next,
@@ -240,6 +263,12 @@ class _LoginScreenState extends State<LoginScreen> {
                       decoration: InputDecoration(
                         labelText: 'Contraseña',
                         prefixIcon: const Icon(Icons.lock_outlined),
+                        filled: true,
+                        fillColor: isDark ? Colors.grey[900] : Colors.grey[100],
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          borderSide: BorderSide.none,
+                        ),
                         suffixIcon: IconButton(
                           icon: Icon(_obscurePassword
                               ? Icons.visibility
@@ -247,7 +276,6 @@ class _LoginScreenState extends State<LoginScreen> {
                           onPressed: () => setState(
                               () => _obscurePassword = !_obscurePassword),
                         ),
-                        border: const OutlineInputBorder(),
                       ),
                       obscureText: _obscurePassword,
                       textInputAction: TextInputAction.done,
@@ -266,11 +294,33 @@ class _LoginScreenState extends State<LoginScreen> {
                     const SizedBox(height: 24),
 
                     // ── Botón: Iniciar Sesión ─────────────────────────────
-                    SizedBox(
+                    Container(
                       width: double.infinity,
-                      height: 50,
-                      child: FilledButton(
+                      height: 54,
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFF00E5FF), Color(0xFF651FFF)],
+                          begin: Alignment.centerLeft,
+                          end: Alignment.centerRight,
+                        ),
+                        borderRadius: BorderRadius.circular(27),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFF00E5FF).withOpacity(0.3),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          )
+                        ],
+                      ),
+                      child: ElevatedButton(
                         onPressed: _isLoading ? null : _signIn,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.transparent,
+                          shadowColor: Colors.transparent,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(27),
+                          ),
+                        ),
                         child: _isLoading
                             ? const SizedBox(
                                 height: 20,
@@ -281,7 +331,13 @@ class _LoginScreenState extends State<LoginScreen> {
                                       Colors.white),
                                 ),
                               )
-                            : const Text('Iniciar Sesión'),
+                            : const Text(
+                                'Iniciar Sesión',
+                                style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold),
+                              ),
                       ),
                     ),
 
@@ -291,7 +347,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       const SizedBox(height: 12),
                       SizedBox(
                         width: double.infinity,
-                        height: 50,
+                        height: 54,
                         child: OutlinedButton.icon(
                           onPressed:
                               _isLoading ? null : _continueLastSession,
@@ -301,6 +357,9 @@ class _LoginScreenState extends State<LoginScreen> {
                             side: BorderSide(
                               color: Colors.orange[700]!,
                               width: 2,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(27),
                             ),
                             foregroundColor: Colors.orange[700],
                           ),
@@ -341,7 +400,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     // ── Botón: Modo invitado ───────────────────────────────
                     SizedBox(
                       width: double.infinity,
-                      height: 50,
+                      height: 54,
                       child: OutlinedButton.icon(
                         onPressed:
                             _isLoading ? null : _continueAsGuest,
@@ -349,6 +408,9 @@ class _LoginScreenState extends State<LoginScreen> {
                         label: const Text('Continuar como Invitado'),
                         style: OutlinedButton.styleFrom(
                           side: BorderSide(color: primaryColor, width: 2),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(27),
+                          ),
                         ),
                       ),
                     ),

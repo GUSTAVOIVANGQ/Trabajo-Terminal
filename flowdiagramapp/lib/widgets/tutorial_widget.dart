@@ -644,8 +644,11 @@ class NodeShapePainter extends CustomPainter {
     switch (nodeType) {
       case 'start':
       case 'end':
-        // Óvalo
-        path.addOval(Rect.fromLTWH(0, 0, size.width, size.height));
+        // Cápsula/píldora
+        path.addRRect(RRect.fromRectAndRadius(
+          Rect.fromLTWH(0, 0, size.width, size.height),
+          Radius.circular(size.height / 2),
+        ));
         break;
 
       case 'process':

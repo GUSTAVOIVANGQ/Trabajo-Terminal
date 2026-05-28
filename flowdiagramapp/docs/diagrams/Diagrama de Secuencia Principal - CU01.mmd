@@ -1,0 +1,36 @@
+%%{init: {'theme':'neutral', 'fontFamily':'Verdana'}}%%
+sequenceDiagram
+    autonumber
+    actor Usuario
+    participant WelcomeScreen
+    participant EditorScreen
+    participant SaveDiagramDialog
+    participant DatabaseService
+    participant SQLite
+
+    Usuario->>WelcomeScreen: Selecciona "Nuevo Diagrama"
+    WelcomeScreen->>EditorScreen: Navega a Editor (initial=null)
+    EditorScreen->>EditorScreen: Inicializar Canvas y Herramientas
+    EditorScreen-->>Usuario: Mostrar Editor Vacío
+
+    note right of Usuario: El usuario construye el diagrama
+
+    Usuario->>EditorScreen: Guardar
+    EditorScreen->>SaveDiagramDialog: Mostrar Diálogo
+
+    SaveDiagramDialog-->>Usuario: Solicitar Nombre del Proyecto
+    Usuario->>SaveDiagramDialog: Ingresar Nombre
+    SaveDiagramDialog->>SaveDiagramDialog: Validar Campos
+
+    alt Nombre Válido
+        SaveDiagramDialog->>EditorScreen: Datos Proyecto
+        EditorScreen->>EditorScreen: Serializar a JSON
+        EditorScreen->>DatabaseService: GuardarDiagrama(datos)
+        DatabaseService->>SQLite: Insertar Registro
+        SQLite-->>DatabaseService: ID Asignado
+        DatabaseService-->>EditorScreen: Éxito con ID
+        EditorScreen->>EditorScreen: Actualizar Referencia
+        EditorScreen-->>Usuario: Confirmación Éxito
+    else Nombre Inválido
+        SaveDiagramDialog-->>Usuario: Mostrar Error de Validación
+    end

@@ -1,0 +1,477 @@
+﻿[
+    {
+        "Filename":  "admin_metrics_screen.dart",
+        "LineNumber":  49,
+        "Line":  "            content: Text("
+    },
+    {
+        "Filename":  "admin_metrics_screen.dart",
+        "LineNumber":  971,
+        "Line":  "      _showSnackBar(\u0027No hay datos para exportar\u0027, Colors.orange);"
+    },
+    {
+        "Filename":  "admin_metrics_screen.dart",
+        "LineNumber":  983,
+        "Line":  "        _showSnackBar(\u0027Permisos de almacenamiento denegados\u0027, Colors.red);"
+    },
+    {
+        "Filename":  "admin_metrics_screen.dart",
+        "LineNumber":  1003,
+        "Line":  "      _showSnackBar("
+    },
+    {
+        "Filename":  "admin_metrics_screen.dart",
+        "LineNumber":  1009,
+        "Line":  "      _showSnackBar(\u0027Error al exportar: ${e.toString()}\u0027, Colors.red);"
+    },
+    {
+        "Filename":  "admin_metrics_screen.dart",
+        "LineNumber":  1018,
+        "Line":  "  void _showSnackBar(String message, Color color) {"
+    },
+    {
+        "Filename":  "admin_metrics_screen.dart",
+        "LineNumber":  1021,
+        "Line":  "        content: Text(message),"
+    },
+    {
+        "Filename":  "admin_setup_screen.dart",
+        "LineNumber":  32,
+        "Line":  "            content: Text(\u0027✅ Usuario administrador creado exitosamente\u0027),"
+    },
+    {
+        "Filename":  "admin_setup_screen.dart",
+        "LineNumber":  41,
+        "Line":  "            content: Text(\u0027❌ Error: ${e.toString()}\u0027),"
+    },
+    {
+        "Filename":  "admin_setup_screen.dart",
+        "LineNumber":  59,
+        "Line":  "          content: Text(\u0027Por favor, ingresa un email\u0027),"
+    },
+    {
+        "Filename":  "admin_setup_screen.dart",
+        "LineNumber":  75,
+        "Line":  "            content: Text("
+    },
+    {
+        "Filename":  "admin_setup_screen.dart",
+        "LineNumber":  86,
+        "Line":  "            content: Text(\u0027❌ Error: ${e.toString()}\u0027),"
+    },
+    {
+        "Filename":  "debug_screen.dart",
+        "LineNumber":  50,
+        "Line":  "          content: Text(\u0027Sesión cerrada completamente\u0027),"
+    },
+    {
+        "Filename":  "debug_screen.dart",
+        "LineNumber":  58,
+        "Line":  "          content: Text(\u0027Error: ${e.toString()}\u0027),"
+    },
+    {
+        "Filename":  "debug_screen.dart",
+        "LineNumber":  78,
+        "Line":  "          content: Text(\u0027Usuario sincronizado exitosamente\u0027),"
+    },
+    {
+        "Filename":  "debug_screen.dart",
+        "LineNumber":  86,
+        "Line":  "          content: Text(\u0027Error: ${e.toString()}\u0027),"
+    },
+    {
+        "Filename":  "debug_screen.dart",
+        "LineNumber":  133,
+        "Line":  "          content: Text(\u0027Usuario eliminado completamente\u0027),"
+    },
+    {
+        "Filename":  "debug_screen.dart",
+        "LineNumber":  141,
+        "Line":  "          content: Text(\u0027Error: ${e.toString()}\u0027),"
+    },
+    {
+        "Filename":  "debug_screen.dart",
+        "LineNumber":  205,
+        "Line":  "          content: Text(\u0027Por favor completa ambos campos\u0027),"
+    },
+    {
+        "Filename":  "debug_screen.dart",
+        "LineNumber":  232,
+        "Line":  "          content: Text(\u0027Error: ${e.toString()}\u0027),"
+    },
+    {
+        "Filename":  "debug_screen.dart",
+        "LineNumber":  290,
+        "Line":  "          content: Text(exists"
+    },
+    {
+        "Filename":  "debug_screen.dart",
+        "LineNumber":  299,
+        "Line":  "          content: Text(\u0027Error al verificar: ${e.toString()}\u0027),"
+    },
+    {
+        "Filename":  "editor_screen.dart",
+        "LineNumber":  708,
+        "Line":  "                              _showSnackBar("
+    },
+    {
+        "Filename":  "editor_screen.dart",
+        "LineNumber":  758,
+        "Line":  "                        //   _showSnackBar(\u0027Nodo ${nodeName} seleccionado\u0027);"
+    },
+    {
+        "Filename":  "editor_screen.dart",
+        "LineNumber":  768,
+        "Line":  "                            // _showSnackBar(\u0027Selecciona otro nodo para conectarlos\u0027);"
+    },
+    {
+        "Filename":  "editor_screen.dart",
+        "LineNumber":  1010,
+        "Line":  "                    // _showSnackBar(\u0027Conexión cancelada\u0027);"
+    },
+    {
+        "Filename":  "editor_screen.dart",
+        "LineNumber":  1595,
+        "Line":  "        content: Text("
+    },
+    {
+        "Filename":  "editor_screen.dart",
+        "LineNumber":  1667,
+        "Line":  "        content: Text("
+    },
+    {
+        "Filename":  "editor_screen.dart",
+        "LineNumber":  1740,
+        "Line":  "        content: Text("
+    },
+    {
+        "Filename":  "editor_screen.dart",
+        "LineNumber":  1808,
+        "Line":  "        content: Text("
+    },
+    {
+        "Filename":  "editor_screen.dart",
+        "LineNumber":  1986,
+        "Line":  "        content: Text("
+    },
+    {
+        "Filename":  "editor_screen.dart",
+        "LineNumber":  2030,
+        "Line":  "        //   _showSnackBar("
+    },
+    {
+        "Filename":  "editor_screen.dart",
+        "LineNumber":  2033,
+        "Line":  "        //   _showSnackBar(\u0027Conexión creada\u0027);"
+    },
+    {
+        "Filename":  "editor_screen.dart",
+        "LineNumber":  2161,
+        "Line":  "      //   _showSnackBar("
+    },
+    {
+        "Filename":  "editor_screen.dart",
+        "LineNumber":  2164,
+        "Line":  "      //   _showSnackBar(\u0027Conexión creada con etiqueta \"$label\"\u0027);"
+    },
+    {
+        "Filename":  "editor_screen.dart",
+        "LineNumber":  2182,
+        "Line":  "    // _showSnackBar(\u0027Conexión eliminada\u0027);"
+    },
+    {
+        "Filename":  "editor_screen.dart",
+        "LineNumber":  2366,
+        "Line":  "      // _showSnackBar(\u0027Etiqueta actualizada\u0027);"
+    },
+    {
+        "Filename":  "editor_screen.dart",
+        "LineNumber":  2377,
+        "Line":  "    // _showSnackBar("
+    },
+    {
+        "Filename":  "editor_screen.dart",
+        "LineNumber":  2412,
+        "Line":  "      // _showSnackBar(\u0027Un nodo terminal de fin no puede tener conexiones de salida\u0027);"
+    },
+    {
+        "Filename":  "editor_screen.dart",
+        "LineNumber":  2423,
+        "Line":  "      // _showSnackBar(\u0027Un nodo terminal de inicio no puede tener conexiones de entrada\u0027);"
+    },
+    {
+        "Filename":  "editor_screen.dart",
+        "LineNumber":  2433,
+        "Line":  "      // _showSnackBar(\u0027Esta conexión ya existe\u0027);"
+    },
+    {
+        "Filename":  "editor_screen.dart",
+        "LineNumber":  2600,
+        "Line":  "    // _showSnackBar("
+    },
+    {
+        "Filename":  "editor_screen.dart",
+        "LineNumber":  2749,
+        "Line":  "  void _showSnackBar(String message) {"
+    },
+    {
+        "Filename":  "editor_screen.dart",
+        "LineNumber":  2751,
+        "Line":  "      SnackBar(content: Text(message), duration: const Duration(seconds: 2)),"
+    },
+    {
+        "Filename":  "editor_screen.dart",
+        "LineNumber":  2830,
+        "Line":  "          content: Text(\u0027El diagrama está vacío\u0027),"
+    },
+    {
+        "Filename":  "editor_screen.dart",
+        "LineNumber":  2926,
+        "Line":  "                  content: Text(\u0027Código copiado al portapapeles\u0027),"
+    },
+    {
+        "Filename":  "editor_screen.dart",
+        "LineNumber":  2972,
+        "Line":  "          // _showSnackBar(\u0027Diagrama guardado correctamente\u0027);"
+    },
+    {
+        "Filename":  "editor_screen.dart",
+        "LineNumber":  2990,
+        "Line":  "          // _showSnackBar(\u0027Diagrama actualizado correctamente\u0027);"
+    },
+    {
+        "Filename":  "editor_screen.dart",
+        "LineNumber":  2993,
+        "Line":  "        // _showSnackBar(\u0027Error al guardar: ${e.toString()}\u0027);"
+    },
+    {
+        "Filename":  "editor_screen.dart",
+        "LineNumber":  3059,
+        "Line":  "        _showSnackBar(\u0027No hay nodos para exportar\u0027);"
+    },
+    {
+        "Filename":  "editor_screen.dart",
+        "LineNumber":  3112,
+        "Line":  "      _showSnackBar(\u0027Error al exportar PNG: $e\u0027);"
+    },
+    {
+        "Filename":  "editor_screen.dart",
+        "LineNumber":  3120,
+        "Line":  "        _showSnackBar(\u0027No hay nodos para exportar\u0027);"
+    },
+    {
+        "Filename":  "editor_screen.dart",
+        "LineNumber":  3173,
+        "Line":  "      _showSnackBar(\u0027Error al exportar JPG: $e\u0027);"
+    },
+    {
+        "Filename":  "editor_screen.dart",
+        "LineNumber":  3181,
+        "Line":  "        _showSnackBar(\u0027No hay nodos para exportar\u0027);"
+    },
+    {
+        "Filename":  "editor_screen.dart",
+        "LineNumber":  3236,
+        "Line":  "      _showSnackBar(\u0027Error al exportar PDF: $e\u0027);"
+    },
+    {
+        "Filename":  "editor_screen.dart",
+        "LineNumber":  3244,
+        "Line":  "        _showSnackBar(\u0027No hay nodos para exportar\u0027);"
+    },
+    {
+        "Filename":  "editor_screen.dart",
+        "LineNumber":  3313,
+        "Line":  "      _showSnackBar(\u0027Error al exportar código .c: $e\u0027);"
+    },
+    {
+        "Filename":  "editor_screen.dart",
+        "LineNumber":  3324,
+        "Line":  "        content: Text(message),"
+    },
+    {
+        "Filename":  "help_screen.dart",
+        "LineNumber":  271,
+        "Line":  "      SnackBar(content: Text(\u0027Correo copiado: $supportEmail\u0027)),"
+    },
+    {
+        "Filename":  "interactive_tutorial_session_screen.dart",
+        "LineNumber":  57,
+        "Line":  "        content: Text(\u0027Paso completado: ${currentStep.title}\u0027),"
+    },
+    {
+        "Filename":  "interactive_tutorial_session_screen.dart",
+        "LineNumber":  480,
+        "Line":  "                              content: Text(_hintForStep(step)),"
+    },
+    {
+        "Filename":  "load_diagram_screen.dart",
+        "LineNumber":  89,
+        "Line":  "          SnackBar(content: Text(\u0027Error cargando diagramas: ${e.toString()}\u0027)),"
+    },
+    {
+        "Filename":  "load_diagram_screen.dart",
+        "LineNumber":  485,
+        "Line":  "        content: Text("
+    },
+    {
+        "Filename":  "load_diagram_screen.dart",
+        "LineNumber":  510,
+        "Line":  "        ).showSnackBar(const SnackBar(content: Text(\u0027Diagrama eliminado\u0027)));"
+    },
+    {
+        "Filename":  "load_diagram_screen.dart",
+        "LineNumber":  513,
+        "Line":  "          SnackBar(content: Text(\u0027Error eliminando diagrama: ${e.toString()}\u0027)),"
+    },
+    {
+        "Filename":  "login_screen.dart",
+        "LineNumber":  91,
+        "Line":  "            content: Text(\u0027Bienvenido de vuelta, ${user.displayName} (offline)\u0027),"
+    },
+    {
+        "Filename":  "login_screen.dart",
+        "LineNumber":  115,
+        "Line":  "            content: Text(\u0027Bienvenido como invitado 👋\u0027),"
+    },
+    {
+        "Filename":  "login_screen.dart",
+        "LineNumber":  140,
+        "Line":  "        content: Text(message),"
+    },
+    {
+        "Filename":  "profile_screen.dart",
+        "LineNumber":  181,
+        "Line":  "            content: Text("
+    },
+    {
+        "Filename":  "profile_screen.dart",
+        "LineNumber":  198,
+        "Line":  "            content: Text(\u0027No se pudo actualizar el autoguardado: $e\u0027),"
+    },
+    {
+        "Filename":  "profile_screen.dart",
+        "LineNumber":  255,
+        "Line":  "            content: Text("
+    },
+    {
+        "Filename":  "profile_screen.dart",
+        "LineNumber":  272,
+        "Line":  "            content: Text(\u0027No se pudo actualizar el consentimiento: $e\u0027),"
+    },
+    {
+        "Filename":  "profile_screen.dart",
+        "LineNumber":  310,
+        "Line":  "            content: Text("
+    },
+    {
+        "Filename":  "profile_screen.dart",
+        "LineNumber":  327,
+        "Line":  "            content: Text(\u0027No se pudo actualizar el consentimiento: $e\u0027),"
+    },
+    {
+        "Filename":  "profile_screen.dart",
+        "LineNumber":  431,
+        "Line":  "            content: Text(\u0027Foto de perfil actualizada localmente\u0027),"
+    },
+    {
+        "Filename":  "profile_screen.dart",
+        "LineNumber":  440,
+        "Line":  "            content: Text(\u0027No se pudo actualizar la foto: $e\u0027),"
+    },
+    {
+        "Filename":  "profile_screen.dart",
+        "LineNumber":  502,
+        "Line":  "            content: Text(\u0027Foto de perfil restablecida\u0027),"
+    },
+    {
+        "Filename":  "profile_screen.dart",
+        "LineNumber":  511,
+        "Line":  "            content: Text(\u0027No se pudo restablecer la foto: $e\u0027),"
+    },
+    {
+        "Filename":  "profile_screen.dart",
+        "LineNumber":  622,
+        "Line":  "            content: Text("
+    },
+    {
+        "Filename":  "profile_screen.dart",
+        "LineNumber":  636,
+        "Line":  "            content: Text(\u0027Error: ${e.toString()}\u0027),"
+    },
+    {
+        "Filename":  "profile_screen.dart",
+        "LineNumber":  680,
+        "Line":  "            content: Text("
+    },
+    {
+        "Filename":  "profile_screen.dart",
+        "LineNumber":  693,
+        "Line":  "            content: Text(\u0027Error: ${e.toString()}\u0027),"
+    },
+    {
+        "Filename":  "profile_screen.dart",
+        "LineNumber":  738,
+        "Line":  "            content: Text("
+    },
+    {
+        "Filename":  "profile_screen.dart",
+        "LineNumber":  751,
+        "Line":  "            content: Text(\u0027Error: ${e.toString()}\u0027),"
+    },
+    {
+        "Filename":  "profile_screen.dart",
+        "LineNumber":  917,
+        "Line":  "          content: Text(\u0027Tu cuenta ha sido eliminada\u0027),"
+    },
+    {
+        "Filename":  "profile_screen.dart",
+        "LineNumber":  967,
+        "Line":  "            content: Text(\u0027✓ Datos locales eliminados\u0027),"
+    },
+    {
+        "Filename":  "profile_screen.dart",
+        "LineNumber":  976,
+        "Line":  "            content: Text(\u0027Error: ${e.toString()}\u0027),"
+    },
+    {
+        "Filename":  "register_screen.dart",
+        "LineNumber":  51,
+        "Line":  "          content: Text(\u0027Debes aceptar el Aviso de Privacidad para continuar.\u0027),"
+    },
+    {
+        "Filename":  "register_screen.dart",
+        "LineNumber":  79,
+        "Line":  "            content: Text("
+    },
+    {
+        "Filename":  "register_screen.dart",
+        "LineNumber":  123,
+        "Line":  "            content: Text(errorMessage),"
+    },
+    {
+        "Filename":  "compiler_results_dialog.dart",
+        "LineNumber":  1122,
+        "Line":  "                      content: Text(\u0027Código copiado al portapapeles\u0027),"
+    },
+    {
+        "Filename":  "compiler_results_dialog.dart",
+        "LineNumber":  1468,
+        "Line":  "                    content: Text(\u0027Reporte copiado al portapapeles\u0027),"
+    },
+    {
+        "Filename":  "execution_tab.dart",
+        "LineNumber":  275,
+        "Line":  "                        content: Text(\u0027Salida copiada al portapapeles\u0027),"
+    },
+    {
+        "Filename":  "onlinegdb_tab.dart",
+        "LineNumber":  223,
+        "Line":  "          content: Text(\u0027Código inyectado en OnlineGDB\u0027),"
+    },
+    {
+        "Filename":  "theme_selector_widget.dart",
+        "LineNumber":  143,
+        "Line":  "              content: Text(\u0027Tema cambiado a $title\u0027),"
+    }
+]

@@ -9,6 +9,7 @@ import 'services/crash_reporting_service.dart';
 import 'widgets/auth_guard.dart';
 import 'services/theme_service.dart';
 import 'themes/app_themes.dart';
+import 'screens/splash_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -61,9 +62,7 @@ class FlowDiagramApp extends StatelessWidget {
           darkTheme: AppThemes.darkTheme,
           themeMode: ThemeService().themeMode,
           navigatorObservers: AnalyticsService().navigatorObservers,
-          home: const AuthGuard(
-            child: LoadDiagramScreen(),
-          ),
+          home: const SplashScreen(),
           debugShowCheckedModeBanner: false,
         );
       },

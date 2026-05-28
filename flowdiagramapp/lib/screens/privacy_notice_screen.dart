@@ -31,12 +31,36 @@ class PrivacyNoticeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Aviso de Privacidad'),
+        title: const Text('Aviso de Privacidad', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        elevation: 0,
+        iconTheme: const IconThemeData(color: Colors.white),
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Color(0xFF4A00E0), Color(0xFF8E2DE2), Color(0xFF4CA1AF)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+        ),
       ),
-      body: SafeArea(
-        child: SingleChildScrollView(
+      body: Container(
+        width: double.infinity,
+        height: double.infinity,
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: isDark 
+                ? const [Color(0xFF0F172A), Color(0xFF1E293B)]
+                : const [Color(0xFFE0C3FC), Color(0xFF8EC5FC)],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
+        ),
+        child: SafeArea(
+          child: SingleChildScrollView(
           padding: const EdgeInsets.all(20),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -106,6 +130,7 @@ class PrivacyNoticeScreen extends StatelessWidget {
                 ),
               ),
             ],
+          ),
           ),
         ),
       ),
