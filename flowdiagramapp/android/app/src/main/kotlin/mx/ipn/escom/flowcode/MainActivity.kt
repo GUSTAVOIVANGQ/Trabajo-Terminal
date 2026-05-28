@@ -1,4 +1,4 @@
-package com.example.flowdiagramapp
+package mx.ipn.escom.flowcode
 
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine

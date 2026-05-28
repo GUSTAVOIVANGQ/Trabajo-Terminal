@@ -40,6 +40,42 @@
           ]
         }
       }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:345911525401:android:fabc812b9d9e421764aa88",
+        "android_client_info": {
+          "package_name": "mx.ipn.escom.flowcode"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "345911525401-l3mea6kpvepdarjasnlvlbgaud44aj6b.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDXn57bKp1ayq1QWtstRq_XBI7vY3-C1A8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "345911525401-l3mea6kpvepdarjasnlvlbgaud44aj6b.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "345911525401-2th327d3sq2b255n1nkob4dfu6j4akqq.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.flowdiagramapp"
+              }
+            }
+          ]
+        }
+      }
     }
   ],
   "configuration_version": "1"

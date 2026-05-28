@@ -52,7 +52,7 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions android = FirebaseOptions(
     apiKey: 'AIzaSyDXn57bKp1ayq1QWtstRq_XBI7vY3-C1A8',
-    appId: '1:345911525401:android:25d0c44346688f1964aa88',
+    appId: '1:345911525401:android:fabc812b9d9e421764aa88',
     messagingSenderId: '345911525401',
     projectId: 'flowdiagram-app',
     storageBucket: 'flowdiagram-app.firebasestorage.app',
@@ -60,22 +60,22 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions ios = FirebaseOptions(
     apiKey: 'AIzaSyA3TPXcCpsQIFcerlusg3StU_foZWph_s0',
-    appId: '1:345911525401:ios:c72ae8a4e23c6c9464aa88',
+    appId: '1:345911525401:ios:2e297156d80e61b064aa88',
     messagingSenderId: '345911525401',
     projectId: 'flowdiagram-app',
     storageBucket: 'flowdiagram-app.firebasestorage.app',
-    iosClientId: '345911525401-2th327d3sq2b255n1nkob4dfu6j4akqq.apps.googleusercontent.com',
-    iosBundleId: 'com.example.flowdiagramapp',
+    iosClientId: '345911525401-cds5k3hhihkga63nv1j1o0ls22um47g9.apps.googleusercontent.com',
+    iosBundleId: 'mx.ipn.escom.flowcode',
   );
 
   static const FirebaseOptions macos = FirebaseOptions(
     apiKey: 'AIzaSyA3TPXcCpsQIFcerlusg3StU_foZWph_s0',
-    appId: '1:345911525401:ios:c72ae8a4e23c6c9464aa88',
+    appId: '1:345911525401:ios:2e297156d80e61b064aa88',
     messagingSenderId: '345911525401',
     projectId: 'flowdiagram-app',
     storageBucket: 'flowdiagram-app.firebasestorage.app',
-    iosClientId: '345911525401-2th327d3sq2b255n1nkob4dfu6j4akqq.apps.googleusercontent.com',
-    iosBundleId: 'com.example.flowdiagramapp',
+    iosClientId: '345911525401-cds5k3hhihkga63nv1j1o0ls22um47g9.apps.googleusercontent.com',
+    iosBundleId: 'mx.ipn.escom.flowcode',
   );
 
   static const FirebaseOptions windows = FirebaseOptions(
@@ -87,4 +87,5 @@ class DefaultFirebaseOptions {
     storageBucket: 'flowdiagram-app.firebasestorage.app',
     measurementId: 'G-7EQY4EYNDD',
   );
+
 }

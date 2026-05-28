@@ -92,7 +92,7 @@ BEGIN
             VALUE "CompanyName", "com.example" "\0"
             VALUE "FileDescription", "flowdiagramapp" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
-            VALUE "InternalName", "flowdiagramapp" "\0"
+            VALUE "InternalName", "mx.ipn.escom.flowcode" "\0"
             VALUE "LegalCopyright", "Copyright (C) 2025 com.example. All rights reserved." "\0"
             VALUE "OriginalFilename", "flowdiagramapp.exe" "\0"
             VALUE "ProductName", "flowdiagramapp" "\0"

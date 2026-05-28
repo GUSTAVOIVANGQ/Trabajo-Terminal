@@ -17,7 +17,7 @@
         android:minSdkVersion="30" />
     
     <application
-        android:label="flowdiagramapp"
+        android:label="FlowCode"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
         android:requestLegacyExternalStorage="true">  <!-- Para compatibilidad con Android 10 -->
