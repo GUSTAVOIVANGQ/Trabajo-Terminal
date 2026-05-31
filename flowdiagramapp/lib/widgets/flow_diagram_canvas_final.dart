@@ -1296,6 +1296,19 @@ class FlowDiagramPainter extends CustomPainter {
     }
 
     final rect = Rect.fromLTRB(minX, minY, maxX, maxY);
+    
+    final hugeRect = const Rect.fromLTRB(-1000000, -1000000, 1000000, 1000000);
+    final outerPath = Path()
+      ..addRect(hugeRect)
+      ..addRect(rect)
+      ..fillType = PathFillType.evenOdd;
+
+    final overlayPaint = Paint()
+      ..color = isDarkMode ? const Color(0xFF1F2937) : const Color(0xFFE5E7EB)
+      ..style = PaintingStyle.fill;
+
+    canvas.drawPath(outerPath, overlayPaint);
+
     final path = Path()..addRect(rect);
 
     final boundaryPaint = Paint()

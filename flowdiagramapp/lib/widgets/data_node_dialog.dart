@@ -49,8 +49,9 @@ class _DataNodeDialogState extends State<DataNodeDialog> {
                   caseSensitive: false),
               '')
           .trim();
-      
-      final stringMatch = RegExp(r'^"([^"]*)"(?:,\s*(.*))?$').firstMatch(cleaned);
+
+      final stringMatch =
+          RegExp(r'^"([^"]*)"(?:,\s*(.*))?$').firstMatch(cleaned);
       if (stringMatch != null) {
         _messageController.text = stringMatch.group(1) ?? '';
         _variablesController.text = stringMatch.group(2) ?? '';
@@ -86,9 +87,9 @@ class _DataNodeDialogState extends State<DataNodeDialog> {
     } else {
       final msg = _messageController.text.trim();
       final vars = _variablesController.text.trim();
-      
+
       if (msg.isEmpty && vars.isEmpty) return '';
-      
+
       if (msg.isNotEmpty && vars.isNotEmpty) {
         return 'Mostrar "$msg", $vars';
       } else if (msg.isNotEmpty) {
@@ -116,147 +117,154 @@ class _DataNodeDialogState extends State<DataNodeDialog> {
       ),
       content: SizedBox(
         width: MediaQuery.of(context).size.width * 0.85,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Selector Entrada / Salida
-            const Text('Tipo de operación',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-            const SizedBox(height: 10),
-            Row(
-              children: [
-                Expanded(
-                  child: _OptionCard(
-                    label: 'Entrada',
-                    description: 'El usuario ingresa un dato',
-                    icon: Icons.input,
-                    selected: _isInput,
-                    onTap: () => setState(() => _isInput = true),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _OptionCard(
-                    label: 'Salida',
-                    description: 'El programa muestra un dato',
-                    icon: Icons.output,
-                    selected: !_isInput,
-                    onTap: () => setState(() => _isInput = false),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 20),
-
-            // Campo de dato/variable
-            if (_isInput) ...[
-              const Text(
-                'Variable donde se guarda',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
-              ),
-              const SizedBox(height: 8),
-              TextField(
-                controller: _inputController,
-                decoration: const InputDecoration(
-                  hintText: 'Ej: edad, nombre, numero',
-                  border: OutlineInputBorder(),
-                ),
-                onChanged: (_) => setState(() {}),
-              ),
-              const SizedBox(height: 16),
-              const Text(
-                'Tipo de dato',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
-              ),
-              const SizedBox(height: 8),
-              DropdownButtonFormField<String>(
-                value: _selectedDataType,
-                decoration: const InputDecoration(
-                  border: OutlineInputBorder(),
-                  contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                ),
-                items: const [
-                  DropdownMenuItem(value: 'auto', child: Text('Auto (Inferir)')),
-                  DropdownMenuItem(value: 'int', child: Text('Entero (int)')),
-                  DropdownMenuItem(value: 'float', child: Text('Decimal (float)')),
-                  DropdownMenuItem(value: 'char', child: Text('Carácter (char)')),
-                  DropdownMenuItem(value: 'string', child: Text('Texto (string)')),
-                ],
-                onChanged: (val) {
-                  if (val != null) {
-                    setState(() => _selectedDataType = val);
-                  }
-                },
-              ),
-            ] else ...[
-              const Text(
-                'Mensaje a mostrar',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
-              ),
-              const SizedBox(height: 8),
-              TextField(
-                controller: _messageController,
-                decoration: const InputDecoration(
-                  hintText: 'Ej: El resultado es',
-                  border: OutlineInputBorder(),
-                ),
-                onChanged: (_) => setState(() {}),
-              ),
-              const SizedBox(height: 16),
-              const Text(
-                'Variables (Opcional)',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
-              ),
-              const SizedBox(height: 8),
-              TextField(
-                controller: _variablesController,
-                decoration: const InputDecoration(
-                  hintText: 'Ej: resultado, suma',
-                  border: OutlineInputBorder(),
-                ),
-                onChanged: (_) => setState(() {}),
-              ),
-            ],
-            const SizedBox(height: 20),
-
-            // Vista previa
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Selector Entrada / Salida
+              const Text('Tipo de operación',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+              const SizedBox(height: 10),
+              Row(
                 children: [
-                  Row(
-                    children: [
-                      Icon(Icons.visibility,
-                          size: 16,
-                          color: Theme.of(context).colorScheme.primary),
-                      const SizedBox(width: 6),
-                      Text('Vista previa',
-                          style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: Theme.of(context).colorScheme.primary,
-                              fontSize: 13)),
-                    ],
+                  Expanded(
+                    child: _OptionCard(
+                      label: 'Entrada',
+                      description: 'El usuario ingresa un dato',
+                      icon: Icons.input,
+                      selected: _isInput,
+                      onTap: () => setState(() => _isInput = true),
+                    ),
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    preview.isEmpty ? '(completa el campo)' : preview,
-                    style: TextStyle(
-                      fontFamily: 'monospace',
-                      fontSize: 14,
-                      color: preview.isEmpty ? Colors.grey : Colors.black87,
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _OptionCard(
+                      label: 'Salida',
+                      description: 'El programa muestra un dato',
+                      icon: Icons.output,
+                      selected: !_isInput,
+                      onTap: () => setState(() => _isInput = false),
                     ),
                   ),
                 ],
               ),
-            ),
-          ],
+              const SizedBox(height: 20),
+
+              // Campo de dato/variable
+              if (_isInput) ...[
+                const Text(
+                  'Variable donde se guarda',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                ),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: _inputController,
+                  decoration: const InputDecoration(
+                    hintText: 'Ej: edad, nombre, numero',
+                    border: OutlineInputBorder(),
+                  ),
+                  onChanged: (_) => setState(() {}),
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  'Tipo de dato',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                ),
+                const SizedBox(height: 8),
+                DropdownButtonFormField<String>(
+                  value: _selectedDataType,
+                  decoration: const InputDecoration(
+                    border: OutlineInputBorder(),
+                    contentPadding:
+                        EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  ),
+                  items: const [
+                    DropdownMenuItem(
+                        value: 'auto', child: Text('Auto (Inferir)')),
+                    DropdownMenuItem(value: 'int', child: Text('Entero (int)')),
+                    DropdownMenuItem(
+                        value: 'float', child: Text('Decimal (float)')),
+                    DropdownMenuItem(
+                        value: 'char', child: Text('Carácter (char)')),
+                    DropdownMenuItem(
+                        value: 'string', child: Text('Texto (string)')),
+                  ],
+                  onChanged: (val) {
+                    if (val != null) {
+                      setState(() => _selectedDataType = val);
+                    }
+                  },
+                ),
+              ] else ...[
+                const Text(
+                  'Mensaje a mostrar',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                ),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: _messageController,
+                  decoration: const InputDecoration(
+                    hintText: 'Ej: El resultado es',
+                    border: OutlineInputBorder(),
+                  ),
+                  onChanged: (_) => setState(() {}),
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  'Variables (Opcional)',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                ),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: _variablesController,
+                  decoration: const InputDecoration(
+                    hintText: 'Ej: resultado, suma',
+                    border: OutlineInputBorder(),
+                  ),
+                  onChanged: (_) => setState(() {}),
+                ),
+              ],
+              const SizedBox(height: 20),
+
+              // Vista previa
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.visibility,
+                            size: 16,
+                            color: Theme.of(context).colorScheme.primary),
+                        const SizedBox(width: 6),
+                        Text('Vista previa',
+                            style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: Theme.of(context).colorScheme.primary,
+                                fontSize: 13)),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      preview.isEmpty ? '(completa el campo)' : preview,
+                      style: TextStyle(
+                        fontFamily: 'monospace',
+                        fontSize: 14,
+                        color: preview.isEmpty ? Colors.grey : Colors.black87,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
       actions: [
@@ -272,7 +280,8 @@ class _DataNodeDialogState extends State<DataNodeDialog> {
                     if (_selectedDataType == 'auto') {
                       widget.node.metadata.remove('inputType');
                     } else {
-                      widget.node.updateMetadata('inputType', _selectedDataType);
+                      widget.node
+                          .updateMetadata('inputType', _selectedDataType);
                     }
                   }
                   Navigator.of(context).pop(NodeDialogResult.simple(preview));
@@ -305,7 +314,7 @@ class _OptionCard extends StatelessWidget {
     final borderColor = selected
         ? Theme.of(context).colorScheme.primary
         : Theme.of(context).colorScheme.outline;
-        
+
     final contentColor = selected
         ? Theme.of(context).colorScheme.onPrimaryContainer
         : Theme.of(context).colorScheme.onSurfaceVariant;
@@ -328,11 +337,14 @@ class _OptionCard extends StatelessWidget {
             const SizedBox(height: 6),
             Text(label,
                 style: TextStyle(
-                    fontWeight: FontWeight.bold, color: contentColor, fontSize: 14)),
+                    fontWeight: FontWeight.bold,
+                    color: contentColor,
+                    fontSize: 14)),
             const SizedBox(height: 4),
             Text(description,
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 11, color: contentColor.withOpacity(0.8))),
+                style: TextStyle(
+                    fontSize: 11, color: contentColor.withOpacity(0.8))),
           ],
         ),
       ),

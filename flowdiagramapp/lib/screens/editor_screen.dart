@@ -54,8 +54,8 @@ class EditorScreen extends StatefulWidget {
 }
 
 class _EditorScreenState extends State<EditorScreen> {
-  static const double _minZoomScale = 0.5;
-  static const double _maxZoomScale = 2.0;
+  static const double _minZoomScale = 0.2;
+  static const double _maxZoomScale = 5.0;
   static const double _zoomStep = 0.1;
   static const int _maxHistoryStates = 100;
   static const Duration _autoSaveInterval = Duration(seconds: 2);
@@ -90,7 +90,7 @@ class _EditorScreenState extends State<EditorScreen> {
   int _historyIndex = -1;
   int _savedHistoryIndex = -1;
   bool _isApplyingHistory = false;
-  bool _showPageBoundary = false; // Estado del límite de página
+  bool _showPageBoundary = true; // Estado del límite de página
 
   bool get _canUndo => _historyIndex > 0;
   bool get _canRedo =>
@@ -506,16 +506,6 @@ class _EditorScreenState extends State<EditorScreen> {
                 tooltip: 'Cargar diagrama',
                 onPressed: () => _navigateToLoadDiagram(context),
               ),
-              // Botón para visualizar área de página
-              IconButton(
-                icon: Icon(_showPageBoundary ? Icons.border_clear : Icons.border_outer),
-                tooltip: _showPageBoundary ? 'Ocultar área de página' : 'Mostrar área de página',
-                onPressed: () {
-                  setState(() {
-                    _showPageBoundary = !_showPageBoundary;
-                  });
-                },
-              ),
               // Botón de compilación: ejecuta el conversor completo (validación + análisis + generación)
               Container(
                 key: _editorCompileKey,
@@ -852,7 +842,7 @@ class _EditorScreenState extends State<EditorScreen> {
                     // ── Toolbar flotante de nodo seleccionado ──
                     if (selectedNode != null && !isConnecting)
                       Positioned(
-                        bottom: 16,
+                        bottom: 16 + MediaQuery.of(context).padding.bottom,
                         left: 0,
                         right: 0,
                         child: Center(
@@ -863,8 +853,10 @@ class _EditorScreenState extends State<EditorScreen> {
                             child: Padding(
                               padding: const EdgeInsets.symmetric(
                                   horizontal: 8, vertical: 4),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
+                              child: SingleChildScrollView(
+                                scrollDirection: Axis.horizontal,
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
                                 children: [
                                   // Nombre del tipo de nodo
                                   Padding(
@@ -922,13 +914,14 @@ class _EditorScreenState extends State<EditorScreen> {
                               ),
                             ),
                           ),
+                          ),
                         ),
                       ),
 
                     // ── Toolbar de conexión seleccionada ──
                     if (selectedConnection != null && !isConnecting)
                       Positioned(
-                        bottom: 16,
+                        bottom: 16 + MediaQuery.of(context).padding.bottom,
                         left: 0,
                         right: 0,
                         child: Center(
@@ -1003,7 +996,7 @@ class _EditorScreenState extends State<EditorScreen> {
                           return const SizedBox.shrink();
                         }
                         return Positioned(
-                          bottom: 100,
+                          bottom: 100 + MediaQuery.of(context).padding.bottom,
                           left: 0,
                           right: 0,
                           child: Center(
@@ -1019,59 +1012,73 @@ class _EditorScreenState extends State<EditorScreen> {
               ),
             ],
           ),
-          floatingActionButton: Column(
-            key: _editorZoomKey,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (isConnecting)
-                FloatingActionButton(
-                  onPressed: () {
-                    setState(() {
-                      connectionStart = null;
-                      isConnecting = false;
-                    });
-                    // _showSnackBar('Conexión cancelada');
-                  },
-                  heroTag: 'cancel',
-                  mini: true,
-                  tooltip: 'Cancelar conexión',
-                  backgroundColor: Colors.red,
-                  child: const Icon(Icons.close),
+          floatingActionButton: ListenableBuilder(
+            listenable: _tutorialController,
+            builder: (context, _) {
+              final isToolbarVisible = (!isConnecting && (selectedNode != null || selectedConnection != null));
+              final isTutorialVisible = _tutorialController.state.isActive;
+              final bottomPadding = isTutorialVisible ? 140.0 : (isToolbarVisible ? 72.0 : 0.0);
+
+              return AnimatedPadding(
+                duration: const Duration(milliseconds: 250),
+                curve: Curves.easeOutCubic,
+                padding: EdgeInsets.only(bottom: bottomPadding),
+                child: Column(
+                  key: _editorZoomKey,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (isConnecting)
+                      FloatingActionButton(
+                        onPressed: () {
+                          setState(() {
+                            connectionStart = null;
+                            isConnecting = false;
+                          });
+                          // _showSnackBar('Conexión cancelada');
+                        },
+                        heroTag: 'cancel',
+                        mini: true,
+                        tooltip: 'Cancelar conexión',
+                        backgroundColor: Colors.red,
+                        child: const Icon(Icons.close),
+                      ),
+                    const SizedBox(height: 8),
+                    FloatingActionButton(
+                      onPressed: currentScale >= _maxZoomScale
+                          ? null
+                          : () => _zoomCanvas(zoomIn: true),
+                      heroTag: 'zoom_in',
+                      mini: true,
+                      tooltip: 'Acercar (+)',
+                      child: const Icon(Icons.zoom_in),
+                    ),
+                    const SizedBox(height: 8),
+                    FloatingActionButton(
+                      onPressed: currentScale <= _minZoomScale
+                          ? null
+                          : () => _zoomCanvas(zoomIn: false),
+                      heroTag: 'zoom_out',
+                      mini: true,
+                      tooltip: 'Alejar (-)',
+                      child: const Icon(Icons.zoom_out),
+                    ),
+                    const SizedBox(height: 8),
+                    FloatingActionButton(
+                      onPressed: () {
+                        setState(() {
+                          // Resetear el desplazamiento y la escala
+                          panOffset = Offset.zero;
+                          currentScale = 1.0;
+                        });
+                      },
+                      heroTag: 'center',
+                      tooltip: 'Centrar diagrama',
+                      child: const Icon(Icons.center_focus_strong),
+                    ),
+                  ],
                 ),
-              const SizedBox(height: 8),
-              FloatingActionButton(
-                onPressed: currentScale >= _maxZoomScale
-                    ? null
-                    : () => _zoomCanvas(zoomIn: true),
-                heroTag: 'zoom_in',
-                mini: true,
-                tooltip: 'Acercar (+)',
-                child: const Icon(Icons.zoom_in),
-              ),
-              const SizedBox(height: 8),
-              FloatingActionButton(
-                onPressed: currentScale <= _minZoomScale
-                    ? null
-                    : () => _zoomCanvas(zoomIn: false),
-                heroTag: 'zoom_out',
-                mini: true,
-                tooltip: 'Alejar (-)',
-                child: const Icon(Icons.zoom_out),
-              ),
-              const SizedBox(height: 8),
-              FloatingActionButton(
-                onPressed: () {
-                  setState(() {
-                    // Resetear el desplazamiento y la escala
-                    panOffset = Offset.zero;
-                    currentScale = 1.0;
-                  });
-                },
-                heroTag: 'center',
-                tooltip: 'Centrar diagrama',
-                child: const Icon(Icons.center_focus_strong),
-              ),
-            ],
+              );
+            },
           ),
         ),
       ),

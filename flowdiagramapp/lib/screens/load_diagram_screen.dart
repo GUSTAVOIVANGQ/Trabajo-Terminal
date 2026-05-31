@@ -299,11 +299,12 @@ class _LoadDiagramScreenState extends State<LoadDiagramScreen> {
         ),
         child: BottomNavigationBar(
           currentIndex: _currentIndex,
-          onTap: (index) {
+          onTap: (index) async {
             if (index == 2) {
-              Navigator.of(context).push(
+              await Navigator.of(context).push(
                 MaterialPageRoute(builder: (context) => const SettingsScreen()),
               );
+              if (mounted) _loadData();
             } else {
               setState(() { _currentIndex = index; });
             }
@@ -359,10 +360,11 @@ class _LoadDiagramScreenState extends State<LoadDiagramScreen> {
                   const SizedBox(width: 8),
                   GestureDetector(
                     key: _profileKey,
-                    onTap: () {
-                      Navigator.of(context).push(
+                    onTap: () async {
+                      await Navigator.of(context).push(
                         MaterialPageRoute(builder: (context) => const ProfileScreen()),
                       );
+                      if (mounted) _loadData();
                     },
                     child: CircleAvatar(
                       radius: 18,
@@ -403,10 +405,11 @@ class _LoadDiagramScreenState extends State<LoadDiagramScreen> {
           // New Flowchart Button
           GestureDetector(
             key: _createBtnKey,
-            onTap: () {
-              Navigator.of(context).push(
+            onTap: () async {
+              await Navigator.of(context).push(
                 MaterialPageRoute(builder: (context) => const EditorScreen()),
               );
+              if (mounted) _loadData();
             },
             child: Container(
               width: double.infinity,
@@ -500,7 +503,7 @@ class _LoadDiagramScreenState extends State<LoadDiagramScreen> {
   Widget _buildDiagramCard(SavedDiagram item, {bool canDelete = false}) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return GestureDetector(
-      onTap: () {
+      onTap: () async {
         if (!canDelete) {
           _metricsService.trackUserAction(
             action: 'plantilla_usada',
@@ -511,9 +514,10 @@ class _LoadDiagramScreenState extends State<LoadDiagramScreen> {
             },
           );
         }
-        Navigator.of(context).push(
+        await Navigator.of(context).push(
           MaterialPageRoute(builder: (context) => EditorScreen(initialDiagram: item)),
         );
+        if (mounted) _loadData();
       },
       child: Container(
         decoration: BoxDecoration(
