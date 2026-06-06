@@ -1,37 +1,17 @@
 import 'package:flutter/material.dart';
 import '../widgets/theme_selector_widget.dart';
 import '../services/theme_service.dart';
+import '../widgets/gradient_scaffold.dart';
 
 class ThemeSettingsScreen extends StatelessWidget {
   const ThemeSettingsScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Configuración de Tema', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-        elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.white),
-        flexibleSpace: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [Color(0xFF4A00E0), Color(0xFF8E2DE2), Color(0xFF4CA1AF)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-          ),
-        ),
-      ),
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return GradientScaffold(
+      title: 'Configuración de Tema',
       body: Container(
-        width: double.infinity,
-        height: double.infinity,
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Color(0xFFE0C3FC), Color(0xFF8EC5FC)],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-          ),
-        ),
         child: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(

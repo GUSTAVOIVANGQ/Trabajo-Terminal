@@ -411,6 +411,39 @@ class AuthService {
     }
   }
 
+  // ── Actualización de Perfil ───────────────────────────────────────────────
+
+  Future<void> updateDisplayName(String newName) async {
+    final hasInternet = await _hasInternetConnection();
+    if (!hasInternet) {
+      throw Exception('Se requiere conexión a internet para actualizar tu nombre.');
+    }
+
+    final authUser = _auth.currentUser;
+    if (authUser == null) throw Exception('No hay usuario autenticado');
+    if (_currentUser?.isGuest == true) {
+      throw Exception('Los usuarios invitados no pueden cambiar su nombre.');
+    }
+
+    try {
+      await authUser.updateDisplayName(newName);
+      await authUser.reload();
+      
+      // Actualizar en Firestore
+      await _firestore.collection('users').doc(authUser.uid).update({
+        'displayName': newName,
+      });
+
+      // Actualizar localmente
+      if (_currentUser != null) {
+        _currentUser = _currentUser!.copyWith(displayName: newName);
+        await _saveUserToCache(_currentUser!);
+      }
+    } catch (e) {
+      throw Exception('Error al actualizar el nombre: ${e.toString()}');
+    }
+  }
+
   // ── Sincronización ────────────────────────────────────────────────────────
 
   Future<UserModel?> syncAuthUserWithFirestore() async {

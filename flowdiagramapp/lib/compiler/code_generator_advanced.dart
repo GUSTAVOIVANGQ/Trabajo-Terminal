@@ -29,7 +29,7 @@ class CodeGenOptions {
   const CodeGenOptions({
     this.includeComments = true,
     this.includeTimestamp = true,
-    this.indentation = '    ',
+    this.indentation = '  ',
     this.targetCStandard = 'c99',
     this.debugMode = false,
   });
@@ -246,10 +246,14 @@ class AdvancedCodeGenerator {
         final bodyBranch = outgoing.where((c) =>
             c.label.toLowerCase() == 'verdadero' ||
             c.label.toLowerCase() == 'true' ||
+            c.label.toLowerCase() == 'sí' ||
+            c.label.toLowerCase() == 'si' ||
+            c.label.toLowerCase() == 'yes' ||
             c.label.isEmpty);
         final exitBranch = outgoing.where((c) =>
             c.label.toLowerCase() == 'falso' ||
-            c.label.toLowerCase() == 'false');
+            c.label.toLowerCase() == 'false' ||
+            c.label.toLowerCase() == 'no');
 
         for (final conn in bodyBranch) {
           visit(conn.target);

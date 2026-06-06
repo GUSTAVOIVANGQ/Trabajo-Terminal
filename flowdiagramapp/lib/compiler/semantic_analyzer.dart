@@ -543,6 +543,14 @@ class DiagramSemanticAnalyzer {
           }
 
           _registerDeclaration(varName, dataType, isInitialized, nodeId);
+        } else {
+          _errors.add(CompilerError(
+            code: CompilerErrorCode.duplicateDeclaration,
+            message: "La variable '\$varName' ya ha sido declarada.",
+            phase: CompilerPhase.semantic,
+            severity: CompilerSeverity.error,
+            location: SourceLocation(nodeId: nodeId),
+          ));
         }
 
         // Move to next variable (after comma)
@@ -611,30 +619,6 @@ class DiagramSemanticAnalyzer {
 
   /// Gather declarations from AST
   void _gatherDeclarationsFromAST(ProgramNode ast) {
-    // Process global declarations
-    for (final decl in ast.globalDeclarations) {
-      if (decl.isArray) {
-        // Register as array with dimensions
-        _symbolTable.declareSymbol(
-          name: decl.variableName,
-          dataType: decl.dataType,
-          category: SymbolCategory.array,
-          nodeId: null,
-          isInitialized: decl.initializer != null,
-          arrayDimensions: decl.arraySize != null ? [decl.arraySize!] : null,
-        );
-        _variableTypes[decl.variableName] = decl.dataType;
-        _arrayElementTypes[decl.variableName] = decl.dataType;
-      } else {
-        _registerDeclaration(
-          decl.variableName,
-          decl.dataType,
-          decl.initializer != null,
-          null,
-        );
-      }
-    }
-
     // Process node-level declarations and function parameters
     for (final diagNode in ast.diagramNodes) {
       // Check for function parameters in terminal nodes
@@ -643,50 +627,67 @@ class DiagramSemanticAnalyzer {
         _extractFunctionParameters(diagNode.label!, diagNode.diagramNodeId);
       }
 
-      // Check for declarations in process nodes
-      // e.g., "int retorno" or "int a, b, c" or "int arr[5]"
-      if (diagNode.nodeType == 'process' && diagNode.label != null) {
-        _extractDeclarationFromProcess(diagNode.label!, diagNode.diagramNodeId);
-      }
-
       // Process statement-level declarations
       for (final stmt in diagNode.statements) {
-        if (stmt is DeclarationStatementNode) {
-          if (stmt.isArray) {
-            // Register as array if not already declared
-            if (!_symbolTable.symbolExists(stmt.variableName)) {
-              _symbolTable.declareSymbol(
-                name: stmt.variableName,
-                dataType: stmt.dataType,
-                category: SymbolCategory.array,
-                nodeId: diagNode.diagramNodeId,
-                isInitialized: stmt.initializer != null,
-                arrayDimensions:
-                    stmt.arraySize != null ? [stmt.arraySize!] : null,
-              );
-              _variableTypes[stmt.variableName] = stmt.dataType;
-              _arrayElementTypes[stmt.variableName] = stmt.dataType;
-            }
-          } else {
-            _registerDeclaration(
-              stmt.variableName,
-              stmt.dataType,
-              stmt.initializer != null,
-              diagNode.diagramNodeId,
-            );
-          }
-        } else if (stmt is InputStatementNode) {
-          for (final varNode in stmt.variables) {
-            if (!_symbolTable.symbolExists(varNode.name)) {
-              _registerDeclaration(
-                varNode.name,
-                DataType.integer,
-                true,
-                diagNode.diagramNodeId,
-              );
-            }
-          }
+        _gatherDeclarationsFromStatement(stmt, diagNode.diagramNodeId);
+      }
+    }
+  }
+
+  /// Gather declarations from a single statement recursively
+  void _gatherDeclarationsFromStatement(StatementNode stmt, String nodeId) {
+    if (stmt is DeclarationStatementNode) {
+      if (stmt.isArray) {
+        // Register as array if not already declared
+        if (!_symbolTable.symbolExists(stmt.variableName)) {
+          _symbolTable.declareSymbol(
+            name: stmt.variableName,
+            dataType: stmt.dataType,
+            category: SymbolCategory.array,
+            nodeId: nodeId,
+            isInitialized: stmt.initializer != null,
+            arrayDimensions:
+                stmt.arraySize != null ? [stmt.arraySize!] : null,
+          );
+          _variableTypes[stmt.variableName] = stmt.dataType;
+          _arrayElementTypes[stmt.variableName] = stmt.dataType;
         }
+      } else {
+        _registerDeclaration(
+          stmt.variableName,
+          stmt.dataType,
+          stmt.initializer != null,
+          nodeId,
+        );
+      }
+    } else if (stmt is InputStatementNode) {
+      for (final varNode in stmt.variables) {
+        if (!_symbolTable.symbolExists(varNode.name)) {
+          _registerDeclaration(
+            varNode.name,
+            DataType.integer,
+            true,
+            nodeId,
+          );
+        }
+      }
+    } else if (stmt is ForStatementNode) {
+      if (stmt.initializer is DeclarationStatementNode) {
+        _gatherDeclarationsFromStatement(stmt.initializer as StatementNode, nodeId);
+      }
+      _gatherDeclarationsFromStatement(stmt.body, nodeId);
+    } else if (stmt is WhileStatementNode) {
+      _gatherDeclarationsFromStatement(stmt.body, nodeId);
+    } else if (stmt is DoWhileStatementNode) {
+      _gatherDeclarationsFromStatement(stmt.body, nodeId);
+    } else if (stmt is IfStatementNode) {
+      _gatherDeclarationsFromStatement(stmt.thenBranch, nodeId);
+      if (stmt.elseBranch != null) {
+        _gatherDeclarationsFromStatement(stmt.elseBranch!, nodeId);
+      }
+    } else if (stmt is BlockStatementNode) {
+      for (final s in stmt.statements) {
+        _gatherDeclarationsFromStatement(s, nodeId);
       }
     }
   }
@@ -745,13 +746,24 @@ class DiagramSemanticAnalyzer {
     bool isInitialized,
     String? nodeId,
   ) {
-    _symbolTable.declareSymbol(
+    bool success = _symbolTable.declareSymbol(
       name: name,
       dataType: type,
       nodeId: nodeId,
       isInitialized: isInitialized,
     );
-    _variableTypes[name] = type;
+    
+    if (!success) {
+      _errors.add(CompilerError(
+        code: CompilerErrorCode.duplicateDeclaration,
+        message: "La variable '\$name' ya ha sido declarada.",
+        phase: CompilerPhase.semantic,
+        severity: CompilerSeverity.error,
+        location: nodeId != null ? SourceLocation(nodeId: nodeId) : null,
+      ));
+    } else {
+      _variableTypes[name] = type;
+    }
   }
 
   /// Convert token type to data type
@@ -1367,6 +1379,19 @@ class DiagramSemanticAnalyzer {
 
     // Check operator compatibility
     final op = expr.operator;
+
+    // Check for division by zero
+    if (op == BinaryOperator.divide || op == BinaryOperator.modulo) {
+      if (expr.right is IntegerLiteralNode) {
+        if ((expr.right as IntegerLiteralNode).value == 0) {
+          _errors.add(SemanticError.divisionByZero(nodeId: nodeId));
+        }
+      } else if (expr.right is FloatLiteralNode) {
+        if ((expr.right as FloatLiteralNode).value == 0.0) {
+          _errors.add(SemanticError.divisionByZero(nodeId: nodeId));
+        }
+      }
+    }
 
     // Arithmetic operators need numeric types
     if (_isArithmeticOperator(op)) {

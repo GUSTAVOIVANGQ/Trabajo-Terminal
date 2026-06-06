@@ -36,6 +36,12 @@ class TemplateDefinitions {
         '18. Función Factorial',
         '19. Intercambio (Swap)',
         '20. Apuntadores y Arreglos',
+        // BENCHMARK - Plantillas de medición de rendimiento
+        'BM-10. Benchmark 10 Nodos',
+        'BM-25. Benchmark 25 Nodos',
+        'BM-50. Benchmark 50 Nodos',
+        'BM-75. Benchmark 75 Nodos',
+        'BM-100. Benchmark 100 Nodos',
       ];
 
   // ============================================================
@@ -2958,6 +2964,1439 @@ class TemplateDefinitions {
     );
   }
 
+  // ============================================================
+  // BENCHMARK - PLANTILLAS DE MEDICIÓN DE RENDIMIENTO
+  // ============================================================
+
+  /// BM-10: Benchmark 10 nodos - Búsqueda Binaria simplificada
+  /// Nodos totales: 10 (1 comment + 1 start + 3 process + 1 data input + 3 decision + 1 end)
+  static Future<SavedDiagram> createBenchmark10Template() async {
+    final now = DateTime.now();
+    final baseId = now.millisecondsSinceEpoch;
+
+    // Nodo 1: comment
+    final n1 = DiagramNode(
+      id: 'bm10_comment_${baseId}_1',
+      type: NodeType.comment,
+      position: const Offset(450, 40),
+      text: '/* BENCHMARK 10 NODOS\nBúsqueda Binaria (iteración única)\nNodos: 10 */',
+    );
+    // Nodo 2: start
+    final n2 = DiagramNode(
+      id: 'bm10_start_${baseId}_2',
+      type: NodeType.terminal,
+      position: const Offset(250, 40),
+      text: 'Inicio',
+    );
+    // Nodo 3: declarar variables
+    final n3 = DiagramNode(
+      id: 'bm10_proc_${baseId}_3',
+      type: NodeType.process,
+      position: const Offset(250, 140),
+      text: 'int arr[10], bajo, alto, medio, objetivo',
+      metadata: {'processType': 'declaration'},
+    );
+    // Nodo 4: inicializar índices
+    final n4 = DiagramNode(
+      id: 'bm10_proc_${baseId}_4',
+      type: NodeType.process,
+      position: const Offset(250, 240),
+      text: 'bajo = 0\nalto = 9',
+      metadata: {'processType': 'initialization'},
+    );
+    // Nodo 5: leer objetivo
+    final n5 = DiagramNode(
+      id: 'bm10_data_${baseId}_5',
+      type: NodeType.data,
+      position: const Offset(250, 340),
+      text: 'Leer objetivo',
+      metadata: {'isOutput': false},
+    );
+    // Nodo 6: calcular medio
+    final n6 = DiagramNode(
+      id: 'bm10_proc_${baseId}_6',
+      type: NodeType.process,
+      position: const Offset(250, 440),
+      text: 'medio = (bajo + alto) / 2',
+      metadata: {'processType': 'arithmetic'},
+    );
+    // Nodo 7: decisión arr[medio] == objetivo
+    final n7 = DiagramNode(
+      id: 'bm10_dec_${baseId}_7',
+      type: NodeType.decision,
+      position: const Offset(250, 550),
+      text: 'arr[medio] == objetivo',
+    );
+    // Nodo 8: encontrado
+    final n8 = DiagramNode(
+      id: 'bm10_data_${baseId}_8',
+      type: NodeType.data,
+      position: const Offset(460, 680),
+      text: 'Escribir "Encontrado en:", medio',
+      metadata: {'isOutput': true},
+    );
+    // Nodo 9: decisión arr[medio] < objetivo
+    final n9 = DiagramNode(
+      id: 'bm10_dec_${baseId}_9',
+      type: NodeType.decision,
+      position: const Offset(60, 680),
+      text: 'arr[medio] < objetivo',
+    );
+    // Nodo 10: end
+    final n10 = DiagramNode(
+      id: 'bm10_end_${baseId}_10',
+      type: NodeType.terminal,
+      position: const Offset(250, 820),
+      text: 'Fin',
+    );
+
+    final nodes = [n1, n2, n3, n4, n5, n6, n7, n8, n9, n10];
+    final connections = [
+      Connection(source: n2, target: n3, label: ''),
+      Connection(source: n3, target: n4, label: ''),
+      Connection(source: n4, target: n5, label: ''),
+      Connection(source: n5, target: n6, label: ''),
+      Connection(source: n6, target: n7, label: ''),
+      Connection(source: n7, target: n8, label: 'Sí'),
+      Connection(source: n7, target: n9, label: 'No'),
+      Connection(source: n8, target: n10, label: ''),
+      Connection(source: n9, target: n10, label: ''),
+    ];
+
+    return SavedDiagram(
+      name: 'BM-10. Benchmark 10 Nodos',
+      description:
+          'BENCHMARK: Búsqueda Binaria simplificada. 10 nodos exactos para medición de rendimiento.',
+      createdAt: now,
+      updatedAt: now,
+      nodes: nodes,
+      connections: connections,
+      isTemplate: true,
+    );
+  }
+
+  /// BM-25: Benchmark 25 nodos - Verificación de número primo
+  /// Nodos totales: 25
+  static Future<SavedDiagram> createBenchmark25Template() async {
+    final now = DateTime.now();
+    final baseId = now.millisecondsSinceEpoch;
+
+    // Nodo 1
+    final n1 = DiagramNode(
+      id: 'bm25_comment_${baseId}_1',
+      type: NodeType.comment,
+      position: const Offset(520, 40),
+      text: '/* BENCHMARK 25 NODOS\nVerificación de Número Primo\nNodos: 25 */',
+    );
+    // Nodo 2
+    final n2 = DiagramNode(
+      id: 'bm25_start_${baseId}_2',
+      type: NodeType.terminal,
+      position: const Offset(280, 40),
+      text: 'Inicio',
+    );
+    // Nodo 3 - Declaración de TODAS las variables del programa (una sola línea)
+    final n3 = DiagramNode(
+      id: 'bm25_proc_${baseId}_3',
+      type: NodeType.process,
+      position: const Offset(280, 130),
+      text: 'int n, i, esPrimo, contadorPrimos, sumaTotal, digitos, raizCuadrada, logaritmo, categoria',
+      metadata: {'processType': 'declaration'},
+    );
+    // Nodo 4
+    final n4 = DiagramNode(
+      id: 'bm25_data_${baseId}_4',
+      type: NodeType.data,
+      position: const Offset(280, 220),
+      text: 'Leer n',
+      metadata: {'isOutput': false},
+    );
+    // Nodo 5
+    final n5 = DiagramNode(
+      id: 'bm25_dec_${baseId}_5',
+      type: NodeType.decision,
+      position: const Offset(280, 320),
+      text: 'n <= 1',
+    );
+    // Nodo 6
+    final n6 = DiagramNode(
+      id: 'bm25_data_${baseId}_6',
+      type: NodeType.data,
+      position: const Offset(480, 320),
+      text: 'Escribir "No es primo"',
+      metadata: {'isOutput': true},
+    );
+    // Nodo 7 - Inicializar contadores junto con esPrimo e i
+    final n7 = DiagramNode(
+      id: 'bm25_proc_${baseId}_7',
+      type: NodeType.process,
+      position: const Offset(280, 440),
+      text: 'esPrimo = 1\ni = 2\ncontadorPrimos = 0\nsumaTotal = 0',
+      metadata: {'processType': 'initialization'},
+    );
+    // Nodo 8 - prep (hexágono for)
+    final n8 = DiagramNode(
+      id: 'bm25_prep_${baseId}_8',
+      type: NodeType.preparation,
+      position: const Offset(280, 540),
+      text: 'i = 2; i < n; i++',
+    );
+    // Nodo 9
+    final n9 = DiagramNode(
+      id: 'bm25_dec_${baseId}_9',
+      type: NodeType.decision,
+      position: const Offset(280, 650),
+      text: 'n % i == 0',
+    );
+    // Nodo 10
+    final n10 = DiagramNode(
+      id: 'bm25_proc_${baseId}_10',
+      type: NodeType.process,
+      position: const Offset(480, 650),
+      text: 'esPrimo = 0',
+      metadata: {'processType': 'assignment'},
+    );
+    // Nodo 11
+    final n11 = DiagramNode(
+      id: 'bm25_dec_${baseId}_11',
+      type: NodeType.decision,
+      position: const Offset(280, 780),
+      text: 'esPrimo == 1',
+    );
+    // Nodo 12
+    final n12 = DiagramNode(
+      id: 'bm25_data_${baseId}_12',
+      type: NodeType.data,
+      position: const Offset(480, 780),
+      text: 'Escribir n, "es primo"',
+      metadata: {'isOutput': true},
+    );
+    // Nodo 13
+    final n13 = DiagramNode(
+      id: 'bm25_data_${baseId}_13',
+      type: NodeType.data,
+      position: const Offset(80, 780),
+      text: 'Escribir n, "no es primo"',
+      metadata: {'isOutput': true},
+    );
+    // Nodos 14-24: proceso de validación de múltiples entradas (secuencia de pasos)
+    final n14 = DiagramNode(
+      id: 'bm25_proc_${baseId}_14',
+      type: NodeType.process,
+      position: const Offset(280, 900),
+      text: 'contadorPrimos++',
+      metadata: {'processType': 'arithmetic'},
+    );
+    // Nodo 15 - Salida que LEE sumaTotal (evita warning "declarada pero no usada")
+    final n15 = DiagramNode(
+      id: 'bm25_data_${baseId}_15',
+      type: NodeType.data,
+      position: const Offset(280, 980),
+      text: 'Escribir "Suma acumulada:", sumaTotal',
+      metadata: {'isOutput': true},
+    );
+    final n16 = DiagramNode(
+      id: 'bm25_dec_${baseId}_16',
+      type: NodeType.decision,
+      position: const Offset(280, 1060),
+      text: 'n > 100',
+    );
+    final n17 = DiagramNode(
+      id: 'bm25_data_${baseId}_17',
+      type: NodeType.data,
+      position: const Offset(480, 1060),
+      text: 'Escribir "Primo grande"',
+      metadata: {'isOutput': true},
+    );
+    final n18 = DiagramNode(
+      id: 'bm25_proc_${baseId}_18',
+      type: NodeType.process,
+      position: const Offset(280, 1160),
+      text: 'categoria = 0',
+      metadata: {'processType': 'assignment'},
+    );
+    final n19 = DiagramNode(
+      id: 'bm25_proc_${baseId}_19',
+      type: NodeType.process,
+      position: const Offset(280, 1240),
+      text: 'digitos = n / 10 + 1',
+      metadata: {'processType': 'arithmetic'},
+    );
+    final n20 = DiagramNode(
+      id: 'bm25_proc_${baseId}_20',
+      type: NodeType.process,
+      position: const Offset(280, 1320),
+      text: 'raizCuadrada = sqrt(n)',
+      metadata: {'processType': 'arithmetic'},
+    );
+    final n21 = DiagramNode(
+      id: 'bm25_data_${baseId}_21',
+      type: NodeType.data,
+      position: const Offset(280, 1400),
+      text: 'Escribir "Raiz:", raizCuadrada',
+      metadata: {'isOutput': true},
+    );
+    final n22 = DiagramNode(
+      id: 'bm25_proc_${baseId}_22',
+      type: NodeType.process,
+      position: const Offset(280, 1480),
+      text: 'logaritmo = log2(n)',
+      metadata: {'processType': 'arithmetic'},
+    );
+    final n23 = DiagramNode(
+      id: 'bm25_data_${baseId}_23',
+      type: NodeType.data,
+      position: const Offset(280, 1560),
+      text: 'Escribir "Log2:", logaritmo',
+      metadata: {'isOutput': true},
+    );
+    final n24 = DiagramNode(
+      id: 'bm25_data_${baseId}_24',
+      type: NodeType.data,
+      position: const Offset(280, 1640),
+      text: 'Escribir "Digitos:", digitos, "Categoria:", categoria',
+      metadata: {'isOutput': true},
+    );
+    // Nodo 25
+    final n25 = DiagramNode(
+      id: 'bm25_end_${baseId}_25',
+      type: NodeType.terminal,
+      position: const Offset(280, 1740),
+      text: 'Fin',
+    );
+
+    final nodes = [
+      n1, n2, n3, n4, n5, n6, n7, n8, n9, n10,
+      n11, n12, n13, n14, n15, n16, n17, n18, n19, n20,
+      n21, n22, n23, n24, n25,
+    ];
+    final connections = [
+      Connection(source: n2, target: n3, label: ''),
+      Connection(source: n3, target: n4, label: ''),
+      Connection(source: n4, target: n5, label: ''),
+      Connection(source: n5, target: n6, label: 'Sí'),
+      Connection(source: n5, target: n7, label: 'No'),
+      Connection(source: n6, target: n25, label: ''),
+      Connection(source: n7, target: n8, label: ''),
+      Connection(source: n8, target: n9, label: 'Verdadero'),
+      Connection(source: n9, target: n10, label: 'Sí'),
+      Connection(source: n9, target: n8, label: 'No', isLoopBack: true),
+      Connection(source: n10, target: n8, label: '', isLoopBack: true),
+      Connection(source: n8, target: n11, label: 'Falso'),
+      Connection(source: n11, target: n12, label: 'Sí'),
+      Connection(source: n11, target: n13, label: 'No'),
+      Connection(source: n12, target: n14, label: ''),
+      Connection(source: n13, target: n14, label: ''),
+      Connection(source: n14, target: n15, label: ''),
+      Connection(source: n15, target: n16, label: ''),
+      Connection(source: n16, target: n17, label: 'Sí'),
+      Connection(source: n16, target: n18, label: 'No'),
+      Connection(source: n17, target: n19, label: ''),
+      Connection(source: n18, target: n19, label: ''),
+      Connection(source: n19, target: n20, label: ''),
+      Connection(source: n20, target: n21, label: ''),
+      Connection(source: n21, target: n22, label: ''),
+      Connection(source: n22, target: n23, label: ''),
+      Connection(source: n23, target: n24, label: ''),
+      Connection(source: n24, target: n25, label: ''),
+    ];
+
+    return SavedDiagram(
+      name: 'BM-25. Benchmark 25 Nodos',
+      description:
+          'BENCHMARK: Verificación de Número Primo con análisis extendido. 25 nodos exactos para medición de rendimiento.',
+      createdAt: now,
+      updatedAt: now,
+      nodes: nodes,
+      connections: connections,
+      isTemplate: true,
+    );
+  }
+
+  /// BM-50: Benchmark 50 nodos - Ordenamiento Burbuja con estadísticas
+  /// Nodos totales: 50
+  static Future<SavedDiagram> createBenchmark50Template() async {
+    final now = DateTime.now();
+    final baseId = now.millisecondsSinceEpoch;
+
+    final nodes = <DiagramNode>[];
+    final connections = <Connection>[];
+
+    // ---- Sección 1: Encabezado (nodos 1-3) ----
+    final n1 = DiagramNode(
+      id: 'bm50_${baseId}_1', type: NodeType.comment,
+      position: const Offset(560, 40),
+      text: '/* BENCHMARK 50 NODOS\nOrdenamiento Burbuja + Estadísticas\nNodos: 50 */',
+    );
+    final n2 = DiagramNode(
+      id: 'bm50_${baseId}_2', type: NodeType.terminal,
+      position: const Offset(280, 40), text: 'Inicio',
+    );
+    final n3 = DiagramNode(
+      id: 'bm50_${baseId}_3', type: NodeType.process,
+      position: const Offset(280, 130),
+      text: 'int arr[20], n, i, j, temp, suma, min, max, rango, intercambios, mediana, eficiencia, varianza, desviacion, promedio',
+      metadata: {'processType': 'declaration'},
+    );
+    nodes.addAll([n1, n2, n3]);
+
+    // ---- Sección 2: Lectura de datos (nodos 4-7) ----
+    final n4 = DiagramNode(
+      id: 'bm50_${baseId}_4', type: NodeType.data,
+      position: const Offset(280, 230), text: 'Leer n',
+      metadata: {'isOutput': false},
+    );
+    final n5 = DiagramNode(
+      id: 'bm50_${baseId}_5', type: NodeType.decision,
+      position: const Offset(280, 320), text: 'n >= 1 && n <= 20',
+    );
+    final n6 = DiagramNode(
+      id: 'bm50_${baseId}_6', type: NodeType.data,
+      position: const Offset(500, 320), text: 'Escribir "Error: tamaño inválido"',
+      metadata: {'isOutput': true},
+    );
+    final n7 = DiagramNode(
+      id: 'bm50_${baseId}_7', type: NodeType.preparation,
+      position: const Offset(280, 430), text: 'i = 0; i < n; i++',
+    );
+    nodes.addAll([n4, n5, n6, n7]);
+
+    // ---- Sección 3: Lectura arreglo (nodos 8-10) ----
+    final n8 = DiagramNode(
+      id: 'bm50_${baseId}_8', type: NodeType.data,
+      position: const Offset(280, 530), text: 'Leer arr[i]',
+      metadata: {'isOutput': false},
+    );
+    final n9 = DiagramNode(
+      id: 'bm50_${baseId}_9', type: NodeType.process,
+      position: const Offset(280, 620), text: 'suma += arr[i]',
+      metadata: {'processType': 'arithmetic'},
+    );
+    final n10 = DiagramNode(
+      id: 'bm50_${baseId}_10', type: NodeType.process,
+      position: const Offset(280, 710), text: 'suma = 0\nmin = arr[0]\nmax = arr[0]\nintercambios = 0',
+      metadata: {'processType': 'initialization'},
+    );
+    nodes.addAll([n8, n9, n10]);
+
+    // ---- Sección 4: Búsqueda de min/max (nodos 11-20) ----
+    final n11 = DiagramNode(
+      id: 'bm50_${baseId}_11', type: NodeType.preparation,
+      position: const Offset(280, 800), text: 'i = 1; i < n; i++',
+    );
+    final n12 = DiagramNode(
+      id: 'bm50_${baseId}_12', type: NodeType.decision,
+      position: const Offset(280, 900), text: 'arr[i] < min',
+    );
+    final n13 = DiagramNode(
+      id: 'bm50_${baseId}_13', type: NodeType.process,
+      position: const Offset(480, 900), text: 'min = arr[i]',
+      metadata: {'processType': 'assignment'},
+    );
+    final n14 = DiagramNode(
+      id: 'bm50_${baseId}_14', type: NodeType.decision,
+      position: const Offset(280, 1010), text: 'arr[i] > max',
+    );
+    final n15 = DiagramNode(
+      id: 'bm50_${baseId}_15', type: NodeType.process,
+      position: const Offset(480, 1010), text: 'max = arr[i]',
+      metadata: {'processType': 'assignment'},
+    );
+    final n16 = DiagramNode(
+      id: 'bm50_${baseId}_16', type: NodeType.process,
+      position: const Offset(280, 1120), text: 'promedio = suma / n',
+      metadata: {'processType': 'arithmetic'},
+    );
+    final n17 = DiagramNode(
+      id: 'bm50_${baseId}_17', type: NodeType.data,
+      position: const Offset(280, 1210), text: 'Escribir "Suma:", suma, "Min:", min, "Max:", max',
+      metadata: {'isOutput': true},
+    );
+    final n18 = DiagramNode(
+      id: 'bm50_${baseId}_18', type: NodeType.data,
+      position: const Offset(280, 1300), text: 'Escribir "Promedio:", promedio',
+      metadata: {'isOutput': true},
+    );
+    final n19 = DiagramNode(
+      id: 'bm50_${baseId}_19', type: NodeType.process,
+      position: const Offset(280, 1390), text: 'rango = max - min',
+      metadata: {'processType': 'arithmetic'},
+    );
+    final n20 = DiagramNode(
+      id: 'bm50_${baseId}_20', type: NodeType.data,
+      position: const Offset(280, 1480), text: 'Escribir "Rango:", rango',
+      metadata: {'isOutput': true},
+    );
+    nodes.addAll([n11, n12, n13, n14, n15, n16, n17, n18, n19, n20]);
+
+    // ---- Sección 5: Ordenamiento Burbuja (nodos 21-35) ----
+    final n21 = DiagramNode(
+      id: 'bm50_${baseId}_21', type: NodeType.preparation,
+      position: const Offset(280, 1570), text: 'i = 0; i < n-1; i++',
+    );
+    final n22 = DiagramNode(
+      id: 'bm50_${baseId}_22', type: NodeType.preparation,
+      position: const Offset(280, 1660), text: 'j = 0; j < n-i-1; j++',
+    );
+    final n23 = DiagramNode(
+      id: 'bm50_${baseId}_23', type: NodeType.decision,
+      position: const Offset(280, 1760), text: 'arr[j] > arr[j+1]',
+    );
+    final n24 = DiagramNode(
+      id: 'bm50_${baseId}_24', type: NodeType.process,
+      position: const Offset(480, 1760), text: 'temp = arr[j]',
+      metadata: {'processType': 'assignment'},
+    );
+    final n25 = DiagramNode(
+      id: 'bm50_${baseId}_25', type: NodeType.process,
+      position: const Offset(480, 1850), text: 'arr[j] = arr[j+1]',
+      metadata: {'processType': 'assignment'},
+    );
+    final n26 = DiagramNode(
+      id: 'bm50_${baseId}_26', type: NodeType.process,
+      position: const Offset(480, 1940), text: 'arr[j+1] = temp',
+      metadata: {'processType': 'assignment'},
+    );
+    final n27 = DiagramNode(
+      id: 'bm50_${baseId}_27', type: NodeType.process,
+      position: const Offset(280, 2030), text: 'intercambios++',
+      metadata: {'processType': 'arithmetic'},
+    );
+    final n28 = DiagramNode(
+      id: 'bm50_${baseId}_28', type: NodeType.data,
+      position: const Offset(280, 2120), text: 'Escribir "Arreglo ordenado:"',
+      metadata: {'isOutput': true},
+    );
+    final n29 = DiagramNode(
+      id: 'bm50_${baseId}_29', type: NodeType.preparation,
+      position: const Offset(280, 2210), text: 'i = 0; i < n; i++',
+    );
+    final n30 = DiagramNode(
+      id: 'bm50_${baseId}_30', type: NodeType.data,
+      position: const Offset(280, 2310), text: 'Escribir arr[i]',
+      metadata: {'isOutput': true},
+    );
+    final n31 = DiagramNode(
+      id: 'bm50_${baseId}_31', type: NodeType.data,
+      position: const Offset(280, 2400), text: 'Escribir "Intercambios:", intercambios',
+      metadata: {'isOutput': true},
+    );
+    final n32 = DiagramNode(
+      id: 'bm50_${baseId}_32', type: NodeType.process,
+      position: const Offset(280, 2490), text: 'eficiencia = (n * n - intercambios) * 100 / (n * n)',
+      metadata: {'processType': 'arithmetic'},
+    );
+    final n33 = DiagramNode(
+      id: 'bm50_${baseId}_33', type: NodeType.data,
+      position: const Offset(280, 2580), text: 'Escribir "Eficiencia:", eficiencia, "%"',
+      metadata: {'isOutput': true},
+    );
+    final n34 = DiagramNode(
+      id: 'bm50_${baseId}_34', type: NodeType.decision,
+      position: const Offset(280, 2670), text: 'eficiencia >= 75.0',
+    );
+    final n35 = DiagramNode(
+      id: 'bm50_${baseId}_35', type: NodeType.data,
+      position: const Offset(480, 2670), text: 'Escribir "Resultado: Eficiente"',
+      metadata: {'isOutput': true},
+    );
+    nodes.addAll([n21, n22, n23, n24, n25, n26, n27, n28, n29, n30,
+                  n31, n32, n33, n34, n35]);
+
+    // ---- Sección 6: Análisis final (nodos 36-50) ----
+    final n36 = DiagramNode(
+      id: 'bm50_${baseId}_36', type: NodeType.data,
+      position: const Offset(80, 2670), text: 'Escribir "Resultado: Mejorable"',
+      metadata: {'isOutput': true},
+    );
+    final n37 = DiagramNode(
+      id: 'bm50_${baseId}_37', type: NodeType.process,
+      position: const Offset(280, 2780), text: 'mediana = arr[n/2]',
+      metadata: {'processType': 'assignment'},
+    );
+    final n38 = DiagramNode(
+      id: 'bm50_${baseId}_38', type: NodeType.data,
+      position: const Offset(280, 2870), text: 'Escribir "Mediana:", mediana',
+      metadata: {'isOutput': true},
+    );
+    final n39 = DiagramNode(
+      id: 'bm50_${baseId}_39', type: NodeType.process,
+      position: const Offset(280, 2960), text: 'varianza = 0.0',
+      metadata: {'processType': 'initialization'},
+    );
+    final n40 = DiagramNode(
+      id: 'bm50_${baseId}_40', type: NodeType.preparation,
+      position: const Offset(280, 3050), text: 'i = 0; i < n; i++',
+    );
+    final n41 = DiagramNode(
+      id: 'bm50_${baseId}_41', type: NodeType.process,
+      position: const Offset(280, 3150), text: 'varianza = varianza + (arr[i] - promedio) * (arr[i] - promedio)',
+      metadata: {'processType': 'arithmetic'},
+    );
+    final n42 = DiagramNode(
+      id: 'bm50_${baseId}_42', type: NodeType.process,
+      position: const Offset(280, 3240), text: 'varianza = varianza / n',
+      metadata: {'processType': 'arithmetic'},
+    );
+    final n43 = DiagramNode(
+      id: 'bm50_${baseId}_43', type: NodeType.process,
+      position: const Offset(280, 3330), text: 'desviacion = varianza / n',
+      metadata: {'processType': 'arithmetic'},
+    );
+    final n44 = DiagramNode(
+      id: 'bm50_${baseId}_44', type: NodeType.data,
+      position: const Offset(280, 3420), text: 'Escribir "Varianza:", varianza',
+      metadata: {'isOutput': true},
+    );
+    final n45 = DiagramNode(
+      id: 'bm50_${baseId}_45', type: NodeType.data,
+      position: const Offset(280, 3510), text: 'Escribir "Desviacion:", desviacion',
+      metadata: {'isOutput': true},
+    );
+    final n46 = DiagramNode(
+      id: 'bm50_${baseId}_46', type: NodeType.decision,
+      position: const Offset(280, 3600), text: 'desviacion < promedio * 0.1',
+    );
+    final n47 = DiagramNode(
+      id: 'bm50_${baseId}_47', type: NodeType.data,
+      position: const Offset(480, 3600), text: 'Escribir "Datos homogéneos"',
+      metadata: {'isOutput': true},
+    );
+    final n48 = DiagramNode(
+      id: 'bm50_${baseId}_48', type: NodeType.data,
+      position: const Offset(80, 3600), text: 'Escribir "Datos heterogéneos"',
+      metadata: {'isOutput': true},
+    );
+    final n49 = DiagramNode(
+      id: 'bm50_${baseId}_49', type: NodeType.data,
+      position: const Offset(280, 3710), text: 'Escribir "--- Análisis completo ---"',
+      metadata: {'isOutput': true},
+    );
+    final n50 = DiagramNode(
+      id: 'bm50_${baseId}_50', type: NodeType.terminal,
+      position: const Offset(280, 3800), text: 'Fin',
+    );
+    nodes.addAll([n36, n37, n38, n39, n40, n41, n42, n43, n44, n45,
+                  n46, n47, n48, n49, n50]);
+
+    connections.addAll([
+      Connection(source: n2, target: n3, label: ''),
+      Connection(source: n3, target: n4, label: ''),
+      Connection(source: n4, target: n5, label: ''),
+      Connection(source: n5, target: n6, label: 'No'),
+      Connection(source: n5, target: n7, label: 'Sí'),
+      Connection(source: n6, target: n50, label: ''),
+      Connection(source: n7, target: n8, label: 'Verdadero'),
+      Connection(source: n8, target: n9, label: ''),
+      Connection(source: n9, target: n7, label: '', isLoopBack: true),
+      Connection(source: n7, target: n10, label: 'Falso'),
+      Connection(source: n10, target: n11, label: ''),
+      Connection(source: n11, target: n12, label: 'Verdadero'),
+      Connection(source: n12, target: n13, label: 'Sí'),
+      Connection(source: n12, target: n14, label: 'No'),
+      Connection(source: n13, target: n14, label: ''),
+      Connection(source: n14, target: n15, label: 'Sí'),
+      Connection(source: n14, target: n11, label: 'No', isLoopBack: true),
+      Connection(source: n15, target: n11, label: '', isLoopBack: true),
+      Connection(source: n11, target: n16, label: 'Falso'),
+      Connection(source: n16, target: n17, label: ''),
+      Connection(source: n17, target: n18, label: ''),
+      Connection(source: n18, target: n19, label: ''),
+      Connection(source: n19, target: n20, label: ''),
+      Connection(source: n20, target: n21, label: ''),
+      Connection(source: n21, target: n22, label: 'Verdadero'),
+      Connection(source: n22, target: n23, label: 'Verdadero'),
+      Connection(source: n23, target: n24, label: 'Sí'),
+      Connection(source: n23, target: n22, label: 'No', isLoopBack: true),
+      Connection(source: n24, target: n25, label: ''),
+      Connection(source: n25, target: n26, label: ''),
+      Connection(source: n26, target: n27, label: ''),
+      Connection(source: n27, target: n22, label: '', isLoopBack: true),
+      Connection(source: n22, target: n21, label: 'Falso', isLoopBack: true),
+      Connection(source: n21, target: n28, label: 'Falso'),
+      Connection(source: n28, target: n29, label: ''),
+      Connection(source: n29, target: n30, label: 'Verdadero'),
+      Connection(source: n30, target: n29, label: '', isLoopBack: true),
+      Connection(source: n29, target: n31, label: 'Falso'),
+      Connection(source: n31, target: n32, label: ''),
+      Connection(source: n32, target: n33, label: ''),
+      Connection(source: n33, target: n34, label: ''),
+      Connection(source: n34, target: n35, label: 'Sí'),
+      Connection(source: n34, target: n36, label: 'No'),
+      Connection(source: n35, target: n37, label: ''),
+      Connection(source: n36, target: n37, label: ''),
+      Connection(source: n37, target: n38, label: ''),
+      Connection(source: n38, target: n39, label: ''),
+      Connection(source: n39, target: n40, label: ''),
+      Connection(source: n40, target: n41, label: 'Verdadero'),
+      Connection(source: n41, target: n40, label: '', isLoopBack: true),
+      Connection(source: n40, target: n42, label: 'Falso'),
+      Connection(source: n42, target: n43, label: ''),
+      Connection(source: n43, target: n44, label: ''),
+      Connection(source: n44, target: n45, label: ''),
+      Connection(source: n45, target: n46, label: ''),
+      Connection(source: n46, target: n47, label: 'Sí'),
+      Connection(source: n46, target: n48, label: 'No'),
+      Connection(source: n47, target: n49, label: ''),
+      Connection(source: n48, target: n49, label: ''),
+      Connection(source: n49, target: n50, label: ''),
+    ]);
+
+    return SavedDiagram(
+      name: 'BM-50. Benchmark 50 Nodos',
+      description:
+          'BENCHMARK: Ordenamiento Burbuja con estadísticas completas (min, max, promedio, varianza, desviación). 50 nodos exactos.',
+      createdAt: now,
+      updatedAt: now,
+      nodes: nodes,
+      connections: connections,
+      isTemplate: true,
+    );
+  }
+
+  /// BM-75: Benchmark 75 nodos - Gestión de Inventario Básico
+  /// Nodos totales: 75
+  static Future<SavedDiagram> createBenchmark75Template() async {
+    final now = DateTime.now();
+    final baseId = now.millisecondsSinceEpoch;
+
+    final nodes = <DiagramNode>[];
+    final connections = <Connection>[];
+
+    // ---- Bloque A: Inicialización (1-5) ----
+    nodes.add(DiagramNode(id: 'bm75_${baseId}_1', type: NodeType.comment,
+        position: const Offset(600, 40),
+        text: '/* BENCHMARK 75 NODOS\nGestión de Inventario Básico\nNodos: 75 */'));
+    nodes.add(DiagramNode(id: 'bm75_${baseId}_2', type: NodeType.terminal,
+        position: const Offset(280, 40), text: 'Inicio'));
+    nodes.add(DiagramNode(id: 'bm75_${baseId}_3', type: NodeType.process,
+        position: const Offset(280, 130),
+        text: 'int productos[20], precios[20], cantidades[20]\nint n, i, j, opcion, encontrado, contador, totalFinal',
+        metadata: {'processType': 'declaration'}));
+    nodes.add(DiagramNode(id: 'bm75_${baseId}_4', type: NodeType.process,
+        position: const Offset(280, 230),
+        text: 'float total, descuento, impuesto, subtotal, tasaOcupacion, promedioPrecio',
+        metadata: {'processType': 'declaration'}));
+    nodes.add(DiagramNode(id: 'bm75_${baseId}_5', type: NodeType.process,
+        position: const Offset(280, 320),
+        text: 'n = 0\ntotal = 0.0\ndescuento = 0.0',
+        metadata: {'processType': 'initialization'}));
+
+    // ---- Bloque B: Menú principal (6-16) ----
+    nodes.add(DiagramNode(id: 'bm75_${baseId}_6', type: NodeType.data,
+        position: const Offset(280, 410),
+        text: 'Escribir "=== INVENTARIO ==="', metadata: {'isOutput': true}));
+    nodes.add(DiagramNode(id: 'bm75_${baseId}_7', type: NodeType.data,
+        position: const Offset(280, 500),
+        text: 'Escribir "1-Agregar 2-Eliminar 3-Buscar 4-Reporte 5-Salir"',
+        metadata: {'isOutput': true}));
+    nodes.add(DiagramNode(id: 'bm75_${baseId}_8', type: NodeType.data,
+        position: const Offset(280, 590),
+        text: 'Leer opcion', metadata: {'isOutput': false}));
+    nodes.add(DiagramNode(id: 'bm75_${baseId}_9', type: NodeType.decision,
+        position: const Offset(280, 690), text: 'opcion == 5'));
+    nodes.add(DiagramNode(id: 'bm75_${baseId}_10', type: NodeType.decision,
+        position: const Offset(280, 800), text: 'opcion == 1'));
+    nodes.add(DiagramNode(id: 'bm75_${baseId}_11', type: NodeType.decision,
+        position: const Offset(280, 910), text: 'opcion == 2'));
+    nodes.add(DiagramNode(id: 'bm75_${baseId}_12', type: NodeType.decision,
+        position: const Offset(280, 1020), text: 'opcion == 3'));
+    nodes.add(DiagramNode(id: 'bm75_${baseId}_13', type: NodeType.decision,
+        position: const Offset(280, 1130), text: 'opcion == 4'));
+    nodes.add(DiagramNode(id: 'bm75_${baseId}_14', type: NodeType.data,
+        position: const Offset(480, 1130),
+        text: 'Escribir "Opción inválida"', metadata: {'isOutput': true}));
+    nodes.add(DiagramNode(id: 'bm75_${baseId}_15', type: NodeType.decision,
+        position: const Offset(280, 1240), text: 'n < 20'));
+    nodes.add(DiagramNode(id: 'bm75_${baseId}_16', type: NodeType.data,
+        position: const Offset(480, 1240),
+        text: 'Escribir "Inventario lleno"', metadata: {'isOutput': true}));
+
+    // ---- Bloque C: Agregar producto (17-26) ----
+    nodes.add(DiagramNode(id: 'bm75_${baseId}_17', type: NodeType.data,
+        position: const Offset(280, 1350),
+        text: 'Leer productos[n]', metadata: {'isOutput': false}));
+    nodes.add(DiagramNode(id: 'bm75_${baseId}_18', type: NodeType.data,
+        position: const Offset(280, 1440),
+        text: 'Leer precios[n]', metadata: {'isOutput': false}));
+    nodes.add(DiagramNode(id: 'bm75_${baseId}_19', type: NodeType.data,
+        position: const Offset(280, 1530),
+        text: 'Leer cantidades[n]', metadata: {'isOutput': false}));
+    nodes.add(DiagramNode(id: 'bm75_${baseId}_20', type: NodeType.decision,
+        position: const Offset(280, 1620), text: 'precios[n] > 0'));
+    nodes.add(DiagramNode(id: 'bm75_${baseId}_21', type: NodeType.data,
+        position: const Offset(480, 1620),
+        text: 'Escribir "Precio inválido"', metadata: {'isOutput': true}));
+    nodes.add(DiagramNode(id: 'bm75_${baseId}_22', type: NodeType.decision,
+        position: const Offset(280, 1730), text: 'cantidades[n] >= 0'));
+    nodes.add(DiagramNode(id: 'bm75_${baseId}_23', type: NodeType.data,
+        position: const Offset(480, 1730),
+        text: 'Escribir "Cantidad inválida"', metadata: {'isOutput': true}));
+    nodes.add(DiagramNode(id: 'bm75_${baseId}_24', type: NodeType.process,
+        position: const Offset(280, 1840),
+        text: 'n++', metadata: {'processType': 'arithmetic'}));
+    nodes.add(DiagramNode(id: 'bm75_${baseId}_25', type: NodeType.data,
+        position: const Offset(280, 1930),
+        text: 'Escribir "Producto agregado"', metadata: {'isOutput': true}));
+    nodes.add(DiagramNode(id: 'bm75_${baseId}_26', type: NodeType.process,
+        position: const Offset(280, 2020),
+        text: 'subtotal = precios[n-1] * cantidades[n-1]',
+        metadata: {'processType': 'arithmetic'}));
+
+    // ---- Bloque D: Eliminar producto (27-34) ----
+    nodes.add(DiagramNode(id: 'bm75_${baseId}_27', type: NodeType.decision,
+        position: const Offset(280, 2110), text: 'opcion == 2 && n > 0'));
+    nodes.add(DiagramNode(id: 'bm75_${baseId}_28', type: NodeType.data,
+        position: const Offset(480, 2110),
+        text: 'Escribir "Sin productos"', metadata: {'isOutput': true}));
+    nodes.add(DiagramNode(id: 'bm75_${baseId}_29', type: NodeType.data,
+        position: const Offset(280, 2220),
+        text: 'Escribir "Índice a eliminar:"', metadata: {'isOutput': true}));
+    nodes.add(DiagramNode(id: 'bm75_${baseId}_30', type: NodeType.data,
+        position: const Offset(280, 2310),
+        text: 'Leer i', metadata: {'isOutput': false}));
+    nodes.add(DiagramNode(id: 'bm75_${baseId}_31', type: NodeType.decision,
+        position: const Offset(280, 2400), text: 'i >= 0 && i < n'));
+    nodes.add(DiagramNode(id: 'bm75_${baseId}_32', type: NodeType.data,
+        position: const Offset(480, 2400),
+        text: 'Escribir "Índice inválido"', metadata: {'isOutput': true}));
+    nodes.add(DiagramNode(id: 'bm75_${baseId}_33', type: NodeType.preparation,
+        position: const Offset(280, 2510), text: 'j = i; j < n-1; j++'));
+    nodes.add(DiagramNode(id: 'bm75_${baseId}_34', type: NodeType.process,
+        position: const Offset(280, 2610),
+        text: 'productos[j] = productos[j+1]\nprecios[j] = precios[j+1]\ncantidades[j] = cantidades[j+1]',
+        metadata: {'processType': 'assignment'}));
+
+    // ---- Bloque E: Búsqueda (35-44) ----
+    nodes.add(DiagramNode(id: 'bm75_${baseId}_35', type: NodeType.process,
+        position: const Offset(280, 2700),
+        text: 'n--', metadata: {'processType': 'arithmetic'}));
+    nodes.add(DiagramNode(id: 'bm75_${baseId}_36', type: NodeType.data,
+        position: const Offset(280, 2790),
+        text: 'Escribir "Clave de búsqueda:"', metadata: {'isOutput': true}));
+    nodes.add(DiagramNode(id: 'bm75_${baseId}_37', type: NodeType.data,
+        position: const Offset(280, 2880),
+        text: 'Leer clave', metadata: {'isOutput': false}));
+    nodes.add(DiagramNode(id: 'bm75_${baseId}_38', type: NodeType.process,
+        position: const Offset(280, 2970),
+        text: 'encontrado = -1', metadata: {'processType': 'initialization'}));
+    nodes.add(DiagramNode(id: 'bm75_${baseId}_39', type: NodeType.preparation,
+        position: const Offset(280, 3060), text: 'i = 0; i < n; i++'));
+    nodes.add(DiagramNode(id: 'bm75_${baseId}_40', type: NodeType.decision,
+        position: const Offset(280, 3160), text: 'productos[i] == clave'));
+    nodes.add(DiagramNode(id: 'bm75_${baseId}_41', type: NodeType.process,
+        position: const Offset(480, 3160),
+        text: 'encontrado = i', metadata: {'processType': 'assignment'}));
+    nodes.add(DiagramNode(id: 'bm75_${baseId}_42', type: NodeType.decision,
+        position: const Offset(280, 3270), text: 'encontrado >= 0'));
+    nodes.add(DiagramNode(id: 'bm75_${baseId}_43', type: NodeType.data,
+        position: const Offset(480, 3270),
+        text: 'Escribir "Encontrado en:", encontrado',
+        metadata: {'isOutput': true}));
+    nodes.add(DiagramNode(id: 'bm75_${baseId}_44', type: NodeType.data,
+        position: const Offset(80, 3270),
+        text: 'Escribir "No encontrado"', metadata: {'isOutput': true}));
+
+    // ---- Bloque F: Reporte (45-60) ----
+    nodes.add(DiagramNode(id: 'bm75_${baseId}_45', type: NodeType.data,
+        position: const Offset(280, 3380),
+        text: 'Escribir "=== REPORTE ==="', metadata: {'isOutput': true}));
+    nodes.add(DiagramNode(id: 'bm75_${baseId}_46', type: NodeType.process,
+        position: const Offset(280, 3470),
+        text: 'total = 0.0\ncontador = 0', metadata: {'processType': 'initialization'}));
+    nodes.add(DiagramNode(id: 'bm75_${baseId}_47', type: NodeType.preparation,
+        position: const Offset(280, 3560), text: 'i = 0; i < n; i++'));
+    nodes.add(DiagramNode(id: 'bm75_${baseId}_48', type: NodeType.process,
+        position: const Offset(280, 3660),
+        text: 'subtotal = precios[i] * cantidades[i]',
+        metadata: {'processType': 'arithmetic'}));
+    nodes.add(DiagramNode(id: 'bm75_${baseId}_49', type: NodeType.process,
+        position: const Offset(280, 3750),
+        text: 'total += subtotal', metadata: {'processType': 'arithmetic'}));
+    nodes.add(DiagramNode(id: 'bm75_${baseId}_50', type: NodeType.data,
+        position: const Offset(280, 3840),
+        text: 'Escribir productos[i], precios[i], cantidades[i], subtotal',
+        metadata: {'isOutput': true}));
+    nodes.add(DiagramNode(id: 'bm75_${baseId}_51', type: NodeType.decision,
+        position: const Offset(280, 3930), text: 'cantidades[i] < 5'));
+    nodes.add(DiagramNode(id: 'bm75_${baseId}_52', type: NodeType.data,
+        position: const Offset(480, 3930),
+        text: 'Escribir "ALERTA: Stock bajo"', metadata: {'isOutput': true}));
+    nodes.add(DiagramNode(id: 'bm75_${baseId}_53', type: NodeType.decision,
+        position: const Offset(280, 4040), text: 'precios[i] > 1000'));
+    nodes.add(DiagramNode(id: 'bm75_${baseId}_54', type: NodeType.data,
+        position: const Offset(480, 4040),
+        text: 'Escribir "Producto premium"', metadata: {'isOutput': true}));
+    nodes.add(DiagramNode(id: 'bm75_${baseId}_55', type: NodeType.process,
+        position: const Offset(280, 4150),
+        text: 'contador++', metadata: {'processType': 'arithmetic'}));
+    nodes.add(DiagramNode(id: 'bm75_${baseId}_56', type: NodeType.process,
+        position: const Offset(280, 4240),
+        text: 'descuento = total * 0.05', metadata: {'processType': 'arithmetic'}));
+    nodes.add(DiagramNode(id: 'bm75_${baseId}_57', type: NodeType.process,
+        position: const Offset(280, 4330),
+        text: 'impuesto = total * 0.16', metadata: {'processType': 'arithmetic'}));
+    nodes.add(DiagramNode(id: 'bm75_${baseId}_58', type: NodeType.process,
+        position: const Offset(280, 4420),
+        text: 'totalFinal = total - descuento + impuesto',
+        metadata: {'processType': 'arithmetic'}));
+    nodes.add(DiagramNode(id: 'bm75_${baseId}_59', type: NodeType.data,
+        position: const Offset(280, 4510),
+        text: 'Escribir "Total:", total, "Desc:", descuento, "IVA:", impuesto',
+        metadata: {'isOutput': true}));
+    nodes.add(DiagramNode(id: 'bm75_${baseId}_60', type: NodeType.data,
+        position: const Offset(280, 4600),
+        text: 'Escribir "Total Final:", totalFinal', metadata: {'isOutput': true}));
+
+    // ---- Bloque G: Análisis de categorías (61-74) ----
+    nodes.add(DiagramNode(id: 'bm75_${baseId}_61', type: NodeType.decision,
+        position: const Offset(280, 4690), text: 'totalFinal > 10000'));
+    nodes.add(DiagramNode(id: 'bm75_${baseId}_62', type: NodeType.data,
+        position: const Offset(480, 4690),
+        text: 'Escribir "Compra mayor"', metadata: {'isOutput': true}));
+    nodes.add(DiagramNode(id: 'bm75_${baseId}_63', type: NodeType.decision,
+        position: const Offset(280, 4800), text: 'totalFinal > 5000'));
+    nodes.add(DiagramNode(id: 'bm75_${baseId}_64', type: NodeType.data,
+        position: const Offset(480, 4800),
+        text: 'Escribir "Compra mediana"', metadata: {'isOutput': true}));
+    nodes.add(DiagramNode(id: 'bm75_${baseId}_65', type: NodeType.data,
+        position: const Offset(80, 4800),
+        text: 'Escribir "Compra menor"', metadata: {'isOutput': true}));
+    nodes.add(DiagramNode(id: 'bm75_${baseId}_66', type: NodeType.process,
+        position: const Offset(280, 4910),
+        text: 'promedioPrecio = total / n', metadata: {'processType': 'arithmetic'}));
+    nodes.add(DiagramNode(id: 'bm75_${baseId}_67', type: NodeType.data,
+        position: const Offset(280, 5000),
+        text: 'Escribir "Promedio precio:", promedioPrecio',
+        metadata: {'isOutput': true}));
+    nodes.add(DiagramNode(id: 'bm75_${baseId}_68', type: NodeType.decision,
+        position: const Offset(280, 5090), text: 'n > 0'));
+    nodes.add(DiagramNode(id: 'bm75_${baseId}_69', type: NodeType.process,
+        position: const Offset(280, 5190),
+        text: 'tasaOcupacion = n * 100 / 20',
+        metadata: {'processType': 'arithmetic'}));
+    nodes.add(DiagramNode(id: 'bm75_${baseId}_70', type: NodeType.data,
+        position: const Offset(280, 5280),
+        text: 'Escribir "Ocupación:", tasaOcupacion, "%"',
+        metadata: {'isOutput': true}));
+    nodes.add(DiagramNode(id: 'bm75_${baseId}_71', type: NodeType.decision,
+        position: const Offset(280, 5370), text: 'tasaOcupacion > 80'));
+    nodes.add(DiagramNode(id: 'bm75_${baseId}_72', type: NodeType.data,
+        position: const Offset(480, 5370),
+        text: 'Escribir "Inventario casi lleno"', metadata: {'isOutput': true}));
+    nodes.add(DiagramNode(id: 'bm75_${baseId}_73', type: NodeType.data,
+        position: const Offset(280, 5480),
+        text: 'Escribir "=== FIN REPORTE ==="', metadata: {'isOutput': true}));
+    nodes.add(DiagramNode(id: 'bm75_${baseId}_74', type: NodeType.data,
+        position: const Offset(480, 5090),
+        text: 'Escribir "Inventario vacío"', metadata: {'isOutput': true}));
+
+    // ---- Nodo 75: Fin ----
+    nodes.add(DiagramNode(id: 'bm75_${baseId}_75', type: NodeType.terminal,
+        position: const Offset(280, 5580), text: 'Fin'));
+
+    final nodeMap = {for (var nd in nodes) nd.id: nd};
+    String id(int i) => 'bm75_${baseId}_$i';
+    DiagramNode nd(int i) => nodeMap[id(i)]!;
+
+    connections.addAll([
+      Connection(source: nd(2), target: nd(3), label: ''),
+      Connection(source: nd(3), target: nd(4), label: ''),
+      Connection(source: nd(4), target: nd(5), label: ''),
+      Connection(source: nd(5), target: nd(6), label: ''),
+      Connection(source: nd(6), target: nd(7), label: ''),
+      Connection(source: nd(7), target: nd(8), label: ''),
+      Connection(source: nd(8), target: nd(9), label: ''),
+      Connection(source: nd(9), target: nd(75), label: 'Sí'),
+      Connection(source: nd(9), target: nd(10), label: 'No'),
+      Connection(source: nd(10), target: nd(15), label: 'Sí'),
+      Connection(source: nd(10), target: nd(11), label: 'No'),
+      Connection(source: nd(15), target: nd(16), label: 'No'),
+      Connection(source: nd(15), target: nd(17), label: 'Sí'),
+      Connection(source: nd(16), target: nd(6), label: '', isLoopBack: true),
+      Connection(source: nd(17), target: nd(18), label: ''),
+      Connection(source: nd(18), target: nd(19), label: ''),
+      Connection(source: nd(19), target: nd(20), label: ''),
+      Connection(source: nd(20), target: nd(21), label: 'No'),
+      Connection(source: nd(20), target: nd(22), label: 'Sí'),
+      Connection(source: nd(21), target: nd(6), label: '', isLoopBack: true),
+      Connection(source: nd(22), target: nd(23), label: 'No'),
+      Connection(source: nd(22), target: nd(24), label: 'Sí'),
+      Connection(source: nd(23), target: nd(6), label: '', isLoopBack: true),
+      Connection(source: nd(24), target: nd(25), label: ''),
+      Connection(source: nd(25), target: nd(26), label: ''),
+      Connection(source: nd(26), target: nd(6), label: '', isLoopBack: true),
+      Connection(source: nd(11), target: nd(27), label: 'Sí'),
+      Connection(source: nd(11), target: nd(12), label: 'No'),
+      Connection(source: nd(27), target: nd(28), label: 'No'),
+      Connection(source: nd(27), target: nd(29), label: 'Sí'),
+      Connection(source: nd(28), target: nd(6), label: '', isLoopBack: true),
+      Connection(source: nd(29), target: nd(30), label: ''),
+      Connection(source: nd(30), target: nd(31), label: ''),
+      Connection(source: nd(31), target: nd(32), label: 'No'),
+      Connection(source: nd(31), target: nd(33), label: 'Sí'),
+      Connection(source: nd(32), target: nd(6), label: '', isLoopBack: true),
+      Connection(source: nd(33), target: nd(34), label: 'Verdadero'),
+      Connection(source: nd(34), target: nd(33), label: '', isLoopBack: true),
+      Connection(source: nd(33), target: nd(35), label: 'Falso'),
+      Connection(source: nd(35), target: nd(6), label: '', isLoopBack: true),
+      Connection(source: nd(12), target: nd(36), label: 'Sí'),
+      Connection(source: nd(12), target: nd(13), label: 'No'),
+      Connection(source: nd(36), target: nd(37), label: ''),
+      Connection(source: nd(37), target: nd(38), label: ''),
+      Connection(source: nd(38), target: nd(39), label: ''),
+      Connection(source: nd(39), target: nd(40), label: 'Verdadero'),
+      Connection(source: nd(40), target: nd(41), label: 'Sí'),
+      Connection(source: nd(40), target: nd(39), label: 'No', isLoopBack: true),
+      Connection(source: nd(41), target: nd(39), label: '', isLoopBack: true),
+      Connection(source: nd(39), target: nd(42), label: 'Falso'),
+      Connection(source: nd(42), target: nd(43), label: 'Sí'),
+      Connection(source: nd(42), target: nd(44), label: 'No'),
+      Connection(source: nd(43), target: nd(6), label: '', isLoopBack: true),
+      Connection(source: nd(44), target: nd(6), label: '', isLoopBack: true),
+      Connection(source: nd(13), target: nd(45), label: 'Sí'),
+      Connection(source: nd(13), target: nd(14), label: 'No'),
+      Connection(source: nd(14), target: nd(6), label: '', isLoopBack: true),
+      Connection(source: nd(45), target: nd(46), label: ''),
+      Connection(source: nd(46), target: nd(47), label: ''),
+      Connection(source: nd(47), target: nd(48), label: 'Verdadero'),
+      Connection(source: nd(48), target: nd(49), label: ''),
+      Connection(source: nd(49), target: nd(50), label: ''),
+      Connection(source: nd(50), target: nd(51), label: ''),
+      Connection(source: nd(51), target: nd(52), label: 'Sí'),
+      Connection(source: nd(51), target: nd(53), label: 'No'),
+      Connection(source: nd(52), target: nd(53), label: ''),
+      Connection(source: nd(53), target: nd(54), label: 'Sí'),
+      Connection(source: nd(53), target: nd(55), label: 'No'),
+      Connection(source: nd(54), target: nd(55), label: ''),
+      Connection(source: nd(55), target: nd(47), label: '', isLoopBack: true),
+      Connection(source: nd(47), target: nd(56), label: 'Falso'),
+      Connection(source: nd(56), target: nd(57), label: ''),
+      Connection(source: nd(57), target: nd(58), label: ''),
+      Connection(source: nd(58), target: nd(59), label: ''),
+      Connection(source: nd(59), target: nd(60), label: ''),
+      Connection(source: nd(60), target: nd(61), label: ''),
+      Connection(source: nd(61), target: nd(62), label: 'Sí'),
+      Connection(source: nd(61), target: nd(63), label: 'No'),
+      Connection(source: nd(62), target: nd(66), label: ''),
+      Connection(source: nd(63), target: nd(64), label: 'Sí'),
+      Connection(source: nd(63), target: nd(65), label: 'No'),
+      Connection(source: nd(64), target: nd(66), label: ''),
+      Connection(source: nd(65), target: nd(66), label: ''),
+      Connection(source: nd(66), target: nd(67), label: ''),
+      Connection(source: nd(67), target: nd(68), label: ''),
+      Connection(source: nd(68), target: nd(74), label: 'No'),
+      Connection(source: nd(68), target: nd(69), label: 'Sí'),
+      Connection(source: nd(74), target: nd(73), label: ''),
+      Connection(source: nd(69), target: nd(70), label: ''),
+      Connection(source: nd(70), target: nd(71), label: ''),
+      Connection(source: nd(71), target: nd(72), label: 'Sí'),
+      Connection(source: nd(71), target: nd(73), label: 'No'),
+      Connection(source: nd(72), target: nd(73), label: ''),
+      Connection(source: nd(73), target: nd(6), label: '', isLoopBack: true),
+      Connection(source: nd(75), target: nd(75), label: ''),
+    ]);
+
+    return SavedDiagram(
+      name: 'BM-75. Benchmark 75 Nodos',
+      description:
+          'BENCHMARK: Sistema de Gestión de Inventario (agregar, eliminar, buscar, reporte). 75 nodos exactos.',
+      createdAt: now,
+      updatedAt: now,
+      nodes: nodes,
+      connections: connections,
+      isTemplate: true,
+    );
+  }
+
+  /// BM-100: Benchmark 100 nodos - Sistema de Calificaciones Universitario
+  /// Nodos totales: 100
+  static Future<SavedDiagram> createBenchmark100Template() async {
+    final now = DateTime.now();
+    final baseId = now.millisecondsSinceEpoch;
+
+    final nodes = <DiagramNode>[];
+    final connections = <Connection>[];
+
+    void addNode(int i, NodeType type, Offset pos, String text,
+        [Map<String, dynamic>? meta]) {
+      nodes.add(DiagramNode(
+        id: 'bm100_${baseId}_$i',
+        type: type,
+        position: pos,
+        text: text,
+        metadata: meta,
+      ));
+    }
+
+    // ---- Bloque A: Inicialización (1-6) ----
+    addNode(1, NodeType.comment, const Offset(620, 40),
+        '/* BENCHMARK 100 NODOS\nSistema de Calificaciones Universitario\nNodos: 100 */');
+    addNode(2, NodeType.terminal, const Offset(300, 40), 'Inicio');
+    addNode(3, NodeType.process, const Offset(300, 130),
+        'int numAlumnos, numMaterias, aprobados, reprobados, i, j, k, idxMax, idxMin, modaIdx',
+        {'processType': 'declaration'});
+    addNode(4, NodeType.process, const Offset(300, 230),
+        'float promAlumno, promMateria, promedioGrupo, tasaAprobacion, maxProm, minProm, rango, varianza, desviacion, indiceEficiencia',
+        {'processType': 'declaration'});
+    addNode(5, NodeType.data, const Offset(300, 330),
+        'Leer numAlumnos, numMaterias', {'isOutput': false});
+    addNode(6, NodeType.decision, const Offset(300, 430),
+        'numAlumnos >= 1 && numAlumnos <= 30 && numMaterias >= 1 && numMaterias <= 10');
+
+    // ---- Bloque B: Validación de entrada (7-14) ----
+    addNode(7, NodeType.data, const Offset(560, 430),
+        'Escribir "Parámetros fuera de rango"', {'isOutput': true});
+    addNode(8, NodeType.process, const Offset(300, 540),
+        'aprobados = 0\nreprobados = 0\npromedioGrupo = 0', {'processType': 'initialization'});
+    addNode(9, NodeType.preparation, const Offset(300, 630),
+        'i = 0; i < numAlumnos; i++');
+    addNode(10, NodeType.process, const Offset(300, 730),
+        'promAlumno = 0', {'processType': 'initialization'});
+    addNode(11, NodeType.preparation, const Offset(300, 820),
+        'j = 0; j < numMaterias; j++');
+    addNode(12, NodeType.data, const Offset(300, 920),
+        'Leer promAlumno', {'isOutput': false});
+    addNode(13, NodeType.decision, const Offset(300, 1020),
+        'promAlumno >= 0 && promAlumno <= 10');
+    addNode(14, NodeType.data, const Offset(500, 1020),
+        'Escribir "Calificación inválida"', {'isOutput': true});
+
+    // ---- Bloque C: Cálculo promedio por alumno (15-26) ----
+    addNode(15, NodeType.process, const Offset(300, 1130),
+        'promAlumno = promAlumno + promMateria', {'processType': 'arithmetic'});
+    addNode(16, NodeType.process, const Offset(300, 1220),
+        'promAlumno = promAlumno / numMaterias', {'processType': 'arithmetic'});
+    addNode(17, NodeType.decision, const Offset(300, 1320),
+        'promAlumno >= 6');
+    addNode(18, NodeType.process, const Offset(500, 1320),
+        'aprobados++', {'processType': 'assignment'});
+    addNode(19, NodeType.process, const Offset(100, 1320),
+        'reprobados++', {'processType': 'assignment'});
+    addNode(20, NodeType.decision, const Offset(300, 1450),
+        'promAlumno >= 9');
+    addNode(21, NodeType.data, const Offset(500, 1450),
+        'Escribir "Alumno", i, "Distinción"', {'isOutput': true});
+    addNode(22, NodeType.decision, const Offset(300, 1570),
+        'promAlumno >= 8');
+    addNode(23, NodeType.data, const Offset(500, 1570),
+        'Escribir "Alumno", i, "Notable"', {'isOutput': true});
+    addNode(24, NodeType.decision, const Offset(300, 1690),
+        'promAlumno >= 7');
+    addNode(25, NodeType.data, const Offset(500, 1690),
+        'Escribir "Alumno", i, "Bien"', {'isOutput': true});
+    addNode(26, NodeType.data, const Offset(100, 1690),
+        'Escribir "Alumno", i, "Suficiente o Reprobado"', {'isOutput': true});
+
+    // ---- Bloque D: Promedio por materia (27-40) ----
+    addNode(27, NodeType.process, const Offset(300, 1820),
+        'promedioGrupo = promedioGrupo + promAlumno', {'processType': 'arithmetic'});
+    addNode(28, NodeType.preparation, const Offset(300, 1910),
+        'j = 0; j < numMaterias; j++');
+    addNode(29, NodeType.process, const Offset(300, 2010),
+        'promMateria = 0', {'processType': 'initialization'});
+    addNode(30, NodeType.preparation, const Offset(300, 2100),
+        'i = 0; i < numAlumnos; i++');
+    addNode(31, NodeType.process, const Offset(300, 2200),
+        'promMateria = promMateria + promAlumno', {'processType': 'arithmetic'});
+    addNode(32, NodeType.process, const Offset(300, 2300),
+        'promMateria = promMateria / numAlumnos', {'processType': 'arithmetic'});
+    addNode(33, NodeType.decision, const Offset(300, 2400),
+        'promMateria < 6');
+    addNode(34, NodeType.data, const Offset(500, 2400),
+        'Escribir "Materia", j, "REPROBADA"', {'isOutput': true});
+    addNode(35, NodeType.process, const Offset(300, 2510),
+        'promedioGrupo = promedioGrupo / numAlumnos', {'processType': 'arithmetic'});
+    addNode(36, NodeType.data, const Offset(300, 2610),
+        'Escribir "Promedio Grupo:", promedioGrupo', {'isOutput': true});
+    addNode(37, NodeType.data, const Offset(300, 2700),
+        'Escribir "Aprobados:", aprobados, "Reprobados:", reprobados',
+        {'isOutput': true});
+    addNode(38, NodeType.process, const Offset(300, 2790),
+        'tasaAprobacion = aprobados * 100 / numAlumnos',
+        {'processType': 'arithmetic'});
+    addNode(39, NodeType.data, const Offset(300, 2880),
+        'Escribir "Tasa aprobación:", tasaAprobacion, "%"', {'isOutput': true});
+    addNode(40, NodeType.decision, const Offset(300, 2970),
+        'tasaAprobacion >= 70.0');
+
+    // ---- Bloque E: Análisis avanzado (41-60) ----
+    addNode(41, NodeType.data, const Offset(500, 2970),
+        'Escribir "Grupo aprobado"', {'isOutput': true});
+    addNode(42, NodeType.data, const Offset(100, 2970),
+        'Escribir "Grupo con dificultades"', {'isOutput': true});
+    addNode(43, NodeType.process, const Offset(300, 3090),
+        'maxProm = promAlumno\nminProm = promAlumno', {'processType': 'initialization'});
+    addNode(44, NodeType.process, const Offset(300, 3180),
+        'idxMax = 0\nidxMin = 0', {'processType': 'initialization'});
+    addNode(45, NodeType.preparation, const Offset(300, 3270),
+        'i = 1; i < numAlumnos; i++');
+    addNode(46, NodeType.decision, const Offset(300, 3370),
+        'promAlumno > maxProm');
+    addNode(47, NodeType.process, const Offset(500, 3370),
+        'maxProm = promAlumno\nidxMax = i', {'processType': 'assignment'});
+    addNode(48, NodeType.decision, const Offset(300, 3490),
+        'promAlumno < minProm');
+    addNode(49, NodeType.process, const Offset(500, 3490),
+        'minProm = promAlumno\nidxMin = i', {'processType': 'assignment'});
+    addNode(50, NodeType.data, const Offset(300, 3610),
+        'Escribir "Mejor alumno:", idxMax, maxProm', {'isOutput': true});
+    addNode(51, NodeType.data, const Offset(300, 3700),
+        'Escribir "Peor alumno:", idxMin, minProm', {'isOutput': true});
+    addNode(52, NodeType.process, const Offset(300, 3790),
+        'rango = maxProm - minProm', {'processType': 'arithmetic'});
+    addNode(53, NodeType.data, const Offset(300, 3880),
+        'Escribir "Rango promedios:", rango', {'isOutput': true});
+    addNode(54, NodeType.process, const Offset(300, 3970),
+        'varianza = 0.0', {'processType': 'initialization'});
+    addNode(55, NodeType.preparation, const Offset(300, 4060),
+        'i = 0; i < numAlumnos; i++');
+    addNode(56, NodeType.process, const Offset(300, 4160),
+        'varianza = varianza + (promAlumno - promedioGrupo) * (promAlumno - promedioGrupo)',
+        {'processType': 'arithmetic'});
+    addNode(57, NodeType.process, const Offset(300, 4260),
+        'varianza = varianza / numAlumnos', {'processType': 'arithmetic'});
+    addNode(58, NodeType.process, const Offset(300, 4350),
+        'desviacion = varianza / numAlumnos', {'processType': 'arithmetic'});
+    addNode(59, NodeType.data, const Offset(300, 4440),
+        'Escribir "Varianza:", varianza, "Desv:", desviacion', {'isOutput': true});
+    addNode(60, NodeType.decision, const Offset(300, 4540),
+        'desviacion < 1.5');
+
+    // ---- Bloque F: Histograma de calificaciones (61-80) ----
+    addNode(61, NodeType.data, const Offset(500, 4540),
+        'Escribir "Grupo homogéneo"', {'isOutput': true});
+    addNode(62, NodeType.data, const Offset(100, 4540),
+        'Escribir "Grupo heterogéneo"', {'isOutput': true});
+    addNode(63, NodeType.process, const Offset(300, 4660),
+        'int hist0, hist1, hist2, hist3, hist4', {'processType': 'declaration'});
+    addNode(64, NodeType.preparation, const Offset(300, 4750),
+        'i = 0; i < numAlumnos; i++');
+    addNode(65, NodeType.decision, const Offset(300, 4850),
+        'promAlumno >= 9');
+    addNode(66, NodeType.process, const Offset(500, 4850),
+        'hist0++', {'processType': 'arithmetic'});
+    addNode(67, NodeType.decision, const Offset(300, 4970),
+        'promAlumno >= 8');
+    addNode(68, NodeType.process, const Offset(500, 4970),
+        'hist1++', {'processType': 'arithmetic'});
+    addNode(69, NodeType.decision, const Offset(300, 5090),
+        'promAlumno >= 7');
+    addNode(70, NodeType.process, const Offset(500, 5090),
+        'hist2++', {'processType': 'arithmetic'});
+    addNode(71, NodeType.decision, const Offset(300, 5210),
+        'promAlumno >= 6');
+    addNode(72, NodeType.process, const Offset(500, 5210),
+        'hist3++', {'processType': 'arithmetic'});
+    addNode(73, NodeType.process, const Offset(100, 5210),
+        'hist4++', {'processType': 'arithmetic'});
+    addNode(74, NodeType.data, const Offset(300, 5330),
+        'Escribir "=== HISTOGRAMA ==="', {'isOutput': true});
+    addNode(75, NodeType.data, const Offset(300, 5420),
+        'Escribir "9-10:", hist0', {'isOutput': true});
+    addNode(76, NodeType.data, const Offset(300, 5510),
+        'Escribir "8-9:", hist1', {'isOutput': true});
+    addNode(77, NodeType.data, const Offset(300, 5600),
+        'Escribir "7-8:", hist2', {'isOutput': true});
+    addNode(78, NodeType.data, const Offset(300, 5690),
+        'Escribir "6-7:", hist3', {'isOutput': true});
+    addNode(79, NodeType.data, const Offset(300, 5780),
+        'Escribir "0-6:", hist4', {'isOutput': true});
+    addNode(80, NodeType.process, const Offset(300, 5870),
+        'modaIdx = 0', {'processType': 'initialization'});
+
+    // ---- Bloque G: Moda del histograma y reporte final (81-100) ----
+    addNode(81, NodeType.preparation, const Offset(300, 5960),
+        'k = 1; k < 5; k++');
+    addNode(82, NodeType.decision, const Offset(300, 6060),
+        'k > modaIdx');
+    addNode(83, NodeType.process, const Offset(500, 6060),
+        'modaIdx = k', {'processType': 'assignment'});
+    addNode(84, NodeType.data, const Offset(300, 6180),
+        'Escribir "Moda en rango:", modaIdx', {'isOutput': true});
+    addNode(85, NodeType.decision, const Offset(300, 6280),
+        'aprobados > reprobados');
+    addNode(86, NodeType.data, const Offset(500, 6280),
+        'Escribir "Balance: positivo"', {'isOutput': true});
+    addNode(87, NodeType.data, const Offset(100, 6280),
+        'Escribir "Balance: negativo o neutro"', {'isOutput': true});
+    addNode(88, NodeType.process, const Offset(300, 6400),
+        'indiceEficiencia = tasaAprobacion * (promedioGrupo / 10.0)',
+        {'processType': 'arithmetic'});
+    addNode(89, NodeType.data, const Offset(300, 6490),
+        'Escribir "Índice eficiencia:", indiceEficiencia', {'isOutput': true});
+    addNode(90, NodeType.decision, const Offset(300, 6590),
+        'indiceEficiencia >= 60.0');
+    addNode(91, NodeType.data, const Offset(500, 6590),
+        'Escribir "Desempeño: SATISFACTORIO"', {'isOutput': true});
+    addNode(92, NodeType.data, const Offset(100, 6590),
+        'Escribir "Desempeño: INSATISFACTORIO"', {'isOutput': true});
+    addNode(93, NodeType.data, const Offset(300, 6710),
+        'Escribir "=== RESUMEN FINAL ==="', {'isOutput': true});
+    addNode(94, NodeType.data, const Offset(300, 6800),
+        'Escribir "Total alumnos:", numAlumnos', {'isOutput': true});
+    addNode(95, NodeType.data, const Offset(300, 6890),
+        'Escribir "Total materias:", numMaterias', {'isOutput': true});
+    addNode(96, NodeType.data, const Offset(300, 6980),
+        'Escribir "Promedio grupo:", promedioGrupo', {'isOutput': true});
+    addNode(97, NodeType.data, const Offset(300, 7070),
+        'Escribir "Máximo:", maxProm, "Mínimo:", minProm', {'isOutput': true});
+    addNode(98, NodeType.data, const Offset(300, 7160),
+        'Escribir "Desviación estándar:", desviacion', {'isOutput': true});
+    addNode(99, NodeType.data, const Offset(300, 7250),
+        'Escribir "=== FIN DEL SISTEMA ==="', {'isOutput': true});
+    addNode(100, NodeType.terminal, const Offset(300, 7350), 'Fin');
+
+    final nodeMap = {for (var nd in nodes) nd.id: nd};
+    String id(int i) => 'bm100_${baseId}_$i';
+    DiagramNode nd(int i) => nodeMap[id(i)]!;
+
+    connections.addAll([
+      // Bloque A
+      Connection(source: nd(2), target: nd(3), label: ''),
+      Connection(source: nd(3), target: nd(4), label: ''),
+      Connection(source: nd(4), target: nd(5), label: ''),
+      Connection(source: nd(5), target: nd(6), label: ''),
+      Connection(source: nd(6), target: nd(7), label: 'No'),
+      Connection(source: nd(6), target: nd(8), label: 'Sí'),
+      Connection(source: nd(7), target: nd(100), label: ''),
+      // Bloque B - lectura calificaciones
+      Connection(source: nd(8), target: nd(9), label: ''),
+      Connection(source: nd(9), target: nd(10), label: 'Verdadero'),
+      Connection(source: nd(10), target: nd(11), label: ''),
+      Connection(source: nd(11), target: nd(12), label: 'Verdadero'),
+      Connection(source: nd(12), target: nd(13), label: ''),
+      Connection(source: nd(13), target: nd(14), label: 'No'),
+      Connection(source: nd(13), target: nd(15), label: 'Sí'),
+      Connection(source: nd(14), target: nd(11), label: '', isLoopBack: true),
+      Connection(source: nd(15), target: nd(11), label: '', isLoopBack: true),
+      Connection(source: nd(11), target: nd(16), label: 'Falso'),
+      // Bloque C - promedios alumno
+      Connection(source: nd(16), target: nd(17), label: ''),
+      Connection(source: nd(17), target: nd(18), label: 'Sí'),
+      Connection(source: nd(17), target: nd(19), label: 'No'),
+      Connection(source: nd(18), target: nd(20), label: ''),
+      Connection(source: nd(19), target: nd(20), label: ''),
+      Connection(source: nd(20), target: nd(21), label: 'Sí'),
+      Connection(source: nd(20), target: nd(22), label: 'No'),
+      Connection(source: nd(21), target: nd(27), label: ''),
+      Connection(source: nd(22), target: nd(23), label: 'Sí'),
+      Connection(source: nd(22), target: nd(24), label: 'No'),
+      Connection(source: nd(23), target: nd(27), label: ''),
+      Connection(source: nd(24), target: nd(25), label: 'Sí'),
+      Connection(source: nd(24), target: nd(26), label: 'No'),
+      Connection(source: nd(25), target: nd(27), label: ''),
+      Connection(source: nd(26), target: nd(27), label: ''),
+      Connection(source: nd(27), target: nd(9), label: '', isLoopBack: true),
+      Connection(source: nd(9), target: nd(28), label: 'Falso'),
+      // Bloque D - promedios materia
+      Connection(source: nd(28), target: nd(29), label: 'Verdadero'),
+      Connection(source: nd(29), target: nd(30), label: ''),
+      Connection(source: nd(30), target: nd(31), label: 'Verdadero'),
+      Connection(source: nd(31), target: nd(30), label: '', isLoopBack: true),
+      Connection(source: nd(30), target: nd(32), label: 'Falso'),
+      Connection(source: nd(32), target: nd(33), label: ''),
+      Connection(source: nd(33), target: nd(34), label: 'Sí'),
+      Connection(source: nd(33), target: nd(28), label: 'No', isLoopBack: true),
+      Connection(source: nd(34), target: nd(28), label: '', isLoopBack: true),
+      Connection(source: nd(28), target: nd(35), label: 'Falso'),
+      Connection(source: nd(35), target: nd(36), label: ''),
+      Connection(source: nd(36), target: nd(37), label: ''),
+      Connection(source: nd(37), target: nd(38), label: ''),
+      Connection(source: nd(38), target: nd(39), label: ''),
+      Connection(source: nd(39), target: nd(40), label: ''),
+      Connection(source: nd(40), target: nd(41), label: 'Sí'),
+      Connection(source: nd(40), target: nd(42), label: 'No'),
+      Connection(source: nd(41), target: nd(43), label: ''),
+      Connection(source: nd(42), target: nd(43), label: ''),
+      // Bloque E - estadísticas
+      Connection(source: nd(43), target: nd(44), label: ''),
+      Connection(source: nd(44), target: nd(45), label: ''),
+      Connection(source: nd(45), target: nd(46), label: 'Verdadero'),
+      Connection(source: nd(46), target: nd(47), label: 'Sí'),
+      Connection(source: nd(46), target: nd(48), label: 'No'),
+      Connection(source: nd(47), target: nd(48), label: ''),
+      Connection(source: nd(48), target: nd(49), label: 'Sí'),
+      Connection(source: nd(48), target: nd(45), label: 'No', isLoopBack: true),
+      Connection(source: nd(49), target: nd(45), label: '', isLoopBack: true),
+      Connection(source: nd(45), target: nd(50), label: 'Falso'),
+      Connection(source: nd(50), target: nd(51), label: ''),
+      Connection(source: nd(51), target: nd(52), label: ''),
+      Connection(source: nd(52), target: nd(53), label: ''),
+      Connection(source: nd(53), target: nd(54), label: ''),
+      Connection(source: nd(54), target: nd(55), label: ''),
+      Connection(source: nd(55), target: nd(56), label: 'Verdadero'),
+      Connection(source: nd(56), target: nd(55), label: '', isLoopBack: true),
+      Connection(source: nd(55), target: nd(57), label: 'Falso'),
+      Connection(source: nd(57), target: nd(58), label: ''),
+      Connection(source: nd(58), target: nd(59), label: ''),
+      Connection(source: nd(59), target: nd(60), label: ''),
+      Connection(source: nd(60), target: nd(61), label: 'Sí'),
+      Connection(source: nd(60), target: nd(62), label: 'No'),
+      Connection(source: nd(61), target: nd(63), label: ''),
+      Connection(source: nd(62), target: nd(63), label: ''),
+      // Bloque F - histograma
+      Connection(source: nd(63), target: nd(64), label: ''),
+      Connection(source: nd(64), target: nd(65), label: 'Verdadero'),
+      Connection(source: nd(65), target: nd(66), label: 'Sí'),
+      Connection(source: nd(65), target: nd(67), label: 'No'),
+      Connection(source: nd(66), target: nd(64), label: '', isLoopBack: true),
+      Connection(source: nd(67), target: nd(68), label: 'Sí'),
+      Connection(source: nd(67), target: nd(69), label: 'No'),
+      Connection(source: nd(68), target: nd(64), label: '', isLoopBack: true),
+      Connection(source: nd(69), target: nd(70), label: 'Sí'),
+      Connection(source: nd(69), target: nd(71), label: 'No'),
+      Connection(source: nd(70), target: nd(64), label: '', isLoopBack: true),
+      Connection(source: nd(71), target: nd(72), label: 'Sí'),
+      Connection(source: nd(71), target: nd(73), label: 'No'),
+      Connection(source: nd(72), target: nd(64), label: '', isLoopBack: true),
+      Connection(source: nd(73), target: nd(64), label: '', isLoopBack: true),
+      Connection(source: nd(64), target: nd(74), label: 'Falso'),
+      Connection(source: nd(74), target: nd(75), label: ''),
+      Connection(source: nd(75), target: nd(76), label: ''),
+      Connection(source: nd(76), target: nd(77), label: ''),
+      Connection(source: nd(77), target: nd(78), label: ''),
+      Connection(source: nd(78), target: nd(79), label: ''),
+      Connection(source: nd(79), target: nd(80), label: ''),
+      // Bloque G - moda y reporte
+      Connection(source: nd(80), target: nd(81), label: ''),
+      Connection(source: nd(81), target: nd(82), label: 'Verdadero'),
+      Connection(source: nd(82), target: nd(83), label: 'Sí'),
+      Connection(source: nd(82), target: nd(81), label: 'No', isLoopBack: true),
+      Connection(source: nd(83), target: nd(81), label: '', isLoopBack: true),
+      Connection(source: nd(81), target: nd(84), label: 'Falso'),
+      Connection(source: nd(84), target: nd(85), label: ''),
+      Connection(source: nd(85), target: nd(86), label: 'Sí'),
+      Connection(source: nd(85), target: nd(87), label: 'No'),
+      Connection(source: nd(86), target: nd(88), label: ''),
+      Connection(source: nd(87), target: nd(88), label: ''),
+      Connection(source: nd(88), target: nd(89), label: ''),
+      Connection(source: nd(89), target: nd(90), label: ''),
+      Connection(source: nd(90), target: nd(91), label: 'Sí'),
+      Connection(source: nd(90), target: nd(92), label: 'No'),
+      Connection(source: nd(91), target: nd(93), label: ''),
+      Connection(source: nd(92), target: nd(93), label: ''),
+      Connection(source: nd(93), target: nd(94), label: ''),
+      Connection(source: nd(94), target: nd(95), label: ''),
+      Connection(source: nd(95), target: nd(96), label: ''),
+      Connection(source: nd(96), target: nd(97), label: ''),
+      Connection(source: nd(97), target: nd(98), label: ''),
+      Connection(source: nd(98), target: nd(99), label: ''),
+      Connection(source: nd(99), target: nd(100), label: ''),
+    ]);
+
+    return SavedDiagram(
+      name: 'BM-100. Benchmark 100 Nodos',
+      description:
+          'BENCHMARK: Sistema completo de Calificaciones Universitarias con estadísticas, histograma y reporte. 100 nodos exactos.',
+      createdAt: now,
+      updatedAt: now,
+      nodes: nodes,
+      connections: connections,
+      isTemplate: true,
+    );
+  }
+
   /// Obtiene una plantilla por su nombre
   static Future<SavedDiagram?> getTemplateByName(String name) async {
     switch (name) {
@@ -3001,6 +4440,17 @@ class TemplateDefinitions {
         return createSwapTemplate();
       case '20. Apuntadores y Arreglos':
         return createApuntadoresArreglosTemplate();
+      // BENCHMARK
+      case 'BM-10. Benchmark 10 Nodos':
+        return createBenchmark10Template();
+      case 'BM-25. Benchmark 25 Nodos':
+        return createBenchmark25Template();
+      case 'BM-50. Benchmark 50 Nodos':
+        return createBenchmark50Template();
+      case 'BM-75. Benchmark 75 Nodos':
+        return createBenchmark75Template();
+      case 'BM-100. Benchmark 100 Nodos':
+        return createBenchmark100Template();
       default:
         return null;
     }

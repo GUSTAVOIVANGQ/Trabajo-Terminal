@@ -77,8 +77,8 @@ class AutoTutorialScripts {
 
   static List<AutoTutorialDefinition> all() => [
         _holaMundo(),
-        _parOImpar(),
-        _burbuja(),
+        // _parOImpar(),
+        // _burbuja(),
       ];
 
   // ── Tutorial 1: Hola Mundo (Básico, ~60 s) ─────────────────────────────

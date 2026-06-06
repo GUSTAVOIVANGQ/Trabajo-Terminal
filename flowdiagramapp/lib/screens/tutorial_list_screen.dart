@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/tutorial_step.dart';
 import '../services/tutorial_service.dart';
 import '../widgets/tutorial_widget.dart';
+import '../widgets/gradient_scaffold.dart';
 
 /// Pantalla que muestra la lista de todas las guías de uso disponibles
 class TutorialListScreen extends StatefulWidget {
@@ -44,38 +45,17 @@ class _TutorialListScreenState extends State<TutorialListScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Guías de Uso', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-        elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.white),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.info_outline, color: Colors.white),
-            onPressed: _showAboutDialog,
-            tooltip: 'Acerca de la applicación',
-          ),
-        ],
-        flexibleSpace: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [Color(0xFF4A00E0), Color(0xFF8E2DE2), Color(0xFF4CA1AF)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-          ),
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return GradientScaffold(
+      title: 'Guías de Uso',
+      actions: [
+        IconButton(
+          icon: const Icon(Icons.info_outline, color: Colors.white),
+          onPressed: _showAboutDialog,
+          tooltip: 'Acerca de la applicación',
         ),
-      ),
+      ],
       body: Container(
-        width: double.infinity,
-        height: double.infinity,
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Color(0xFFE0C3FC), Color(0xFF8EC5FC)],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-          ),
-        ),
         child: ListView(
         padding: const EdgeInsets.all(16),
         children: [

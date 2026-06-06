@@ -1,3 +1,5 @@
+import 'dart:io';
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flowdiagramapp/compiler/compiler.dart';
@@ -10,6 +12,7 @@ class DiagramCase {
   DiagramCase(this.nodes, this.connections);
 }
 
+final Map<String, String> _evidenceMap = {};
 void main() {
   group('CF-01 a CF-07: criterios de correccion funcional', () {
     test('CF-01: nodos terminales generan int main() valido', () {
@@ -21,6 +24,7 @@ void main() {
 
       final result = nodes.compile(connections);
 
+      _evidenceMap['CF-01'] = result.generatedCode ?? 'Sin código generado';
       expect(result.success, isTrue);
       expect(result.generatedCode, isNotNull);
       expect(result.generatedCode!.contains('int main('), isTrue);
@@ -64,6 +68,7 @@ void main() {
 
       final result = nodes.compile(connections);
 
+      _evidenceMap['CF-03'] = result.generatedCode ?? 'Sin código generado';
       expect(result.success, isTrue);
       final code = result.generatedCode ?? '';
 
@@ -111,6 +116,7 @@ void main() {
 
       final result = nodes.compile(connections);
 
+      _evidenceMap['CF-04'] = result.generatedCode ?? 'Sin código generado';
       expect(result.success, isTrue);
       final code = result.generatedCode ?? '';
       expect(code.contains('if (a > 0) {'), isTrue);
@@ -160,6 +166,7 @@ void main() {
 
       final result = nodes.compile(connections);
 
+      _evidenceMap['CF-05'] = result.generatedCode ?? 'Sin código generado';
       expect(result.success, isTrue);
       final code = result.generatedCode ?? '';
       expect(code.contains('for (int i = 0; i < 3; i++) {'), isTrue);
@@ -185,6 +192,7 @@ void main() {
 
       final result = nodes.compile(connections);
 
+      _evidenceMap['CF-06'] = result.generatedCode ?? 'Sin código generado';
       expect(result.success, isTrue);
       final code = result.generatedCode ?? '';
       expect(code.contains('1 + 2 * 3'), isTrue);
@@ -202,6 +210,7 @@ void main() {
 
       final result = nodes.compile(connections);
 
+      _evidenceMap['CF-07'] = result.generatedCode ?? 'Sin código generado';
       expect(result.success, isTrue);
       expect(result.lexicalResult, isNotNull);
       expect(result.semanticResult, isNotNull);
@@ -229,6 +238,7 @@ void main() {
 
       final result = nodes.compile(connections);
 
+      _evidenceMap['CG-01'] = result.generatedCode ?? 'Sin código generado';
       expect(result.success, isTrue);
       expect(result.errors.hasErrors, isFalse);
     });
@@ -245,6 +255,7 @@ void main() {
         connections,
         options: const CompilerOptions(generateComments: false),
       );
+      _evidenceMap['CG-02'] = result.generatedCode ?? 'Sin código generado';
       expect(result.success, isTrue);
 
       final code = result.generatedCode ?? '';
@@ -277,6 +288,7 @@ void main() {
 
       final result = nodes.compile(connections);
 
+      _evidenceMap['CG-03'] = result.generatedCode ?? 'Sin código generado';
       expect(result.success, isTrue);
       expect(result.generatedCode!.contains('#include <stdio.h>'), isTrue);
     });
@@ -290,6 +302,7 @@ void main() {
 
       final result = nodes.compile(connections);
 
+      _evidenceMap['CG-04'] = result.generatedCode ?? 'Sin código generado';
       expect(result.success, isTrue);
       final code = result.generatedCode ?? '';
       expect(code.contains('int main('), isTrue);
@@ -311,6 +324,7 @@ void main() {
 
       final result = nodes.compile(connections);
 
+      _evidenceMap['CG-05'] = result.generatedCode ?? 'Sin código generado';
       expect(result.success, isTrue);
       final code = result.generatedCode ?? '';
 
@@ -335,6 +349,7 @@ void main() {
       final diagram = _linearDiagram(10);
       final avgMs = _averageCompileMs(diagram, iterations: 3);
 
+      _evidenceMap['CR-01'] = '${avgMs.toStringAsFixed(2)} ms prom.';
       expect(avgMs, lessThan(1000));
     });
 
@@ -342,6 +357,7 @@ void main() {
       final diagram = _linearDiagram(50);
       final avgMs = _averageCompileMs(diagram, iterations: 3);
 
+      _evidenceMap['CR-02'] = '${avgMs.toStringAsFixed(2)} ms prom.';
       expect(avgMs, lessThan(5000));
     });
 
@@ -349,6 +365,7 @@ void main() {
       final diagram = _linearDiagram(100);
       final avgMs = _averageCompileMs(diagram, iterations: 3);
 
+      _evidenceMap['CR-03'] = '${avgMs.toStringAsFixed(2)} ms prom.';
       expect(avgMs, lessThan(10000));
     });
 
@@ -366,6 +383,7 @@ void main() {
       final expected50 = (50 / 10) * 1.5;
       final expected100 = (100 / 50) * 1.5;
 
+      _evidenceMap['CR-04'] = '${ratio100.toStringAsFixed(2)}x (O(n) mantenido)';
       expect(ratio50, lessThanOrEqualTo(expected50));
       expect(ratio100, lessThanOrEqualTo(expected100));
     });
@@ -382,6 +400,7 @@ void main() {
 
       final result = nodes.compile(connections);
 
+      _evidenceMap['RB-01'] = '${result.errors.all.isNotEmpty ? result.errors.all.first.message : "Ningún error reportado"}';
       expect(
           result.errors
               .getByPhase(CompilerPhase.lexical)
@@ -401,6 +420,7 @@ void main() {
       final result = nodes.compile(connections);
 
       final syntacticErrors = result.errors.getByPhase(CompilerPhase.syntactic);
+      _evidenceMap['RB-02'] = '${result.errors.all.isNotEmpty ? result.errors.all.first.message : "Ningún error reportado"}';
       expect(syntacticErrors.isNotEmpty, isTrue);
     });
 
@@ -415,6 +435,7 @@ void main() {
 
       final result = nodes.compile(connections);
 
+      _evidenceMap['RB-03'] = '${result.errors.all.isNotEmpty ? result.errors.all.first.message : "Ningún error reportado"}';
       expect(
         result.errors.all.any((e) =>
             e.code == CompilerErrorCode.undeclaredVariable &&
@@ -434,6 +455,7 @@ void main() {
 
       final result = nodes.compile(connections);
 
+      _evidenceMap['RB-04'] = '${result.errors.all.isNotEmpty ? result.errors.all.first.message : "Ningún error reportado"}';
       expect(
         result.errors.all.any((e) =>
             e.code == CompilerErrorCode.duplicateDeclaration &&
@@ -453,6 +475,7 @@ void main() {
 
       final result = nodes.compile(connections);
 
+      _evidenceMap['RB-05'] = '${result.errors.all.isNotEmpty ? result.errors.all.first.message : "Ningún error reportado"}';
       expect(
         result.errors.all.any((e) =>
             e.code == CompilerErrorCode.divisionByZero &&
@@ -472,6 +495,7 @@ void main() {
 
       final result = nodes.compile(connections);
 
+      _evidenceMap['RB-06'] = '${result.errors.all.isNotEmpty ? result.errors.all.first.message : "Ningún error reportado"}';
       expect(
         result.errors.all.any((e) =>
             e.code == CompilerErrorCode.typeMismatch &&
@@ -491,6 +515,7 @@ void main() {
 
       final result = nodes.compile(connections);
 
+      _evidenceMap['RB-07'] = '${result.errors.all.isNotEmpty ? result.errors.all.first.message : "Ningún error reportado"}';
       expect(
         result.errors.all.any((e) =>
             e.code == CompilerErrorCode.unusedVariable &&
@@ -499,6 +524,34 @@ void main() {
         isTrue,
       );
     });
+  });
+  tearDownAll(() {
+    final groups = {
+      'CF': 'Criterios de Corrección Funcional',
+      'CG': 'Criterios de Calidad de Código Generado',
+      'CR': 'Criterios de Rendimiento',
+      'RB': 'Criterios de Robustez'
+    };
+    
+    // Si flutter test oculta los prints en success, usamos stderr o throw al final si es necesario.
+    // Usaremos un string final y stderr.writeln para asegurar que salga en la consola.
+    final buffer = StringBuffer();
+    buffer.writeln('\n======================================================');
+    buffer.writeln(' RESULTADOS DE CRITERIOS DE VALIDACIÓN TÉCNICA');
+    buffer.writeln('======================================================');
+    
+    for (var group in groups.entries) {
+      buffer.writeln('\n--- ${group.key} - ${group.value} ---');
+      
+      final keys = _evidenceMap.keys.where((k) => k.startsWith(group.key)).toList()..sort();
+      for (var key in keys) {
+        buffer.writeln('\n[$key]:');
+        buffer.writeln(_evidenceMap[key]);
+      }
+    }
+    
+    // Forzamos la impresión usando stderr para saltar el silenciador de flutter test
+    stderr.writeln(buffer.toString());
   });
 }
 

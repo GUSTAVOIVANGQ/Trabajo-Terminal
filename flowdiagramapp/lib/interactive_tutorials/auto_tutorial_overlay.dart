@@ -6,6 +6,7 @@
 import 'package:flutter/material.dart';
 import 'auto_tutorial_models.dart';
 import 'auto_tutorial_script.dart';
+import '../widgets/gradient_scaffold.dart';
 
 // ---------------------------------------------------------------------------
 // Pantalla del catálogo
@@ -24,34 +25,11 @@ class AutoTutorialCatalogPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
     final tutorials = AutoTutorialScripts.all();
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Tutoriales animados', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-        elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.white),
-        flexibleSpace: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [Color(0xFF4A00E0), Color(0xFF8E2DE2), Color(0xFF4CA1AF)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-          ),
-        ),
-      ),
+    return GradientScaffold(
+      title: 'Demostración',
       body: Container(
-        width: double.infinity,
-        height: double.infinity,
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Color(0xFFE0C3FC), Color(0xFF8EC5FC)],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-          ),
-        ),
         child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

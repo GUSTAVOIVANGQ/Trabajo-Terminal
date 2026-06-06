@@ -12,60 +12,7 @@ Una aplicación móvil Android Flutter que permite a los usuarios diseñar algor
 
 FlowCode ahora genera código C correcto para estructuras avanzadas:
 
-#### ✅ **Switch Statement**
-
-- **Antes**: Generaba múltiples `if-else` anidados ❌
-- **Ahora**: Genera código `switch() { case: break; }` correcto ✅
-- **Uso**: Menú "Conceptos" → "Switch"
-
-**Ejemplo:**
-
-```c
-// Código generado por FlowCode
-switch (opcion) {
-    case 1:
-        printf("Opción 1");
-        break;
-    case 2:
-        printf("Opción 2");
-        break;
-    default:
-        printf("Opción inválida");
-        break;
-}
-```
-
-#### ✅ **Bucle For**
-
-- **Antes**: Indistinguible de `while`, generaba código genérico ❌
-- **Ahora**: Genera bucles `for(init; cond; incr)` específicos ✅
-- **Uso**: Menú "Conceptos" → "For"
-
-**Ejemplo:**
-
-```c
-// Código generado por FlowCode
-for (int i = 0; i < 10; i++) {
-    printf("Iteración %d\n", i);
-}
-```
-
-#### ✅ **Bucle While**
-
-- **Antes**: Mezclado con for, sin diferenciación ❌
-- **Ahora**: Genera bucles `while(cond)` diferenciados ✅
-- **Uso**: Menú "Conceptos" → "While"
-
-**Ejemplo:**
-
-```c
-// Código generado por FlowCode
-while (contador < 100) {
-    contador++;
-}
-```
-
-### 🔍 **Sistema de Detección Inteligente**
+### 🔍 **Sistema de Detección Inteligente de ciclos**
 
 **Doble prioridad de detección:**
 
@@ -529,9 +476,6 @@ lib/
 - [X] Agregar optimizaciones específicas para diagramas de flujo (detección de bucles)
 
 ## 🔄 En Desarrollo
-
-- [ ] Corregir la estructura de todas las plantillas de los diagramas C:\Users\ivan-\Documents\GitHub\Trabajo-Terminal\flowdiagramapp\lib\services\template_definitions.dart ya que algunos no siguen las reglas que marca el compilador.
-
 
 ### 🎯 Próximas Funcionalidades
 

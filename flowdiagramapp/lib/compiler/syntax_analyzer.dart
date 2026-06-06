@@ -1048,7 +1048,13 @@ class DiagramSyntaxAnalyzer {
 
     while (_match([TokenType.opOr])) {
       final right = _parseAnd();
-      if (expr != null && right != null) {
+      if (right == null) {
+        _addError(
+          CompilerErrorCode.invalidExpression,
+          'Falta el operando derecho',
+          _getPosition(),
+        );
+      } else if (expr != null) {
         expr = BinaryExpressionNode(
           left: expr,
           operator: BinaryOperator.or,
@@ -1068,7 +1074,13 @@ class DiagramSyntaxAnalyzer {
 
     while (_match([TokenType.opAnd])) {
       final right = _parseBitOr();
-      if (expr != null && right != null) {
+      if (right == null) {
+        _addError(
+          CompilerErrorCode.invalidExpression,
+          'Falta el operando derecho',
+          _getPosition(),
+        );
+      } else if (expr != null) {
         expr = BinaryExpressionNode(
           left: expr,
           operator: BinaryOperator.and,
@@ -1088,7 +1100,13 @@ class DiagramSyntaxAnalyzer {
 
     while (_match([TokenType.opBitOr])) {
       final right = _parseBitXor();
-      if (expr != null && right != null) {
+      if (right == null) {
+        _addError(
+          CompilerErrorCode.invalidExpression,
+          'Falta el operando derecho',
+          _getPosition(),
+        );
+      } else if (expr != null) {
         expr = BinaryExpressionNode(
           left: expr,
           operator: BinaryOperator.bitOr,
@@ -1108,7 +1126,13 @@ class DiagramSyntaxAnalyzer {
 
     while (_match([TokenType.opBitXor])) {
       final right = _parseBitAnd();
-      if (expr != null && right != null) {
+      if (right == null) {
+        _addError(
+          CompilerErrorCode.invalidExpression,
+          'Falta el operando derecho',
+          _getPosition(),
+        );
+      } else if (expr != null) {
         expr = BinaryExpressionNode(
           left: expr,
           operator: BinaryOperator.bitXor,
@@ -1128,7 +1152,13 @@ class DiagramSyntaxAnalyzer {
 
     while (_match([TokenType.opBitAnd])) {
       final right = _parseEquality();
-      if (expr != null && right != null) {
+      if (right == null) {
+        _addError(
+          CompilerErrorCode.invalidExpression,
+          'Falta el operando derecho',
+          _getPosition(),
+        );
+      } else if (expr != null) {
         expr = BinaryExpressionNode(
           left: expr,
           operator: BinaryOperator.bitAnd,
@@ -1151,7 +1181,13 @@ class DiagramSyntaxAnalyzer {
           ? BinaryOperator.equal
           : BinaryOperator.notEqual;
       final right = _parseComparison();
-      if (expr != null && right != null) {
+      if (right == null) {
+        _addError(
+          CompilerErrorCode.invalidExpression,
+          'Falta el operando derecho',
+          _getPosition(),
+        );
+      } else if (expr != null) {
         expr = BinaryExpressionNode(
           left: expr,
           operator: op,
@@ -1194,7 +1230,13 @@ class DiagramSyntaxAnalyzer {
           op = BinaryOperator.less;
       }
       final right = _parseShift();
-      if (expr != null && right != null) {
+      if (right == null) {
+        _addError(
+          CompilerErrorCode.invalidExpression,
+          'Falta el operando derecho',
+          _getPosition(),
+        );
+      } else if (expr != null) {
         expr = BinaryExpressionNode(
           left: expr,
           operator: op,
@@ -1217,7 +1259,13 @@ class DiagramSyntaxAnalyzer {
           ? BinaryOperator.shiftLeft
           : BinaryOperator.shiftRight;
       final right = _parseAdditive();
-      if (expr != null && right != null) {
+      if (right == null) {
+        _addError(
+          CompilerErrorCode.invalidExpression,
+          'Falta el operando derecho',
+          _getPosition(),
+        );
+      } else if (expr != null) {
         expr = BinaryExpressionNode(
           left: expr,
           operator: op,
@@ -1240,7 +1288,13 @@ class DiagramSyntaxAnalyzer {
           ? BinaryOperator.add
           : BinaryOperator.subtract;
       final right = _parseMultiplicative();
-      if (expr != null && right != null) {
+      if (right == null) {
+        _addError(
+          CompilerErrorCode.invalidExpression,
+          'Falta el operando derecho',
+          _getPosition(),
+        );
+      } else if (expr != null) {
         expr = BinaryExpressionNode(
           left: expr,
           operator: op,
@@ -1279,7 +1333,13 @@ class DiagramSyntaxAnalyzer {
           op = BinaryOperator.multiply;
       }
       final right = _parseUnary();
-      if (expr != null && right != null) {
+      if (right == null) {
+        _addError(
+          CompilerErrorCode.invalidExpression,
+          'Falta el operando derecho',
+          _getPosition(),
+        );
+      } else if (expr != null) {
         expr = BinaryExpressionNode(
           left: expr,
           operator: op,

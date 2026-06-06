@@ -98,7 +98,7 @@ class DatabaseService {
   }
 
   Future<void> _ensureTemplatesExist(Database db) async {
-    // Obtener los nombres de las 20 plantillas educativas
+    // Obtener los nombres de todas las plantillas esperadas
     final expectedTemplates = TemplateDefinitions.expectedTemplateNames;
 
     // Verificar qué plantillas ya existen
@@ -132,14 +132,24 @@ class DatabaseService {
       }
     }
 
-    // Cargar solo las plantillas que faltan
+    // Cargar plantillas faltantes, y SIEMPRE reemplazar las de benchmark (BM-*)
+    // para reflejar cambios en template_definitions.dart sin reiniciar la BD.
     for (final templateName in expectedTemplates) {
-      if (!existingNames.contains(templateName)) {
-        print('Cargando plantilla: $templateName');
+      final isBenchmark = templateName.startsWith('BM-');
+      if (!existingNames.contains(templateName) || isBenchmark) {
+        print('${isBenchmark ? "Actualizando" : "Cargando"} plantilla: $templateName');
         final template =
             await TemplateDefinitions.getTemplateByName(templateName);
 
         if (template != null) {
+          if (isBenchmark && existingNames.contains(templateName)) {
+            // Eliminar la versión vieja del benchmark antes de reinsertar
+            await db.delete(
+              'diagrams',
+              where: 'name = ? AND is_template = ?',
+              whereArgs: [templateName, 1],
+            );
+          }
           await db.insert(
             'diagrams',
             template.toMap(),

@@ -16,6 +16,7 @@ import 'login_screen.dart';
 import 'metrics_screen.dart';
 import 'admin_metrics_screen.dart';
 import 'theme_settings_screen.dart';
+import '../widgets/gradient_scaffold.dart';
 import 'package:tutorial_coach_mark/tutorial_coach_mark.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -42,6 +43,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   bool _updatingTelemetryConsent = false;
   bool _crashReportsConsent = false;
   bool _updatingCrashReportsConsent = false;
+  bool _autoSyncEnabled = false;
 
   final GlobalKey _avatarKey = GlobalKey();
   final GlobalKey _settingsKey = GlobalKey();
@@ -871,6 +873,190 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
+  void _showUserDetailsDialog() {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            final user = _authService.currentUser;
+            if (user == null) return const SizedBox.shrink();
+            
+            // Buenas prácticas de seguridad: Enmascarar el ID de usuario
+            final String maskedUid = user.uid.length > 8 
+                ? '${user.uid.substring(0, 4)}****${user.uid.substring(user.uid.length - 4)}'
+                : '****';
+                
+            final isDark = Theme.of(context).brightness == Brightness.dark;
+            
+            return AlertDialog(
+              backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white,
+              title: Row(
+                children: [
+                  Icon(Icons.security, color: isDark ? Colors.blue[300] : Colors.blue),
+                  const SizedBox(width: 8),
+                  Text('Datos del Usuario', style: TextStyle(color: isDark ? Colors.white : Colors.black87)),
+                ],
+              ),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.red.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Row(
+                        children: [
+                          Icon(Icons.info_outline, color: Colors.red, size: 20),
+                          SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'Información confidencial. No compartas tu ID.',
+                              style: TextStyle(color: Colors.red, fontSize: 12),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    _buildDialogInfoRow(Icons.badge_outlined, 'ID de Usuario', maskedUid, isDark),
+                    const Divider(),
+                    _buildDialogInfoRow(Icons.email_outlined, 'Email', user.email, isDark),
+                    const Divider(),
+                    _buildDialogInfoRow(
+                      Icons.person_outline, 
+                      'Nombre', 
+                      user.displayName.isNotEmpty ? user.displayName : 'No especificado', 
+                      isDark,
+                      trailing: IconButton(
+                        icon: const Icon(Icons.edit, size: 18, color: Colors.blue),
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                        tooltip: 'Editar nombre',
+                        onPressed: () async {
+                          await _showEditNameDialog();
+                          setDialogState(() {}); // Refresca los datos en el diálogo
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Cerrar'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Future<void> _showEditNameDialog() async {
+    final user = _authService.currentUser;
+    if (user == null || user.isGuest) return;
+
+    final TextEditingController nameController = TextEditingController(text: user.displayName);
+    bool isSaving = false;
+
+    await showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) {
+          final isDark = Theme.of(context).brightness == Brightness.dark;
+          return AlertDialog(
+            backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white,
+            title: Text('Editar Nombre', style: TextStyle(color: isDark ? Colors.white : Colors.black87)),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: nameController,
+                  enabled: !isSaving,
+                  decoration: InputDecoration(
+                    labelText: 'Nuevo nombre',
+                    border: const OutlineInputBorder(),
+                    labelStyle: TextStyle(color: isDark ? Colors.grey[400] : Colors.grey[600]),
+                  ),
+                  style: TextStyle(color: isDark ? Colors.white : Colors.black87),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: isSaving ? null : () => Navigator.pop(context),
+                child: const Text('Cancelar'),
+              ),
+              FilledButton(
+                onPressed: isSaving ? null : () async {
+                  final newName = nameController.text.trim();
+                  if (newName.isEmpty || newName == user.displayName) {
+                    Navigator.pop(context);
+                    return;
+                  }
+
+                  setDialogState(() => isSaving = true);
+                  try {
+                    await _authService.updateDisplayName(newName);
+                    if (mounted) {
+                      setState(() {}); // Actualiza la pantalla principal
+                      Navigator.pop(context);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Nombre actualizado correctamente'), backgroundColor: Colors.green),
+                      );
+                    }
+                  } catch (e) {
+                    if (mounted) {
+                      setDialogState(() => isSaving = false);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),
+                      );
+                    }
+                  }
+                },
+                child: isSaving 
+                  ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                  : const Text('Guardar'),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildDialogInfoRow(IconData icon, String label, String value, bool isDark, {Widget? trailing}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 20, color: isDark ? Colors.grey[400] : Colors.grey[600]),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(label, style: TextStyle(fontSize: 12, color: isDark ? Colors.grey[400] : Colors.grey[600])),
+                const SizedBox(height: 2),
+                Text(value, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: isDark ? Colors.white : Colors.black87)),
+              ],
+            ),
+          ),
+          if (trailing != null) trailing,
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final user = _authService.currentUser;
@@ -880,41 +1066,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
     
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Mi Perfil', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-        elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.white),
-        flexibleSpace: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [Color(0xFF4A00E0), Color(0xFF8E2DE2), Color(0xFF4CA1AF)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-          ),
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.settings),
-            onPressed: () {
-              if (_settingsKey.currentContext != null) {
-                Scrollable.ensureVisible(_settingsKey.currentContext!, duration: const Duration(milliseconds: 500));
-              }
-            },
-          )
-        ],
-      ),
+    return GradientScaffold(
+      title: 'Mi Perfil',
+      actions: [
+        IconButton(
+          icon: const Icon(Icons.settings),
+          onPressed: () {
+            if (_settingsKey.currentContext != null) {
+              Scrollable.ensureVisible(_settingsKey.currentContext!, duration: const Duration(milliseconds: 500));
+            }
+          },
+        )
+      ],
       body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: isDark 
-                ? const [Color(0xFF0F172A), Color(0xFF1E293B)]
-                : const [Color(0xFFE0C3FC), Color(0xFF8EC5FC)],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-          ),
-        ),
         child: SingleChildScrollView(
           child: Padding(
             padding: const EdgeInsets.only(top: 32.0, left: 16, right: 16, bottom: 24),
@@ -1025,7 +1189,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 _buildGradientButton(
                   text: 'Editar Perfil',
                   colors: [const Color(0xFF6A11CB), const Color(0xFF2575FC)],
-                  onTap: () => _showComingSoonToast('Editar Perfil'),
+                  onTap: () => _showUserDetailsDialog(),
                 ),
                 const SizedBox(height: 12),
                 _buildGradientButton(
@@ -1040,13 +1204,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   title: 'Información de la cuenta',
                   children: [
                     _buildListTile(icon: Icons.email_outlined, title: user.email, subtitle: 'Correo electrónico'),
-                    _buildListTile(icon: Icons.admin_panel_settings_outlined, title: user.isAdmin ? 'Administrador' : 'Usuario', subtitle: 'Tipo de cuenta'),
+                    _buildListTile(icon: Icons.person_outline, title: user.displayName.isNotEmpty ? user.displayName : 'Usuario', subtitle: 'Nombre de usuario'),
                     _buildListTile(icon: Icons.calendar_today_outlined, title: DateFormat("dd/MM/yyyy").format(user.createdAt), subtitle: 'Fecha de registro'),
                     _buildListTile(icon: Icons.access_time_outlined, title: DateFormat("dd/MM/yyyy HH:mm").format(user.lastLogin), subtitle: 'Último acceso'),
                   ],
                 ),
 
-                _buildSectionCard(
+                /*_buildSectionCard(
                   title: 'Mis Métricas',
                   children: [
                     ListTile(
@@ -1067,16 +1231,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         _buildListTile(icon: Icons.check_circle, title: user.metrics["total_validaciones"].toString(), subtitle: 'Validaciones realizadas'),
                     ]
                   ],
-                ),
+                ),*/
 
-                _buildSectionCard(
+                /*_buildSectionCard(
                   title: 'Estado de suscripción',
                   children: [
                     _buildListTile(icon: Icons.workspace_premium_outlined, title: 'Plan Gratuito', subtitle: 'Actualiza para obtener más funciones'),
                   ],
-                ),
+                ),*/
 
-                _buildSectionCard(
+                /*_buildSectionCard(
                   title: 'Seguridad',
                   children: [
                     ListTile(
@@ -1106,19 +1270,43 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       onTap: () => _showComingSoonToast('Cuentas conectadas'),
                     ),
                   ],
-                ),
+                ),*/
 
                 _buildSectionCard(
                   key: _settingsKey,
                   title: 'Configuración general',
                   children: [
-                    ListTile(
-                      leading: const Icon(Icons.palette_outlined),
-                      title: const Text('Tema'),
-                      subtitle: Text(ThemeService().getThemeName()),
-                      trailing: const Icon(Icons.chevron_right),
-                      onTap: () {
-                        Navigator.of(context).push(MaterialPageRoute(builder: (context) => const ThemeSettingsScreen()));
+                    ListenableBuilder(
+                      listenable: ThemeService(),
+                      builder: (context, child) {
+                        return ListTile(
+                          leading: const Icon(Icons.palette_outlined),
+                          title: const Text('Tema'),
+                          trailing: DropdownButtonHideUnderline(
+                            child: DropdownButton<AppThemeMode>(
+                              value: ThemeService().currentTheme,
+                              items: const [
+                                DropdownMenuItem(
+                                  value: AppThemeMode.light,
+                                  child: Text('Modo Claro'),
+                                ),
+                                DropdownMenuItem(
+                                  value: AppThemeMode.dark,
+                                  child: Text('Modo Oscuro'),
+                                ),
+                                DropdownMenuItem(
+                                  value: AppThemeMode.system,
+                                  child: Text('Seguir sistema'),
+                                ),
+                              ],
+                              onChanged: (AppThemeMode? mode) {
+                                if (mode != null) {
+                                  ThemeService().setTheme(mode);
+                                }
+                              },
+                            ),
+                          ),
+                        );
                       },
                     ),
                     const Divider(height: 1),
@@ -1150,15 +1338,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   key: _syncKey,
                   title: 'Datos',
                   children: [
-                    ListTile(
-                      leading: _isSyncing
+                    SwitchListTile.adaptive(
+                      secondary: _isSyncing
                           ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2))
                           : const Icon(Icons.cloud_sync, color: Colors.blue),
                       title: const Text('Sincronizar datos'),
-                      subtitle: Text(user.isGuest ? 'No disponible para invitados' : 'Respalda tus diagramas en la nube'),
-                      trailing: user.isGuest ? const Icon(Icons.lock_outline, color: Colors.grey) : const Icon(Icons.chevron_right),
-                      enabled: !user.isGuest && !_isSyncing,
-                      onTap: user.isGuest ? null : _performSync,
+                      subtitle: Text(user.isGuest ? 'No disponible para invitados' : 'Respalda tus diagramas en la nube automáticamente'),
+                      value: _autoSyncEnabled,
+                      onChanged: user.isGuest || _isSyncing ? null : (bool value) {
+                        setState(() {
+                          _autoSyncEnabled = value;
+                        });
+                        if (value) {
+                          _performSync();
+                        }
+                      },
                     ),
                     const Divider(height: 1),
                     ListTile(
