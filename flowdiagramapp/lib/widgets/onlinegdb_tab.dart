@@ -1,3 +1,6 @@
+import 'dart:async';
+import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
@@ -32,6 +35,8 @@ class OnlineGdbTabState extends State<OnlineGdbTab>
   bool _isLoading = true;
   bool _injected = false;
   String? _loadError;
+  bool _hasInternet = true;
+  StreamSubscription<dynamic>? _connectivitySubscription;
 
   // ── Keep-alive so the WebView survives tab switches ─────────────────────
   @override
@@ -42,7 +47,30 @@ class OnlineGdbTabState extends State<OnlineGdbTab>
   @override
   void initState() {
     super.initState();
+    _checkConnectivity();
     _initWebView();
+  }
+
+  Future<void> _checkConnectivity() async {
+    final result = await Connectivity().checkConnectivity();
+    if (mounted) {
+      setState(() {
+        _hasInternet = result != ConnectivityResult.none;
+      });
+    }
+    _connectivitySubscription = Connectivity().onConnectivityChanged.listen((result) {
+      if (mounted) {
+        setState(() {
+          _hasInternet = result != ConnectivityResult.none;
+        });
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _connectivitySubscription?.cancel();
+    super.dispose();
   }
 
   void _initWebView() {
@@ -242,6 +270,14 @@ class OnlineGdbTabState extends State<OnlineGdbTab>
       return _buildCompileErrorState(isDark);
     }
 
+    final bool isDisconnected = !_hasInternet || 
+        (_loadError != null && (
+          _loadError!.toUpperCase().contains('INTERNET_DISCONNECTED') ||
+          _loadError!.toUpperCase().contains('NAME_NOT_RESOLVED') ||
+          _loadError!.toUpperCase().contains('ADDRESS_UNREACHABLE') ||
+          _loadError!.toUpperCase().contains('CONNECTION_REFUSED')
+        ));
+
     return Stack(
       children: [
         WebViewWidget(
@@ -252,8 +288,11 @@ class OnlineGdbTabState extends State<OnlineGdbTab>
             ),
           },
         ),
-        if (_isLoading) _buildLoadingOverlay(isDark),
-        if (_loadError != null) _buildErrorOverlay(isDark),
+        if (_isLoading && !isDisconnected) _buildLoadingOverlay(isDark),
+        if (isDisconnected) 
+          _buildNoInternetOverlay(isDark)
+        else if (_loadError != null) 
+          _buildErrorOverlay(isDark),
       ],
     );
   }
@@ -289,6 +328,133 @@ class OnlineGdbTabState extends State<OnlineGdbTab>
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNoInternetOverlay(bool isDark) {
+    final bgColor = isDark ? const Color(0xFF0D1117) : const Color(0xFFF8F9FA);
+    final cardColor = isDark ? const Color(0xFF161B22) : Colors.white;
+    final textColor = isDark ? Colors.white : const Color(0xFF2D3142);
+    final subtitleColor = isDark ? Colors.grey[400] : Colors.grey[600];
+
+    return Container(
+      color: bgColor,
+      width: double.infinity,
+      height: double.infinity,
+      child: Center(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(28),
+                decoration: BoxDecoration(
+                  color: cardColor,
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.redAccent.withOpacity(0.12),
+                      blurRadius: 30,
+                      offset: const Offset(0, 10),
+                    )
+                  ],
+                ),
+                child: const Icon(
+                  Icons.wifi_off_rounded,
+                  size: 72,
+                  color: Colors.redAccent,
+                ),
+              ).animate()
+               .scale(duration: 500.ms, curve: Curves.easeOutBack)
+               .fadeIn(duration: 500.ms),
+              
+              const SizedBox(height: 32),
+              
+              Text(
+                '¡Vaya! Sin conexión',
+                style: TextStyle(
+                  fontSize: 26,
+                  fontWeight: FontWeight.bold,
+                  color: textColor,
+                  letterSpacing: -0.5,
+                ),
+              ).animate(delay: 100.ms)
+               .slideY(begin: 0.3, end: 0, duration: 400.ms, curve: Curves.easeOutQuart)
+               .fadeIn(duration: 400.ms),
+               
+              const SizedBox(height: 16),
+              
+              Text(
+                'Parece que perdiste la conexión a internet.\nConéctate para ejecutar tu código en OnlineGDB.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 16,
+                  color: subtitleColor,
+                  height: 1.5,
+                ),
+              ).animate(delay: 200.ms)
+               .slideY(begin: 0.3, end: 0, duration: 400.ms, curve: Curves.easeOutQuart)
+               .fadeIn(duration: 400.ms),
+               
+              const SizedBox(height: 40),
+              
+              FilledButton.icon(
+                onPressed: () {
+                  setState(() {
+                    _loadError = null;
+                    _isLoading = true;
+                  });
+                  _checkConnectivity();
+                  _controller.reload();
+                },
+                style: FilledButton.styleFrom(
+                  backgroundColor: Colors.blueAccent,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                ),
+                icon: const Icon(Icons.refresh_rounded),
+                label: const Text('Reintentar conexión', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+              ).animate(delay: 300.ms)
+               .slideY(begin: 0.3, end: 0, duration: 400.ms, curve: Curves.easeOutQuart)
+               .fadeIn(duration: 400.ms),
+              
+              if (widget.cCode.isNotEmpty) ...[
+                const SizedBox(height: 16),
+                OutlinedButton.icon(
+                  onPressed: () {
+                    Clipboard.setData(ClipboardData(text: widget.cCode));
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Código copiado al portapapeles'),
+                          behavior: SnackBarBehavior.floating,
+                        ),
+                      );
+                    }
+                  },
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: textColor,
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    side: BorderSide(color: isDark ? Colors.grey[700]! : Colors.grey[300]!, width: 2),
+                  ),
+                  icon: const Icon(Icons.copy_rounded, size: 20),
+                  label: const Text('Copiar código C en su lugar', style: TextStyle(fontWeight: FontWeight.w600)),
+                ).animate(delay: 400.ms)
+                 .slideY(begin: 0.3, end: 0, duration: 400.ms, curve: Curves.easeOutQuart)
+                 .fadeIn(duration: 400.ms),
+              ]
+            ],
+          ),
         ),
       ),
     );
