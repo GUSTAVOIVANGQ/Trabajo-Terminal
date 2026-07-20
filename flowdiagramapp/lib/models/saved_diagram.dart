@@ -73,7 +73,7 @@ class SavedDiagram {
     final List<DiagramNode> nodes = nodesData.map((nodeData) {
       return DiagramNode(
         id: nodeData['id'],
-        type: _migrateNodeType(nodeData['type']),
+        type: migrateNodeType(nodeData['type']),
         position: Offset(nodeData['x'], nodeData['y']),
         text: nodeData['text'],
         metadata: nodeData['metadata'] != null
@@ -139,7 +139,7 @@ class SavedDiagram {
   }
 
   // Migrar tipos de nodos antiguos a los nuevos (compatibilidad hacia atrás)
-  static NodeType _migrateNodeType(String typeString) {
+  static NodeType migrateNodeType(String typeString) {
     // Mapa de tipos antiguos a nuevos
     const Map<String, String> migrationMap = {
       'start': 'terminal', // start fue renombrado a terminal

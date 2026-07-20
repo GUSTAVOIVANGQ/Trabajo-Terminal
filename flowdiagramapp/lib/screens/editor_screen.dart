@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
@@ -582,6 +583,14 @@ class _EditorScreenState extends State<EditorScreen> {
                     _exportDiagramAsPDF();
                   } else if (value == 'c') {
                     _exportCodeAsCFile();
+                  // Opciones de compartir independiente (desactivadas: ahora
+                  // el share se abre automáticamente después de cada exportación)
+                  // } else if (value == 'share_img') {
+                  //   _shareDiagramAsImage();
+                  // } else if (value == 'share_c') {
+                  //   _shareCodeAsText();
+                  } else if (value == 'json') {
+                    _exportProjectAsJSON();
                   }
                 },
                 itemBuilder: (context) => [
@@ -625,6 +634,42 @@ class _EditorScreenState extends State<EditorScreen> {
                       ],
                     ),
                   ),
+                  const PopupMenuItem(
+                    value: 'json',
+                    child: Row(
+                      children: [
+                        Icon(Icons.data_object, color: Colors.teal),
+                        SizedBox(width: 8),
+                        Text(
+                          'Exportar proyecto (.json)',
+                          style: TextStyle(color: Colors.teal),
+                        ),
+                      ],
+                    ),
+                  ),
+                  // Opciones de compartir independiente desactivadas:
+                  // ahora el share se abre automáticamente tras cada exportación.
+                  // const PopupMenuDivider(),
+                  // const PopupMenuItem(
+                  //   value: 'share_img',
+                  //   child: Row(
+                  //     children: [
+                  //       Icon(Icons.share, color: Colors.deepPurple),
+                  //       SizedBox(width: 8),
+                  //       Text('Compartir imagen'),
+                  //     ],
+                  //   ),
+                  // ),
+                  // const PopupMenuItem(
+                  //   value: 'share_c',
+                  //   child: Row(
+                  //     children: [
+                  //       Icon(Icons.ios_share, color: Colors.deepPurple),
+                  //       SizedBox(width: 8),
+                  //       Text('Compartir código .c'),
+                  //     ],
+                  //   ),
+                  // ),
                 ],
               ),
 
@@ -3129,11 +3174,13 @@ class _EditorScreenState extends State<EditorScreen> {
       // Cerrar el diálogo de progreso
       if (mounted) Navigator.of(context).pop();
 
-      // Mostrar resultado exitoso
+      // Mostrar resultado exitoso y luego abrir el Share Sheet
       _showSuccessDialog(
         'PNG exportado exitosamente',
         'El diagrama se guardó en:\n$filePath',
       );
+      // Abrir Share Sheet nativo para compartir la imagen guardada
+      await _shareFileFromPath(filePath, 'image/png', diagramName);
     } catch (e) {
       // Cerrar el diálogo de progreso si está abierto
       if (mounted) Navigator.of(context).pop();
@@ -3190,11 +3237,13 @@ class _EditorScreenState extends State<EditorScreen> {
       // Cerrar el diálogo de progreso
       if (mounted) Navigator.of(context).pop();
 
-      // Mostrar resultado exitoso
+      // Mostrar resultado exitoso y luego abrir el Share Sheet
       _showSuccessDialog(
         'JPG exportado exitosamente',
         'El diagrama se guardó en:\n$filePath',
       );
+      // Abrir Share Sheet nativo para compartir la imagen guardada
+      await _shareFileFromPath(filePath, 'image/jpeg', diagramName);
     } catch (e) {
       // Cerrar el diálogo de progreso si está abierto
       if (mounted) Navigator.of(context).pop();
@@ -3261,6 +3310,8 @@ class _EditorScreenState extends State<EditorScreen> {
         'PDF exportado exitosamente',
         'El archivo PDF se guardó en:\n$filePath',
       );
+      // Abrir Share Sheet nativo para compartir el PDF
+      await _shareFileFromPath(filePath, 'application/pdf', diagramName);
     } catch (e) {
       if (mounted) Navigator.of(context).pop();
       _showSnackBar('Error al exportar PDF: $e');
@@ -3338,9 +3389,236 @@ class _EditorScreenState extends State<EditorScreen> {
         'Código C exportado exitosamente',
         'El archivo .c se guardó en:\n$filePath',
       );
+      // Abrir Share Sheet nativo para compartir el archivo .c
+      await _shareFileFromPath(filePath, 'text/x-csrc', diagramName);
     } catch (e) {
       if (mounted) Navigator.of(context).pop();
       _showSnackBar('Error al exportar código .c: $e');
+    }
+  }
+
+  /// Exporta el diagrama actual como archivo de proyecto .json
+  Future<void> _exportProjectAsJSON() async {
+    try {
+      if (nodes.isEmpty) {
+        _showSnackBar('No hay nodos para exportar');
+        return;
+      }
+
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(
+          child: Card(
+            child: Padding(
+              padding: EdgeInsets.all(20),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  CircularProgressIndicator(),
+                  SizedBox(height: 16),
+                  Text('Exportando proyecto .json...'),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+
+      final String diagramName = currentDiagram?.name ?? 'diagrama';
+      final String description = currentDiagram?.description ?? '';
+
+      final String filePath = await DiagramExportService.exportProjectToJSON(
+        nodes: nodes,
+        connections: connections,
+        diagramName: diagramName,
+        description: description,
+      );
+
+      _metricsService.trackUserAction(
+        action: 'exportacion_proyecto_json',
+        category: 'export',
+        metadata: {
+          'nodes_count': nodes.length,
+          'connections_count': connections.length,
+          'format': 'json',
+        },
+      );
+
+      if (mounted) Navigator.of(context).pop();
+
+      _showFileSuccessDialog(
+        'Proyecto exportado exitosamente',
+        'El archivo .json se guardó en:\n$filePath\n\n'
+            'Puedes importarlo en otro dispositivo con FlowCode.',
+      );
+      // Abrir Share Sheet nativo para compartir el archivo .json
+      await _shareFileFromPath(filePath, 'application/json', diagramName);
+    } catch (e) {
+      if (mounted) Navigator.of(context).pop();
+      _showSnackBar('Error al exportar proyecto: $e');
+    }
+  }
+
+  /// Abre el Share Sheet nativo para compartir un archivo ya guardado en disco.
+  /// [filePath] debe ser la ruta absoluta al archivo.
+  /// [mimeType] es el tipo MIME (e.g. 'image/png', 'application/pdf').
+  /// [diagramName] se usa como texto descriptivo en el Share Sheet.
+  Future<void> _shareFileFromPath(
+    String filePath,
+    String mimeType,
+    String diagramName,
+  ) async {
+    try {
+      final xFile = XFile(filePath, mimeType: mimeType);
+      await Share.shareXFiles(
+        [xFile],
+        text: 'Diagrama de flujo: $diagramName',
+        subject: 'FlowCode - $diagramName',
+      );
+    } catch (e) {
+      // Si el share falla, no es crítico: el archivo ya fue guardado.
+      // Solo mostramos un aviso discreto.
+      if (mounted) {
+        _showSnackBar('No se pudo abrir el panel de compartir: $e');
+      }
+    }
+  }
+
+  // ──────────────────────────────────────────────────────────────────────────
+  // Métodos de compartir independiente (desactivados).
+  // El share ahora se activa automáticamente después de cada exportación
+  // a través de _shareFileFromPath(). Se mantienen comentados por referencia.
+  // ──────────────────────────────────────────────────────────────────────────
+
+  // ignore: unused_element
+  Future<void> _shareDiagramAsImage() async {
+    try {
+      if (nodes.isEmpty) {
+        _showSnackBar('No hay nodos para compartir');
+        return;
+      }
+
+      final ThemeData exportTheme = Theme.of(context);
+      final bool isDarkMode = exportTheme.brightness == Brightness.dark;
+
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(
+          child: Card(
+            child: Padding(
+              padding: EdgeInsets.all(20),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  CircularProgressIndicator(),
+                  SizedBox(height: 16),
+                  Text('Preparando imagen para compartir...'),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+
+      final String diagramName = currentDiagram?.name ?? 'diagrama';
+
+      await DiagramExportService.shareImageAsPNG(
+        exportTheme: exportTheme,
+        isDarkMode: isDarkMode,
+        nodes: nodes,
+        connections: connections,
+        diagramName: diagramName,
+      );
+
+      _metricsService.trackUserAction(
+        action: 'compartir_imagen',
+        category: 'export',
+        metadata: {
+          'nodes_count': nodes.length,
+          'connections_count': connections.length,
+          'format': 'png_share',
+        },
+      );
+
+      if (mounted) Navigator.of(context).pop();
+    } catch (e) {
+      if (mounted) Navigator.of(context).pop();
+      _showSnackBar('Error al compartir imagen: $e');
+    }
+  }
+
+  // ignore: unused_element
+  Future<void> _shareCodeAsText() async {
+    try {
+      if (nodes.isEmpty) {
+        _showSnackBar('No hay nodos para compartir');
+        return;
+      }
+
+      final validationResult = DiagramValidator.validateDiagram(
+        nodes,
+        connections,
+      );
+
+      if (!validationResult.isValid) {
+        _showValidationDialog(validationResult);
+        return;
+      }
+
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(
+          child: Card(
+            child: Padding(
+              padding: EdgeInsets.all(20),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  CircularProgressIndicator(),
+                  SizedBox(height: 16),
+                  Text('Preparando código para compartir...'),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+
+      final String code = CodeGenerator.generateCode(
+        nodes,
+        connections,
+        ProgrammingLanguage.c,
+      );
+
+      if (code.trim().isEmpty || code.trim().startsWith('// Error:')) {
+        throw Exception('No se pudo generar código C válido para compartir');
+      }
+
+      final String diagramName = currentDiagram?.name ?? 'diagrama';
+
+      await DiagramExportService.shareCodeAsText(
+        code: code,
+        diagramName: diagramName,
+      );
+
+      _metricsService.trackUserAction(
+        action: 'compartir_codigo_c',
+        category: 'export',
+        metadata: {
+          'nodes_count': nodes.length,
+          'connections_count': connections.length,
+          'code_lines': code.split('\n').length,
+          'format': 'c_share',
+        },
+      );
+
+      if (mounted) Navigator.of(context).pop();
+    } catch (e) {
+      if (mounted) Navigator.of(context).pop();
+      _showSnackBar('Error al compartir código: $e');
     }
   }
 
@@ -3385,12 +3663,12 @@ class _EditorScreenState extends State<EditorScreen> {
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.photo_library,
+                    Icon(Icons.folder_open,
                         color: Colors.blue.shade700, size: 20),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        'Puedes encontrar la imagen en:\n📁 Galería > FlowDiagramApp\n📁 Archivos > Pictures > FlowDiagramApp',
+                        'Puedes encontrar la imagen en:\n📁 Descargas (Download)\n📁 Archivos > Android > data > [app] > files',
                         style: TextStyle(
                           fontSize: 12,
                           color: Colors.blue.shade700,

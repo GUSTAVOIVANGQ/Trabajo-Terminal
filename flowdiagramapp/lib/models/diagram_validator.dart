@@ -193,6 +193,10 @@ class DiagramValidator {
     // Validar símbolos ISO 5807 específicos
     final iso5807Validation = _validateISO5807Symbols(nodes, connections);
     result = result.merge(iso5807Validation);
+    
+    // Validar flujo estructural
+    result = result.merge(_validateStructuralFlowTypeA(nodes, connections));
+    result = result.merge(_validateStructuralFlowTypeB(nodes, connections));
 
     return result;
   }
@@ -818,5 +822,174 @@ class DiagramValidator {
     }
 
     return false;
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // VALIDACIÓN DE FLUJO ESTRUCTURAL (TIPO A y TIPO B)
+  // ═══════════════════════════════════════════════════════════
+
+  /// Determina si un nodo es un nodo terminal de cualquier tipo
+  /// (inicio o fin, del programa principal o de subprocesos).
+  static bool _isAnyTerminal(DiagramNode node) =>
+      node.type == NodeType.terminal;
+
+  /// Determina si un nodo es de tipo Inicio (cualquier terminal que no sea "fin")
+  static bool _isStartTerminal(DiagramNode node) {
+    if (node.type != NodeType.terminal) return false;
+    final lower = node.text.toLowerCase().trim();
+    return lower.contains('inicio') ||
+        lower.contains('start') ||
+        lower.contains('comenzar') ||
+        lower.isEmpty;
+  }
+
+  /// Determina si un nodo es de tipo Fin (cualquier terminal que no sea "inicio")
+  static bool _isEndTerminal(DiagramNode node) {
+    if (node.type != NodeType.terminal) return false;
+    final lower = node.text.toLowerCase().trim();
+    return lower.contains('fin') ||
+        lower.contains('end') ||
+        lower.contains('terminar');
+  }
+
+  /// Retorna todos los IDs alcanzables haciendo BFS **hacia adelante**
+  /// desde un conjunto de nodos raíz.
+  static Set<String> _bfsForward(
+    Set<String> startIds,
+    List<Connection> connections,
+  ) {
+    final visited = <String>{};
+    final queue = <String>[...startIds];
+    visited.addAll(startIds);
+
+    while (queue.isNotEmpty) {
+      final current = queue.removeAt(0);
+      for (final conn in connections) {
+        if (conn.source.id == current && !visited.contains(conn.target.id)) {
+          visited.add(conn.target.id);
+          queue.add(conn.target.id);
+        }
+      }
+    }
+    return visited;
+  }
+
+  /// Retorna todos los IDs alcanzables haciendo BFS **hacia atrás**
+  /// (siguiendo conexiones en sentido inverso) desde un conjunto de nodos raíz.
+  static Set<String> _bfsBackward(
+    Set<String> endIds,
+    List<Connection> connections,
+  ) {
+    final visited = <String>{};
+    final queue = <String>[...endIds];
+    visited.addAll(endIds);
+
+    while (queue.isNotEmpty) {
+      final current = queue.removeAt(0);
+      for (final conn in connections) {
+        if (conn.target.id == current && !visited.contains(conn.source.id)) {
+          visited.add(conn.source.id);
+          queue.add(conn.source.id);
+        }
+      }
+    }
+    return visited;
+  }
+
+  /// **Tipo A** – Nodos que no son alcanzables desde **ningún** nodo de Inicio.
+  ///
+  /// Un nodo falla si:
+  /// - Participa en el flujo (no es comment/annotation)
+  /// - No es él mismo un nodo de Inicio
+  /// - No puede ser alcanzado siguiendo las conexiones hacia adelante
+  ///   desde el conjunto unión de todos los nodos de Inicio del diagrama.
+  static ValidationResult _validateStructuralFlowTypeA(
+    List<DiagramNode> nodes,
+    List<Connection> connections,
+  ) {
+    ValidationResult result = ValidationResult();
+
+    // Reunir todos los nodos Inicio (programa principal + subprocesos)
+    final startNodes =
+        nodes.where((n) => _isStartTerminal(n)).toList();
+
+    if (startNodes.isEmpty) return result; // ya lo detecta _validateStartNode
+
+    final startIds = startNodes.map((n) => n.id).toSet();
+    final reachableFromAnyStart = _bfsForward(startIds, connections);
+
+    for (final node in nodes) {
+      // Exemptions
+      if (!ISO5807ConnectionRules.participatesInFlow(node.type)) continue;
+      if (_isAnyTerminal(node) && _isStartTerminal(node)) continue;
+
+      if (!reachableFromAnyStart.contains(node.id)) {
+        final label = node.text.trim().isEmpty
+            ? _getNodeTypeName(node.type)
+            : '"${node.text.trim()}"';
+        result = result.merge(ValidationResult(
+          isValid: false,
+          errors: [
+            'Nodo $label no es alcanzable desde ningún nodo de Inicio '
+                '(camino sin acceso).',
+          ],
+        ));
+      }
+    }
+
+    return result;
+  }
+
+  /// **Tipo B** – Nodos que son alcanzables desde Inicio pero desde los que
+  /// **nunca** se puede llegar a ningún nodo de Fin.
+  ///
+  /// Un nodo falla si:
+  /// - Es alcanzable desde al menos un Inicio (pasa el Tipo A)
+  /// - No puede ser alcanzado siguiendo las conexiones en **sentido inverso**
+  ///   desde el conjunto unión de todos los nodos de Fin del diagrama.
+  static ValidationResult _validateStructuralFlowTypeB(
+    List<DiagramNode> nodes,
+    List<Connection> connections,
+  ) {
+    ValidationResult result = ValidationResult();
+
+    final startNodes = nodes.where((n) => _isStartTerminal(n)).toList();
+    final endNodes = nodes.where((n) => _isEndTerminal(n)).toList();
+
+    if (startNodes.isEmpty || endNodes.isEmpty) return result;
+
+    final startIds = startNodes.map((n) => n.id).toSet();
+    final endIds = endNodes.map((n) => n.id).toSet();
+
+    // Alcanzables desde cualquier Inicio (forward)
+    final reachableFromStart = _bfsForward(startIds, connections);
+
+    // Que pueden llegar a cualquier Fin (backward desde Fin)
+    final canReachEnd = _bfsBackward(endIds, connections);
+
+    for (final node in nodes) {
+      // Exemptions
+      if (!ISO5807ConnectionRules.participatesInFlow(node.type)) continue;
+      if (_isAnyTerminal(node)) continue; // Fin/Inicio se excluyen ellos mismos
+
+      // Solo revisamos nodos que superan el Tipo A
+      if (!reachableFromStart.contains(node.id)) continue;
+
+      if (!canReachEnd.contains(node.id)) {
+        final label = node.text.trim().isEmpty
+            ? _getNodeTypeName(node.type)
+            : '"${node.text.trim()}"';
+        result = result.merge(ValidationResult(
+          isValid: false,
+          errors: [
+            'Nodo $label es alcanzable desde Inicio pero no tiene '
+                'ningún camino que llegue a un nodo de Fin '
+                '(camino sin fin detectado).',
+          ],
+        ));
+      }
+    }
+
+    return result;
   }
 }
