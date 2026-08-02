@@ -815,64 +815,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
-  void _showSubscriptionModal() {
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text(
-                'Suscripción Pro',
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 16),
-              ListTile(
-                leading: const Icon(Icons.star_border, color: Colors.blue),
-                title: const Text('Gratuita'),
-                subtitle: const Text('Funciones básicas'),
-                trailing: const Icon(Icons.check, color: Colors.green),
-              ),
-              ListTile(
-                leading: const Icon(Icons.star, color: Colors.purple),
-                title: const Text('Premium Mensual'),
-                subtitle: const Text('\$49 MXN / mes'),
-                onTap: () {
-                  Navigator.pop(context);
-                  _showComingSoonToast('Suscripción Mensual');
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.workspace_premium, color: Colors.orange),
-                title: const Text('Premium Anual'),
-                subtitle: const Text('\$499 MXN / año'),
-                onTap: () {
-                  Navigator.pop(context);
-                  _showComingSoonToast('Suscripción Anual');
-                },
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  void _showComingSoonToast(String feature) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('${feature}: Próximamente'),
-        backgroundColor: Theme.of(context).primaryColor,
-        duration: const Duration(seconds: 2),
-      ),
-    );
-  }
-
   void _showUserDetailsDialog() {
     showDialog(
       context: context,
@@ -1191,12 +1133,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   colors: [const Color(0xFF6A11CB), const Color(0xFF2575FC)],
                   onTap: () => _showUserDetailsDialog(),
                 ),
-                const SizedBox(height: 12),
-                _buildGradientButton(
-                  text: 'Suscripción',
-                  colors: [const Color(0xFF00B4DB), const Color(0xFF0083B0)],
-                  onTap: _showSubscriptionModal,
-                ),
 
                 const SizedBox(height: 24),
 
@@ -1230,13 +1166,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       if (user.metrics.containsKey("total_validaciones"))
                         _buildListTile(icon: Icons.check_circle, title: user.metrics["total_validaciones"].toString(), subtitle: 'Validaciones realizadas'),
                     ]
-                  ],
-                ),*/
-
-                /*_buildSectionCard(
-                  title: 'Estado de suscripción',
-                  children: [
-                    _buildListTile(icon: Icons.workspace_premium_outlined, title: 'Plan Gratuito', subtitle: 'Actualiza para obtener más funciones'),
                   ],
                 ),*/
 
